@@ -1,0 +1,46 @@
+# Models and checkpoints
+models/
+*.bin
+*.safetensors
+*.pt
+*.pth
+*.gguf
+
+# Processed data
+data/processed/
+
+# Evaluation results
+evaluation/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+myenv/
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+wandb/
+runs/
+
+# HuggingFace cache
+.cache/
