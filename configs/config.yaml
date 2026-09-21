@@ -58,6 +58,7 @@ entity_types:
   FAMILY_RELATION: "Family relationships (spouse, child, parent)"
   POLITICAL_CASE: "Political opinions, party membership"
   SEXUAL_ORIENTATION: "Sexual orientation or gender identity"
+  BEHAVIORAL_PATTERN: "Conduct of an identifiable person (not animal-subject behaviour)"
 
 # -- Training -----------------------------------------------------------------
 training:
