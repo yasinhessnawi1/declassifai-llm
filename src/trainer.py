@@ -208,7 +208,7 @@ def train(cfg: Config):
         gradient_accumulation_steps=cfg.training.gradient_accumulation_steps,
         learning_rate=cfg.training.learning_rate,
         weight_decay=cfg.training.weight_decay,
-        warmup_steps=cfg.training.warmup_ratio * len(train_dataset) / cfg.training.per_device_train_batch_size,
+        warmup_ratio=cfg.training.warmup_ratio,
         lr_scheduler_type=cfg.training.lr_scheduler_type,
         logging_steps=cfg.training.logging_steps,
         save_steps=cfg.training.save_steps,
@@ -222,7 +222,7 @@ def train(cfg: Config):
         max_grad_norm=cfg.training.max_grad_norm,
         report_to=cfg.training.report_to,
         dataloader_num_workers=cfg.training.dataloader_num_workers,
-        max_length=cfg.model.max_seq_length,
+        max_seq_length=cfg.model.max_seq_length,
         packing=False,
     )
 
