@@ -32,19 +32,27 @@ EMPLOYMENT_INFO, SEXUAL_ORIENTATION). They were added after a two-annotator tria
 documents scored strict F1 0.818 / relaxed 0.923, with 67% of all boundary disputes
 traced to a single unanswered question: where does a clause start?
 
-**B1 — Start at the predicate.** Exclude the subject noun phrase and any bare linking
-verb. Keep verbs and participles that carry the fact itself.
-- Drop a leading subject (`Berg`, `Paret`, `Lothbroksson`, `han`, `hun`, `de`) and a bare
-  `er` / `var` / `har` / `hadde` / `blir` / `ble` that only links subject to predicate.
-- Keep a leading fact-carrying verb or participle: `dømt for`, `anmeldt for`,
+**B1 — Start at the predicate.** The span always begins at the fact itself. Drop the
+grammatical subject and any linking verb, with no exceptions.
+
+- Drop the subject **whatever it refers to** — a person (`Berg`, `Lothbroksson`, `han`),
+  an animal (`Hunden`, `Hestene`, `Den`), a body part (`Øynene`, `Pelsen`) or an object.
+  There is no person-only carve-out: one rule, applied everywhere.
+- Drop a leading linking or auxiliary verb: `er`, `var`, `har`, `hadde`, `blir`, `ble`,
+  and the hedges `virker`, `virket`, `fremstår`, together with the discontinuous
+  `ser … ut` / `så … ut til å`. These only connect a subject to its predicate.
+- **Keep** a leading verb or participle that carries the fact: `dømt for`, `anmeldt for`,
   `mistenkt for`, `siktet for`, `diagnostisert med`, `behandles med`, `lider av`,
-  `medlem av`, `registrert som`.
+  `medlem av`, `registrert som`, `innrømmet`, `erkjente`.
 - `medlem av Fremskrittspartiet`, never `er medlem av Fremskrittspartiet`.
-- `to barn`, never `Paret har to barn` or `de har to barn`.
-- `historikk med å motsette seg Mattilsynets anvisninger`, never
-  `Lothbroksson har en historikk med å motsette seg Mattilsynets anvisninger`.
-- The subject's name is already captured separately as PERSON, so including it in the
-  clause only creates a large redundant overlap.
+- `to barn`, never `Paret har to barn`.
+- `litt sunkne`, never `Øynene virker litt sunkne`.
+- `mager og har en matt fjærdrakt`, never `Den virker mager og har en matt fjærdrakt`.
+- For a discontinuous `ser … ut`, tag only the predicate complement:
+  `Hestene ser tynne ut` → `tynne`.
+- Combined with "one clause, one fact", a multi-clause condition sentence yields one span
+  per clause. `Hestene ser tynne ut, pelsen deres er rufsete og matt, og de virker
+  apatiske.` → three HEALTH_INFO spans: `tynne`, `rufsete og matt`, `apatiske`.
 
 **B2 — Drop a leading determiner.** Strip a leading `en` / `et` / `den` / `det` / `de`.
 Numerals and quantifiers are part of the fact and are kept (`to barn`, `flere hester`).
@@ -55,12 +63,17 @@ conjunction is tagged separately, under the same type, rather than absorbed.
 - `anmeldt for dyremishandling i 2018` **+** `sak henlagt grunnet bevisets stilling`
   = two CRIMINAL_RECORD spans, not one.
 
-**B4 — Parentheticals.** Absorb a parenthetical only when it contains nothing but an age.
-A parenthetical containing a date, fødselsnummer or any other identifier is **not**
-absorbed: the span stops before the `(`, and the identifier is tagged on its own.
-- `to barn, Sondre (15) og Maren (12)` — absorbed (ages only).
-- `gift med Bjørn Harald Olsen (f. 12.05.1972, fødselsnummer 12057212345)` →
-  FAMILY_RELATION `gift med Bjørn Harald Olsen`, DATE_TIME `12.05.1972`,
+**B4 — Parentheticals.** Absorb a parenthetical when it only *qualifies the fact the span
+already states* — an age, or a quantity/amount. Do **not** absorb a parenthetical that
+introduces a separate identifiable datum: a date, a fødselsnummer, or any other
+identifier. There the span stops before the `(` and the identifier is tagged on its own.
+
+- `to barn, Sondre (15) og Maren (12)` — absorbed (ages qualify the children).
+- `betydelig gjeld (over 500.000 NOK)` — absorbed (the amount quantifies the debt); this
+  is FINANCIAL_INFO, and the longer form is mandated by FINANCIAL_INFO's own section.
+- `paratuberkulose (Johne's sykdom)` — absorbed (an alternative name for the same disease).
+- `gift med Bjørn Harald Olsen (f. 12.05.1972, fødselsnummer 12057212345)` — **not**
+  absorbed: FAMILY_RELATION `gift med Bjørn Harald Olsen`, DATE_TIME `12.05.1972`,
   GOV_ID `12057212345`.
 
 **B5 — Never end a span mid-token or mid-parenthetical.** A span that opens a bracket or
@@ -79,6 +92,14 @@ is tagged: `nektet å oppgi sin seksuelle orientering`,
 **B8 — A redaction placeholder standing in for a name is tagged PERSON**, consistent with
 the placeholder rule for GOV_ID, phone and email fields: `[Name Redacted]` following
 `Kontaktperson hos Mattilsynet:` is PERSON.
+
+**B9 — Never include terminal punctuation.** A span stops at the last word of the fact.
+Trim a trailing full stop, comma, semicolon or colon. Internal punctuation inside the
+clause is kept.
+- `spesielt på morgenen`, never `spesielt på morgenen.`
+- `Sauene står tett sammen og skjelver, spesielt på morgenen.` → `står tett sammen og
+  skjelver, spesielt på morgenen` (internal comma kept, final stop trimmed, subject
+  dropped per B1).
 
 
 ---
@@ -279,7 +300,7 @@ HEALTH_INFO tags a clause that states or strongly implies a medical condition, d
 - Substance use/dependency framed as a health condition: `rusmisbruk`, `alkoholproblem`, `cannabis` (when used clinically/medically, e.g. "medisinsk cannabis").
 - Human hospitalization/incapacity facts: `innlagt på Bærum sykehus`, `hentet i ambulanse`.
 - Explicit human mental-health language: `ustabil mental helse`, `tegn på depresjon`.
-- **Animal physical/behavioural/medical condition** — pelage, weight, gait, wounds, parasites, appetite, discharge, lameness, apathy, and named livestock/veterinary disease: `skorper rundt øynene`, `halter litt`, `sikler kraftig`, `synlige sår`, `betente sår`, `pelsen deres er matt og flokete`, `unormal gange`, `Hunden har åpenbart en hudsykdom`, `bovine tuberkulose`, `paratuberkulose`, `paratuberkulose (Johne's sykdom)`, `blåtunge`, `rabies` (in an animal), `Canine distemper`, `Equine influenza`, `Parvovirus`, `mistanke om rabies` / `mistenkt tuberkulose` (in an animal).
+- **Animal physical/behavioural/medical condition** — pelage, weight, gait, wounds, parasites, appetite, discharge, lameness, apathy, and named livestock/veterinary disease: `skorper rundt øynene`, `halter litt`, `sikler kraftig`, `synlige sår`, `betente sår`, `matt og flokete`, `unormal gange`, `åpenbart en hudsykdom`, `bovine tuberkulose`, `paratuberkulose`, `paratuberkulose (Johne's sykdom)`, `blåtunge`, `rabies` (in an animal), `Canine distemper`, `Equine influenza`, `Parvovirus`, `mistanke om rabies` / `mistenkt tuberkulose` (in an animal).
 
 *Note on scope: this animal-condition Include bullet is HEALTH_INFO's own pre-existing span population (documented in animal-welfare interview-template documents) — it is not a migration target for the former CONTEXT_SENSITIVE type's separate animal-disease bucket, which is dropped entirely rather than redirected here (see Removed types above).*
 
@@ -319,7 +340,7 @@ HEALTH_INFO tags a clause that states or strongly implies a medical condition, d
 4. `mentale helse` in "...Naboer har uttrykt bekymring for hennes mentale helse..." — human mental-health concern.
 5. `alkoholpåvirket tilstand` in "...Jeg har observert Lars Olsen i alkoholpåvirket tilstand ved flere anledninger..." — human intoxication state, named individual.
 6. `skorper rundt øynene` in "...En av dem så ut til å ha noe skorper rundt øynene..." (subject is a cat) — animal symptom, tagged per the reversed animal-health verdict.
-7. `Hunden har åpenbart en hudsykdom` — explicitly an animal ("Hunden"); tagged HEALTH_INFO under this spec.
+7. `åpenbart en hudsykdom` (source: "Hunden har åpenbart en hudsykdom") — explicitly an animal; the condition is tagged HEALTH_INFO, with the subject and auxiliary dropped per B1.
 8. `tuberkulose` in a livestock-inspection sentence about cattle ("bovine tuberkulose ble bekreftet ved funn av mistenkelige lesjoner hos tre dyr") — animal disease, tagged.
 
 #### Negative examples
