@@ -126,6 +126,23 @@ clause break; split them when they state distinct facts.
 - Two spans: `utdannet veterinærassistent` **+** `jobber for tiden i en dyrebutikk`
   (joined by `men`, two distinct facts).
 
+**B13 — A date inside a narrative clause is also tagged DATE_TIME.** When a clause tagged
+as CRIMINAL_RECORD, HEALTH_INFO or any other narrative type contains a calendar date or a
+bare year as its own token, that date is additionally tagged DATE_TIME on the same
+characters. This mirrors the existing GOV_ID-nests-inside-CRIMINAL_RECORD rule and keeps
+dates retrievable as entities in their own right.
+- `dømt for bedrageri i 2018` → CRIMINAL_RECORD `dømt for bedrageri i 2018`
+  **+** DATE_TIME `2018` (nested).
+- `diagnostisert med diabetes type 2 i mars 2021` → HEALTH_INFO for the clause
+  **+** DATE_TIME `mars 2021`.
+- This also recovers a date that B1 would otherwise discard. In
+  `I 2018 var Sæther involvert i en hendelse…`, B1 drops `I 2018 var Sæther` from the
+  CRIMINAL_RECORD span because the span must stay contiguous; B13 tags `2018` as
+  DATE_TIME so the year is not lost.
+- **Not** when the digits are structurally part of an identifier rather than a date in
+  their own right: `2018` inside the case number `2018/45678`, or the date-shaped prefix
+  of a fødselsnummer, stays GOV_ID only and is never additionally DATE_TIME.
+
 
 ---
 
