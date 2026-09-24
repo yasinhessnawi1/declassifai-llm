@@ -44,3 +44,10 @@ runs/
 
 # HuggingFace cache
 .cache/
+
+# Gold-set intermediates: per-annotator passes and sampling pools.
+# The adjudicated gold (batch_*_gold.jsonl) and rulings ARE tracked.
+data/gold/*_annotator*.jsonl
+data/gold/*_calibration.jsonl
+data/gold/*_reference.jsonl
+data/gold/candidates.jsonl
