@@ -24,6 +24,63 @@ These are lower-level mechanics that recur across many types; they are stated on
 - **Reporting frames vs. diagnostic/evidentiary frames.** Verbs of attribution or self-report ("identifiserer seg som", "hevder", "erklærte seg som", "ifølge naboen", "rykter om", "mistenker at" when it is merely introducing who is speculating) sit **outside** the tagged clause and are cut. Verbs of diagnosis, treatment, conviction, or accusation ("diagnostisert med", "lider av", "behandles med", "mistanke om" the medical/legal hedge itself, "dømt for", "anmeldt for") sit **inside** the tagged clause — they are part of the fact being recorded, not commentary about it. A third-party allegation or rumour about a special-category fact (e.g. sexual orientation) is still tagged: the sensitivity attaches to the fact being processed/written down, not to whether it is proven true.
 - **One clause, one fact.** If a sentence conjoins two distinct facts with "og"/"and" ("diagnostisert med diabetes type 2 og kronisk depresjon"; two separately named children), give each fact its own span rather than merging them because a conjunction sits between them.
 
+### Clause boundary determination
+
+These rules are normative for every narrative type (CRIMINAL_RECORD, POLITICAL_CASE,
+FAMILY_RELATION, BEHAVIORAL_PATTERN, HEALTH_INFO, ECONOMIC_STATUS, FINANCIAL_INFO,
+EMPLOYMENT_INFO, SEXUAL_ORIENTATION). They were added after a two-annotator trial on 22
+documents scored strict F1 0.818 / relaxed 0.923, with 67% of all boundary disputes
+traced to a single unanswered question: where does a clause start?
+
+**B1 — Start at the predicate.** Exclude the subject noun phrase and any bare linking
+verb. Keep verbs and participles that carry the fact itself.
+- Drop a leading subject (`Berg`, `Paret`, `Lothbroksson`, `han`, `hun`, `de`) and a bare
+  `er` / `var` / `har` / `hadde` / `blir` / `ble` that only links subject to predicate.
+- Keep a leading fact-carrying verb or participle: `dømt for`, `anmeldt for`,
+  `mistenkt for`, `siktet for`, `diagnostisert med`, `behandles med`, `lider av`,
+  `medlem av`, `registrert som`.
+- `medlem av Fremskrittspartiet`, never `er medlem av Fremskrittspartiet`.
+- `to barn`, never `Paret har to barn` or `de har to barn`.
+- `historikk med å motsette seg Mattilsynets anvisninger`, never
+  `Lothbroksson har en historikk med å motsette seg Mattilsynets anvisninger`.
+- The subject's name is already captured separately as PERSON, so including it in the
+  clause only creates a large redundant overlap.
+
+**B2 — Drop a leading determiner.** Strip a leading `en` / `et` / `den` / `det` / `de`.
+Numerals and quantifiers are part of the fact and are kept (`to barn`, `flere hester`).
+- `tidligere dom for bedrageri i 2018`, never `en tidligere dom for bedrageri i 2018`.
+
+**B3 — A case outcome is its own span.** An outcome clause separated by a comma or
+conjunction is tagged separately, under the same type, rather than absorbed.
+- `anmeldt for dyremishandling i 2018` **+** `sak henlagt grunnet bevisets stilling`
+  = two CRIMINAL_RECORD spans, not one.
+
+**B4 — Parentheticals.** Absorb a parenthetical only when it contains nothing but an age.
+A parenthetical containing a date, fødselsnummer or any other identifier is **not**
+absorbed: the span stops before the `(`, and the identifier is tagged on its own.
+- `to barn, Sondre (15) og Maren (12)` — absorbed (ages only).
+- `gift med Bjørn Harald Olsen (f. 12.05.1972, fødselsnummer 12057212345)` →
+  FAMILY_RELATION `gift med Bjørn Harald Olsen`, DATE_TIME `12.05.1972`,
+  GOV_ID `12057212345`.
+
+**B5 — Never end a span mid-token or mid-parenthetical.** A span that opens a bracket or
+quote must close it, or stop before it entirely.
+
+**B6 — Agency findings are taggable; boilerplate is not.** Case-specific factual findings
+in an inspection or observation list (`Vi har observert:`) are tagged under whichever type
+they state, exactly as they would be in running prose. Generic legal-citation or
+requirement text is never tagged: `Kravene som gjelder:`,
+`Regelverket som veiledningen bygger på:`, `Mattilsynet vurderer det slik:`.
+
+**B7 — A stated refusal to disclose is not a disclosure.** No fact is revealed, so nothing
+is tagged: `nektet å oppgi sin seksuelle orientering`,
+`nektet å oppgi informasjon om sin økonomiske situasjon`.
+
+**B8 — A redaction placeholder standing in for a name is tagged PERSON**, consistent with
+the placeholder rule for GOV_ID, phone and email fields: `[Name Redacted]` following
+`Kontaktperson hos Mattilsynet:` is PERSON.
+
+
 ---
 
 ## Taxonomy
@@ -993,7 +1050,7 @@ SEXUAL_ORIENTATION tags a clause that states, discloses, or credibly alleges a n
 
 #### Exclude
 - Plain relationship-status nouns with no orientation word: `samboer`, `partner`, `ektefelle`, `gift`, `skilt`, `registrert partnerskap`, `ektemann`, `husband` — FAMILY_RELATION, even though 1,168/1,421/276/40 of them carry a single stray SEXUAL_ORIENTATION mislabel in the corpus. A civil partnership or cohabitation is available to opposite-sex and same-sex couples alike and reveals nothing about orientation by itself.
-- Extramarital-affair language with no orientation content: `affære`, `utroskap`, `utenomekteskapelig forhold`, `kortvarig affære` — FAMILY_RELATION or CONTEXT_SENSITIVE-successor content, not orientation, unless the affair partner's gender combined with the subject's stated orientation is the disclosed fact.
+- Extramarital-affair language with no orientation content: `affære`, `utroskap`, `utenomekteskapelig forhold`, `kortvarig affære` — FAMILY_RELATION, not orientation, unless the affair partner's gender combined with the subject's stated orientation is the disclosed fact.
 - Generic workplace/social descriptors caught by keyword collision: `mannlig kollega` alone.
 - Religious/political self-identifiers that are lexically adjacent in these dossiers but categorically unrelated: `ateist` — POLITICAL_CASE territory (or untagged), never SEXUAL_ORIENTATION, despite 14 stray co-occurrences.
 
