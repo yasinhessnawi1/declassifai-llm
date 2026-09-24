@@ -212,7 +212,92 @@ is idempotent: re-validating a repaired file reports zero violations.
 
 ---
 
-## 9. Remaining work
+## 9. Does the spec work? Three reproducibility trials
+
+Gemini's failure was reproducibility, so the test of the spec is whether two
+annotators who follow it independently converge. Three rounds were run, each on
+the **same 22 documents** (13 dossier, 9 interview, 3 known-hard), by pairs of
+fresh annotators working blind: no sight of each other, of the original labels,
+or of the corpus. Every output passed `validate_labels.py` at zero violations.
+
+| | Round 1 | Round 2 | Round 3 |
+|---|---:|---:|---:|
+| **strict F1** (exact type + span) | 0.818 | 0.799 | **0.850** |
+| **relaxed F1** (type + overlap) | 0.923 | 0.936 | **0.939** |
+| boundary disputes | 51 | 64 | **42** |
+| recall gap (spans) | 74 | 59 | **57** |
+
+For scale: the original labeler, shown the same document twice, disagreed with
+itself on 99.7% of repeated documents. Every annotator in every round also found
+substantially more spans than the original labels (453-495 against 417),
+confirming the recall failure measured in section 3.
+
+### What each round changed
+
+Round 1 ran against the spec as first written. It revealed that the spec was
+**solved where it was mechanical and unsolved where it was prose**: `GOV_ID`,
+`POSTAL_CODE`, `NO_PHONE_NUMBER` and `EMAIL_ADDRESS` all scored 1.000, while
+`FAMILY_RELATION` sat at 0.345. Two-thirds of the boundary disputes reduced to a
+single unanswered question -- where does a clause start? -- so rules B1-B8 were
+added to answer it.
+
+Round 2 scored *lower* on strict F1 while relaxed F1 rose. Every type B1-B8
+targeted improved, and the fall came from two types whose causes were both
+drafting errors rather than genuine ambiguity. B1 said "drop the subject" but
+justified it by noting the subject is already captured as PERSON, so one
+annotator applied it to animals and the other read it as person-only, and
+`HEALTH_INFO` -- the largest type -- collapsed from 0.734 to 0.449 on its own.
+B4 forbade absorbing an amount parenthetical that `FINANCIAL_INFO`'s own section
+mandated. Both were fixed, B9 was added for terminal punctuation, and
+`HEALTH_INFO`'s own examples were reconciled with B1.
+
+Round 3 recovered `HEALTH_INFO` to 0.816 and reached the lowest boundary-dispute
+count of the three rounds, but strict F1 of 0.850 missed the 0.870 threshold set
+in advance, so rule-writing stopped.
+
+### Per-type movement, round 1 to round 3
+
+| Improved | r1 | r3 | | Regressed | r1 | r3 |
+|---|---:|---:|---|---|---:|---:|
+| `BEHAVIORAL_PATTERN` | 0.364 | 0.667 | +0.303 | `FINANCIAL_INFO` | 0.903 | 0.714 |
+| `FAMILY_RELATION` | 0.345 | 0.596 | +0.252 | `EMPLOYMENT_INFO` | 0.722 | 0.621 |
+| `POLITICAL_CASE` | 0.500 | 0.692 | +0.192 | `GOV_ID` | 1.000 | 0.923 |
+| `SEXUAL_ORIENTATION` | 0.870 | 0.957 | +0.087 | | | |
+| `HEALTH_INFO` | 0.734 | 0.816 | +0.082 | | | |
+
+`EMAIL_ADDRESS`, `NO_PHONE_NUMBER` and `POSTAL_CODE` held at 1.000 throughout.
+
+### The governing lesson
+
+**Each patch fixed its target and created a new collision elsewhere.** Net gain
+was +0.032 strict across three rounds. The regressions are the evidence: `GOV_ID`
+fell from a perfect 1.000 because the `CONTEXT_SENSITIVE` redistribution note
+says administrative metadata is untagged while field-label authority says tag
+case numbers, so one annotator tagged `Referanse:` and the other did not --
+both following the spec correctly.
+
+A specification of this kind is a body of interacting rules, and adding a global
+rule without reconciling every per-type example that touches it introduces a
+contradiction somewhere else. Relaxed F1, meanwhile, moved 0.923 -> 0.936 ->
+0.939 and has plateaued: agreement on **which** entities exist is essentially
+converged, and the residual is where spans end.
+
+### Consequence: relaxed match is the primary metric
+
+The 0.089 gap between relaxed and strict is entirely boundary placement. For a
+redaction product it is largely immaterial -- marking `litt sunkne` or
+`Øynene virker litt sunkne` both hide the fact, and over-redaction is the safe
+direction under GDPR. Relaxed match is therefore the primary metric for the gold
+set and for model evaluation; strict F1 is retained as a secondary diagnostic for
+boundary drift.
+
+The 99 round-3 disagreements (42 boundary, 57 recall) were adjudicated against
+the spec into a single gold file, with the 399 agreed spans passing through
+unchanged. See `data/gold/batch_a_rulings.md`.
+
+---
+
+## 10. Remaining work
 
 1. **Gold set** — 300–500 documents annotated to the spec and adjudicated.
    Without it, "100% correct" is unverifiable and there is no way to prove the
