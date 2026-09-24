@@ -101,6 +101,31 @@ clause is kept.
   skjelver, spesielt på morgenen` (internal comma kept, final stop trimmed, subject
   dropped per B1).
 
+**B10 — Keep a possessive that modifies the tagged noun.** B1 drops a clause *subject*;
+it does not drop a possessive pronoun or genitive that modifies the head noun of the span
+itself. Keep it — it ties the fact to the data subject and there is no shorter alternative.
+- `hans samboer, Astrid Olsen`, not `samboer, Astrid Olsen`.
+- `hennes ektemann, Lars Erik Bergquist`; `deres felles barn`.
+- This keeps a possessive the source already has; it never adds one. Where the source
+  uses a definite form instead, tag it as it stands: `ektefellen Astrid Knudsen`,
+  `ektemannen Per Hansen`.
+
+**B11 — Itemisation is absorbed; a second distinct fact is split.** A trailing
+`inkludert …` / `herunder …` phrase itemises the fact already stated and stays in the span.
+A clause joined by a bare `og` / `men` that states a genuinely separate fact gets its own
+span.
+- One span: `utestående gjeld på over 700 000 NOK, inkludert ubetalt skatt på 150 000 NOK`.
+- Two spans: `utestående gjeld på over 700 000 NOK` **+** `registrert med
+  betalingsanmerkninger`.
+- Two spans: `diabetes type 2` **+** `kronisk depresjon`.
+
+**B12 — EMPLOYMENT_INFO: role and employer.** A bare role word and a bare company name are
+each tagged on their own. Merge them into one span only when directly attached with no
+clause break; split them when they state distinct facts.
+- One span: `ansatt Bergen Slakt AS`.
+- Two spans: `utdannet veterinærassistent` **+** `jobber for tiden i en dyrebutikk`
+  (joined by `men`, two distinct facts).
+
 
 ---
 
@@ -378,6 +403,7 @@ Action for re-labeling: tag animal condition/symptom content as HEALTH_INFO on t
 Any government-issued or government-assigned identifier for a person, entity, or case: fødselsnummer, D-nummer, organisasjonsnummer, generic "ID-nummer" values, and police/court/case reference numbers ("saksnummer", "sak nr.", "Vår ref", "Deres ref" when populated). Excludes plain calendar dates and durations that merely resemble part of an ID.
 
 #### Include — exhaustive surface-form enumeration
+- `Førerkortnummer:` — a driver's licence number is government-issued; tag the value as GOV_ID. (Distinct from `Referanse:`, which is excluded below.)
 1. **Fødselsnummer/personnummer** — 11 digits, `DDMMYY` + 5-digit personal number, written with no separator (`12127012345`), a single dash after digit 6 (`120378-12345`), or a single space after digit 6 (`150701 44556`). Trigger labels: "Fødselsnummer:", "fødselsnummer", "personnummer:", "personnummer".
 2. **D-nummer** — same 11-digit shape as fødselsnummer (day-of-birth digit conventionally offset by +4, e.g. `05123456789`); trigger label: "D-nummer". Do not attempt to verify the +4 offset arithmetically — trust the field label.
 3. **Organisasjonsnummer (org.nr)** — 9 digits, solid (`987654321`, `912345678`) or grouped in 3s with spaces (`987 654 321`, `912 345 678`). Trigger labels: "Org.nr.:", "org.nr", "organisasjonsnummer".
@@ -395,6 +421,13 @@ Any government-issued or government-assigned identifier for a person, entity, or
 - A bare 4-digit year or a full calendar date (`2018`, `2023-10-26`) used **on its own**, with no attached ID suffix — DATE_TIME, not GOV_ID.
 - The date-shaped **prefix** of a case number when it is structurally part of that number (see Boundary rule) — not additionally tagged as a standalone date.
 - Account/loan numbers under a "Kontonummer"/"kontonr" label — FINANCIAL_INFO, even if the digit string is shape-identical to an org number.
+- **`Referanse: NNNNNN`** — the agency's own complaint-intake reference, present in
+  51% of the corpus (16,537 documents). It is administrative routing metadata, not an
+  identifier of a person, and the corpus leaves it untagged in 16,309 of 16,537 cases
+  (98.6%). Never tagged, by any type. This is a deliberate omission from the trigger-label
+  enumeration above, not an oversight: `Vår ref:` and `Deres ref:` *are* in that list and
+  *are* GOV_ID.
+- `Fylke:`, `Kommune:`, `Poststed:` as bare administrative form fields carry no GOV_ID.
 
 #### Boundary rule
 - **Fødselsnummer/D-nummer/org.nr/ID-nummer**: tag the number exactly as written — full 11 digits (with its single dash or space if present) or full 9 digits (with its spaces if present). Never split off the leading 6 digits. Examples: `120378-12345`, `987654321`, `987 654 321`, `15048823456`.
