@@ -149,13 +149,24 @@ dates retrievable as entities in their own right.
   of a fødselsnummer, stays GOV_ID only and is never additionally DATE_TIME.
 
 **B14 — Deprivation is health; structure is not.** In an inspection-findings bullet
-(`Vi har observert:`) or in running prose, a finding that the animal is denied **food,
-water or veterinary care** is HEALTH_INFO: it states a fact about the animal's condition,
-not about the premises. A finding about the **structure, cleanliness or layout** of the
-premises is not tagged by any type.
+(`Vi har observert:`) or in running prose, a finding that the animal is denied a **basic
+welfare need** is HEALTH_INFO: it states a fact about the animal's condition, not about
+the premises. A finding about the **structure, cleanliness or layout** of the premises is
+not tagged by any type.
+
+The basic welfare needs are: **food, water, veterinary care, shelter or protection from
+weather, grooming and basic care (`stell`), exercise, and social contact with its own
+species.** Deprivation of any of these is HEALTH_INFO even when the sentence is phrased
+as a property of the enclosure — `Burene har ingen beskyttelse mot vær og vind` deprives
+the animal of shelter and is tagged, while `Burene er skitne` describes cleanliness and
+is not. The test is whether a need of the animal is going unmet, not whether the
+grammatical subject is the animal or the enclosure.
 - HEALTH_INFO: `Utilstrekkelig fôring, vanning, og stell`, `Utilstrekkelig fôr og vann`,
   `mangle tilgang til vann`, `fortsatt ikke hadde tilgang til mat eller vann`,
   `ikke får den nødvendige veterinærbehandlingen`, `Ubehandlet skade på hund`.
+- Also HEALTH_INFO: `ingen beskyttelse mot vær og vind`, `ikke noe tydelig ly`,
+  `lite skygge`, `mangle tilstrekkelig bevegelse, stimulering og omsorg`,
+  `isolert fra andre dyr av samme art`.
 - Untagged: `Manglende renhold i dyrenes oppholdsområde`, `Dårlig hygiene i fjøset`,
   `Innhegningene er små og virker skitne`, `Manglende isolering av syke dyr`.
 - The rule is domain-neutral in the same way B6 is: it turns on whether the finding
@@ -773,7 +784,16 @@ FAMILY_RELATION tags a clause naming a family, kinship, or intimate-partnership 
 - Marital/partnership status with named spouse/partner: `gift med Astrid Olsen Åsberg`, `samboerforhold med Per Arne Olsen`, `Samboer med Lars Olsen`.
 - Relationship-ending facts: `skilsmisse`, `separasjon`, `skilt fra sin tidligere ektefelle`.
 - Household/family collectives naming a family unit tied to a surname: `Familien Eriksen` (see Overlap policy for why the surname itself is not additionally tagged PERSON).
-- Third-party relational identifiers a witness/reporter uses to explain how they know the subject, when they express kinship: `venn av Raymond`, `nabo til Hans Petter Wiik`; plain "naboen" with no family content is not tagged at all.
+- Third-party relational identifiers a witness/reporter uses to explain how they know the
+  subject, **only when they express kinship or intimate partnership**: `svigerinne til
+  Hans Petter Wiik`, `eksmannen til Raymond`.
+- Not tagged: a non-kinship social tie, however specific — `nabo til Hans Petter Wiik`,
+  `venn av Raymond`, `kollega av`, plain `naboen`. A neighbour or friend is neither
+  family nor an intimate partner, so it falls outside this type's definition, and no
+  other type covers it. Leave it untagged, as with religious affiliation and hobby-club
+  membership. (Earlier drafts listed `venn av Raymond` and `nabo til Hans Petter Wiik`
+  as positive examples, contradicting both the definition above and the bullet's own
+  kinship condition; that was an error.)
 
 #### Exclude
 - `eieren` (the owner) — a property/animal-ownership role, never FAMILY_RELATION, despite 4 stray tags vs. 23 correct EMPLOYMENT_INFO/other tags.
