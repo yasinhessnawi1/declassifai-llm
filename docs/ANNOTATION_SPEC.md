@@ -201,6 +201,31 @@ these documents exist to record what the named party did.
   principal, leave it untagged: the referent is genuinely ambiguous and a guess would
   attribute an offence to the wrong person.
 
+**B17 — When the subject *is* the fact, keep it.** B1 drops a subject that is a redundant
+*referent* — `Hestene`, `Øynene`, `Den` — because what it names is recorded elsewhere. It
+does **not** apply when the grammatical subject is a nominalised action or a
+fact-bearing noun phrase that carries the disclosure itself. Dropping that would leave a
+span with no content, or leave only vacuous evaluative filler.
+- `Oppbevaring av uregistrert våpen er ulovlig` → CRIMINAL_RECORD
+  `Oppbevaring av uregistrert våpen`, never the bare adjective `ulovlig`.
+- `Forfalskede veterinærattester ble funnet i hans besittelse` → CRIMINAL_RECORD
+  `Forfalskede veterinærattester`, since `Forfalskede` is the offence.
+- `Mangel på mosjon er også en bekymring` → HEALTH_INFO `Mangel på mosjon`; the tail
+  `er også en bekymring` is the commentary, not the fact.
+- The test: after applying B1, would the span still state the disclosed fact on its own?
+  If not, the subject was the fact — keep it and drop the evaluative predicate instead.
+
+**B18 — BEHAVIORAL_PATTERN keeps its subject.** This type is the one documented exception
+to B1. Its definition requires the clause to show **who** performs the pattern, so the
+span starts at the earliest word that establishes the actor, and the witnessing lead-in is
+kept when it is the only thing that does so.
+- `Har sett eieren bli sint på hunden ved flere anledninger` — kept whole.
+- `har flere ganger hørt eieren rope og skrike til hundene` — kept whole.
+- Where a cleanly named subject and verb already carry the actor, drop the outer reporting
+  wrapper as usual: `jeg har sett Frank Olsen oppføre seg uberegnelig` →
+  `Frank Olsen oppføre seg uberegnelig`.
+- No other type takes this exception.
+
 
 ---
 
@@ -963,7 +988,7 @@ Tag the complete evaluative clause, including the hedging frame the informant us
 
 #### Overlap policy and Precedence
 - **CRIMINAL_RECORD > FINANCIAL_INFO > ECONOMIC_STATUS.** ECONOMIC_STATUS is the lowest-precedence type in this chain: any number, named creditor, named instrument, or offense word anywhere in the candidate span promotes it to FINANCIAL_INFO or CRIMINAL_RECORD instead.
-- Where BEHAVIORAL_PATTERN could also apply (`spillegjeld`, `mislykket investeringsprosjekt i kryptovaluta`, `gambling losses`), ECONOMIC_STATUS wins when the span characterizes the *financial outcome/condition* ("has gambling debt"); BEHAVIORAL_PATTERN wins when the span characterizes the *conduct/habit* itself ("gambles compulsively"). Default to ECONOMIC_STATUS for outcome-framed spans within this type's own boundary (see Open questions — this specific split has not been separately re-confirmed by the project owner).
+- Where BEHAVIORAL_PATTERN could also apply (`spillegjeld`, `mislykket investeringsprosjekt i kryptovaluta`, `gambling losses`), ECONOMIC_STATUS wins when the span characterizes the *financial outcome/condition* ("has gambling debt"); BEHAVIORAL_PATTERN wins when the span characterizes the *conduct/habit* itself ("gambles compulsively"). Default to ECONOMIC_STATUS for outcome-framed spans within this type's own boundary. A clinical frame (`diagnostisert spillavhengighet`) is HEALTH_INFO. Confirmed by the project owner; see Open question 7.
 
 #### Positive examples
 - `sliter økonomisk og ikke har råd til for til sauene` — hardship judgement with stated consequence, no number.
@@ -1167,7 +1192,11 @@ Copy the exact substring of the source, including exact wording, vehicle/locatio
 - `unnvikende` vs. `stresset og unnvikende` → **long form**.
 - `utagerende oppførsel` vs. `utagerende oppførsel, spesielt etter inntak av alkohol` → **long form**.
 - Presence conflict `aktiv i den lokale skytterklubben` / `medlem av den lokale pinsemenigheten` → affiliation, not conduct; for a hobby club/church with no political or extremist character, this is arguably not sensitive under any of the 16 types — recommend leaving untagged rather than forcing it into BEHAVIORAL_PATTERN (see Open questions).
-- Presence conflict `spillegjeld` / `spilleavhengighet` → a financial/addictive **state**, not an action pattern; route to ECONOMIC_STATUS/HEALTH_INFO, not BEHAVIORAL_PATTERN.
+- Presence conflict `spillegjeld` / `spilleavhengighet` → routed by framing, per the
+  project owner's ruling: a stated financial outcome (`spillegjeld`, `gambling losses`,
+  an amount lost) is ECONOMIC_STATUS; the habit or conduct itself
+  (`spilleavhengighet`, `spiller bort pengene sine ukentlig`) is BEHAVIORAL_PATTERN;
+  and a clinical frame (`diagnostisert spillavhengighet`) is HEALTH_INFO.
 
 ---
 
@@ -1247,7 +1276,7 @@ Each item below is marked **OPEN** (no override addresses it — needs a project
 4. **POSTAL_CODE as a separate type vs. folding into NO_ADDRESS.** RESOLVED by Override 6 — the project owner has adopted the field-conditioned nesting/exclusivity rule as written, keeping POSTAL_CODE as its own type with the documented "4 digits only" exception to the full-clause rule.
 5. **NO_ADDRESS field-conditioned nesting reverses the old labels' numeric majority.** RESOLVED by Override 6 — explicitly confirmed acceptable; e.g. `5000 Bergen` was NO_ADDRESS 622× vs. POSTAL_CODE 21× in the old data, and the new rule deliberately reverses that majority because it contradicts both types' own definitions.
 6. **Single first-name PERSON vs. animal-name disambiguation** (`Balder`, `Odin`, `Pus`, `Snøball`, etc.). OPEN. No purely mechanical rule reliably separates "a human named Odin" from "a dog named Odin" beyond checking whether the field is "Navn på varsler/dyreeier" (human) vs. free-text animal description ("hunden heter..."). A short explicit gazetteer of common Norse/mythological pet-names in this corpus may be worth building if perfect inter-annotator agreement is required.
-7. **ECONOMIC_STATUS vs. BEHAVIORAL_PATTERN for gambling/investment-loss spans** (`spillegjeld`, `gambling losses`, `mislykket investeringsprosjekt i kryptovaluta`). OPEN. This spec defaults outcome-framed spans to ECONOMIC_STATUS and habit-framed spans to BEHAVIORAL_PATTERN, but this specific split has not been separately confirmed by the project owner and crosses cluster boundaries.
+7. **ECONOMIC_STATUS vs. BEHAVIORAL_PATTERN for gambling/investment-loss spans** (`spillegjeld`, `gambling losses`, `mislykket investeringsprosjekt i kryptovaluta`). **RESOLVED** by the project owner: split by framing — outcome is ECONOMIC_STATUS, habit is BEHAVIORAL_PATTERN, clinical diagnosis is HEALTH_INFO. Previously OPEN.
 8. **`pensjonist` as EMPLOYMENT_INFO vs. ECONOMIC_STATUS vs. neither.** OPEN. This spec keeps it as EMPLOYMENT_INFO when it answers an occupation question in the source template, on the grounds that excluding it would blow a large hole in presence recall for a frequent, template-driven span.
 9. **FINANCIAL_INFO's tie-break default** (bare `gjeld`/`debts` → FINANCIAL_INFO) **vs. not tagging at all.** OPEN. This spec keeps tagging for recall consistency, but it's a policy call, not a fact derivable from the data.
 10. **English-language spans** (`falsified tax documents`, `undeclared income`, `tax evasion`). PARTIALLY RESOLVED. Global Rule 1 already settles the general case: a genuinely English-language source document keeps its English span verbatim, untranslated. What remains open is a verification task, not a rule question: confirming which apparent English spans are genuine source text vs. translation artifacts from the corpus's generation pipeline (in which case the actual Norwegian source text at that position should be located and tagged instead).
