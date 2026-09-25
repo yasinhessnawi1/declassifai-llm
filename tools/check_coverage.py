@@ -42,7 +42,8 @@ PROBES: Dict[str, re.Pattern] = {
 # not employers and must never be flagged as missing coverage.
 PLACEHOLDERS = {
     "privatperson", "ukjent", "unknown", "not applicable", "n/a", "none",
-    "none provided", "gårdsbruk", "ingen", "blank", "-",
+    "none provided", "ingen", "blank", "-", "gårdsbruk",
+    "not applicable – private individual", "not applicable - private individual",
 }
 
 

@@ -226,6 +226,23 @@ kept when it is the only thing that does so.
   `Frank Olsen oppføre seg uberegnelig`.
 - No other type takes this exception.
 
+**B19 — The organisation in an employer field is EMPLOYMENT_INFO.** The value of a
+`Navn på dyreeier eller virksomhet:` field, and the organisation named in an
+`Org.nr.: NNNNNNNNN (Name)` parenthetical, is the entity under inspection and is tagged
+EMPLOYMENT_INFO whenever the document names a person. This holds regardless of what the
+organisation does: a congregation is treated exactly like a farm or a company, because the
+field means *employer*, not *belief*.
+- `Org.nr.: 987654321 (Stavanger Menighetssenter)` → EMPLOYMENT_INFO
+  `Stavanger Menighetssenter`.
+- Religious **affiliation** remains untagged, as before: `medlem av Jehovas Vitner`,
+  `tilhører Den norske kirke`. The distinction is between an organisation someone runs and
+  a belief someone holds.
+- **Not** when the company appears only as a financial counterparty rather than an
+  employer — a bank the subject owes money to (`Kreditbanken AS` as the creditor) is
+  excluded by FINANCIAL_INFO's own section and is not EMPLOYMENT_INFO.
+- **Not** a placeholder occupying the field without naming anything: `Privatperson`,
+  `Ukjent`, `Not applicable`, `N/A`.
+
 
 ---
 
@@ -504,6 +521,7 @@ Any government-issued or government-assigned identifier for a person, entity, or
 
 #### Include — exhaustive surface-form enumeration
 - `Førerkortnummer:` — a driver's licence number is government-issued; tag the value as GOV_ID. (Distinct from `Referanse:`, which is excluded below.)
+
 1. **Fødselsnummer/personnummer** — 11 digits, `DDMMYY` + 5-digit personal number, written with no separator (`12127012345`), a single dash after digit 6 (`120378-12345`), or a single space after digit 6 (`150701 44556`). Trigger labels: "Fødselsnummer:", "fødselsnummer", "personnummer:", "personnummer".
 2. **D-nummer** — same 11-digit shape as fødselsnummer (day-of-birth digit conventionally offset by +4, e.g. `05123456789`); trigger label: "D-nummer". Do not attempt to verify the +4 offset arithmetically — trust the field label.
 3. **Organisasjonsnummer (org.nr)** — 9 digits, solid (`987654321`, `912345678`) or grouped in 3s with spaces (`987 654 321`, `912 345 678`). Trigger labels: "Org.nr.:", "org.nr", "organisasjonsnummer".
