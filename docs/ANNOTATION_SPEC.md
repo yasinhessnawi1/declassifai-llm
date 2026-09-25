@@ -184,6 +184,23 @@ finding that records the absence of a problem is not tagged.
   meaning (`uten at Olsen hadde kontaktet veterinær`), keep the span intact including the
   subject. Never emit a span whose meaning is the opposite of the source.
 
+**B16 — An organisation's conduct is the named principal's conduct.** When a document
+attributes an offence, neglect or other taggable conduct to a company, farm, congregation
+or other organisation, and the document names a human principal for it — owner, sole
+proprietor, daglig leder, leader — the clause IS tagged under whichever type applies. In a
+one-principal organisation the conduct is in practice personal data about that person, and
+these documents exist to record what the named party did.
+- `Astrid Bjørgen Sjømat AS har systematisk feilmerket eksportprodukter` → CRIMINAL_RECORD,
+  where the document names Astrid Bjørgen as the owner.
+- `Gårdens regnskap viser tegn på skatteunndragelse` → CRIMINAL_RECORD, where the farm's
+  owner is named.
+- This rule licenses **tagging**; it does not change the boundary. B1 still applies, so the
+  organisation name is dropped as the grammatical subject and the span begins at the
+  predicate. The organisation's name may separately be EMPLOYMENT_INFO under B12.
+- Where the document names **several** humans and none is identifiable as the responsible
+  principal, leave it untagged: the referent is genuinely ambiguous and a guess would
+  attribute an offence to the wrong person.
+
 
 ---
 
