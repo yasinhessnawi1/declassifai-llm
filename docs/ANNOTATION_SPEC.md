@@ -84,6 +84,11 @@ in an inspection or observation list (`Vi har observert:`) are tagged under whic
 they state, exactly as they would be in running prose. Generic legal-citation or
 requirement text is never tagged: `Kravene som gjelder:`,
 `Regelverket som veiledningen bygger på:`, `Mattilsynet vurderer det slik:`.
+  A restatement is its own span. Documents routinely state the same offence or
+  condition twice — once in prose and again, in different words, in an observation
+  bullet or an evaluation paragraph. Both are tagged. They are distinct strings of
+  text, not a duplicate, and skipping the second as redundant was the single largest
+  genuine recall gap measured in a single-pass batch (13 spans in 21 documents).
 
 **B7 — A stated refusal to disclose is not a disclosure.** No fact is revealed, so nothing
 is tagged: `nektet å oppgi sin seksuelle orientering`,
