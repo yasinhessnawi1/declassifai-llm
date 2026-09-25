@@ -143,6 +143,31 @@ dates retrievable as entities in their own right.
   their own right: `2018` inside the case number `2018/45678`, or the date-shaped prefix
   of a fødselsnummer, stays GOV_ID only and is never additionally DATE_TIME.
 
+**B14 — Deprivation is health; structure is not.** In an inspection-findings bullet
+(`Vi har observert:`) or in running prose, a finding that the animal is denied **food,
+water or veterinary care** is HEALTH_INFO: it states a fact about the animal's condition,
+not about the premises. A finding about the **structure, cleanliness or layout** of the
+premises is not tagged by any type.
+- HEALTH_INFO: `Utilstrekkelig fôring, vanning, og stell`, `Utilstrekkelig fôr og vann`,
+  `mangle tilgang til vann`, `fortsatt ikke hadde tilgang til mat eller vann`,
+  `ikke får den nødvendige veterinærbehandlingen`, `Ubehandlet skade på hund`.
+- Untagged: `Manglende renhold i dyrenes oppholdsområde`, `Dårlig hygiene i fjøset`,
+  `Innhegningene er små og virker skitne`, `Manglende isolering av syke dyr`.
+- The rule is domain-neutral in the same way B6 is: it turns on whether the finding
+  describes a living subject's deprivation, not on whether the premises house animals or
+  serve food. A commercial hygiene finding (`Muggsopp på flere bakevarer`,
+  `Manglende hygiene i produksjonslokalene`) is structural and stays untagged.
+
+**B15 — An incriminating absence is tagged; a reassuring one is not.** A negated finding
+that *is itself* the documented problem is tagged under the type it evidences. A negative
+finding that records the absence of a problem is not tagged.
+- Tagged: `fortsatt ikke hadde tilgang til mat eller vann`,
+  `ikke får den nødvendige veterinærbehandlingen` (HEALTH_INFO).
+- Untagged: `ingen synlige skader`, `Jeg så ingen lam` — nothing sensitive is disclosed.
+- Where a negation wraps the subject and B1 cannot be applied without inverting the
+  meaning (`uten at Olsen hadde kontaktet veterinær`), keep the span intact including the
+  subject. Never emit a span whose meaning is the opposite of the source.
+
 
 ---
 
