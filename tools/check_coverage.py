@@ -118,8 +118,11 @@ def main() -> int:
     if grand:
         print(f"\ntotal candidates: {sum(grand.values())}  {dict(grand)}")
         print("Candidates are values present in the text that no span covers.")
-        print("Rule on each against the spec -- an incidental mention may be a")
-        print("legitimate non-match. This tool never edits a label file.")
+        print("This is NOT a defect list and 'clean' is NOT a target. The tool")
+        print("knows nothing about the spec: it cannot tell an employer from a")
+        print("creditor, or a name from a placeholder. Rule on each candidate")
+        print("against the spec, and leave it flagged if the spec says leave it.")
+        print("Never add a span solely to make this tool report clean.")
     return 1 if grand else 0
 
 
