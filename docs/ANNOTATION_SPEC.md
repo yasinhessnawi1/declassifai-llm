@@ -472,6 +472,7 @@ the end of the authority name. **A comma counts as a connector too** — `2010-1
 | BEHAVIORAL_PATTERN | A clause describing a recurring or characteristic pattern of conduct performed by an identified natural person (never an animal's own conduct). |
 | ECONOMIC_STATUS | A subjective, evaluative characterization of a person's or organization's overall financial condition, with no attached number, account, or named instrument. |
 | SEXUAL_ORIENTATION | A clause stating, disclosing, or credibly alleging a named individual's sexual orientation, gender identity, or GDPR-Art.-9 "sex life" fact. |
+| RELIGIOUS_BELIEF | A clause stating that an identified person holds, professes, has converted to, or is affiliated with a religious or philosophical belief or community — including non-belief (`ateist`, `agnostiker`). |
 
 ### Removed types
 
