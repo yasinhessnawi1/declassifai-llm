@@ -273,6 +273,22 @@ field means *employer*, not *belief*.
 - **Not** a placeholder occupying the field without naming anything: `Privatperson`,
   `Ukjent`, `Not applicable`, `N/A`.
 
+**B25 — An address makes the subject of an allegation identifiable; nothing does not.**
+CRIMINAL_RECORD, and the other types that attach to a natural person, need a data subject.
+Under GDPR Art. 4(1) that subject may be identified *indirectly*, so a specific address is
+enough even when the owner field is a placeholder: a report naming
+`Navn pa dyreeier eller virksomhet: Uklar` but `Adresse: Nedre Ila 47` supports tagging
+`mistenker organisert virksomhet`. A report with a placeholder owner *and* a placeholder
+address (`Adresse: Ukjent, mistenkes a vaere et lagerlokale i et industriomrade`) identifies
+nobody, and its allegations stay untagged.
+- The reporter and the receiving officer being named does not help. They are not the
+  accused, and their presence cannot make an unnamed third party identifiable.
+- **Animal-welfare facts are unaffected.** HEALTH_INFO does not require a human subject, so
+  `alvorlig mishandling og skader` is tagged in both documents regardless.
+- Two annotators reached opposite verdicts on these two documents and both were right; the
+  fact patterns differ. This rule records the distinction so the next one does not have to
+  rediscover it.
+
 **B24 — A relationship with a minor is CRIMINAL_RECORD, not SEXUAL_ORIENTATION.** The
 disclosed fact is a criminal matter, and the parties' genders are beside the point. Gold
 tags it this way three times (`involvert i en offentlig skandale knyttet til et forhold med

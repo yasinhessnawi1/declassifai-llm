@@ -1,0 +1,1224 @@
+{
+  "version": 2,
+  "types": [
+    {
+      "name": "BANK_ACCOUNT",
+      "tier": "A",
+      "gdpr": null,
+      "legacy_type": "FINANCIAL_INFO",
+      "definition": "A Norwegian or foreign bank account/loan account number identifying where money is held or owed.",
+      "include": [
+        "Kontonummer value, 11 digits grouped 4.4.3 (`1234.56.78903`) or solid",
+        "Lånenummer / loan-account number under a bank field",
+        "Account number stated inline with a creditor name (\"konto hos DNB, 1234.56.78903\")"
+      ],
+      "exclude": [
+        "Org.nr./fødselsnummer-shaped digit strings under a government-identifier label (GOV_ID instead)",
+        "A bare NOK amount with no account number (that is FINANCIAL_INFO's own amount case, not this one)"
+      ],
+      "boundary": "Tag the account number exactly as printed, including group separators; extend to include a directly-attached creditor/bank name per FINANCIAL_INFO's own full-clause rule (ANNOTATION_SPEC §FINANCIAL_INFO boundary rule).",
+      "spec_rules": [
+        "B4"
+      ],
+      "value_kind": "value"
+    },
+    {
+      "name": "CASE_NUMBER",
+      "tier": "A",
+      "gdpr": null,
+      "legacy_type": "GOV_ID",
+      "definition": "A police, court, or agency case/reference number (saksnummer, sak nr., Vår ref/Deres ref when populated).",
+      "include": [
+        "`2018/45678`, `TOSLO-2018-12345`, `2019-12345 Oslo Tingrett`",
+        "`Vår ref:` / `Deres ref:` when populated with an actual value"
+      ],
+      "exclude": [
+        "`Referanse: NNNNNN` — the agency's own complaint-intake routing number, left untagged by the spec in 98.6% of cases",
+        "A bare year or date with no case-number suffix (DATE_TIME instead)"
+      ],
+      "boundary": "Tag the full compound string including any attached court/authority name per B23; never split the date-shaped prefix off as DATE_TIME per B13's identifier carve-out.",
+      "spec_rules": [
+        "B13",
+        "B20",
+        "B23"
+      ],
+      "value_kind": "value"
+    },
+    {
+      "name": "CREDIT_CARD",
+      "tier": "A",
+      "gdpr": null,
+      "legacy_type": "FINANCIAL_INFO",
+      "definition": "A payment card number (typically 16 digits, sometimes grouped in 4s) or its expiry/CVV when directly attached.",
+      "include": [
+        "16-digit PAN, grouped or solid",
+        "PAN with directly attached expiry date"
+      ],
+      "exclude": [
+        "A bare NOK amount charged to the card (tag the amount as its own FINANCIAL_INFO span if present, per that type's own boundary rule)"
+      ],
+      "boundary": "Tag the digit string exactly as printed; a directly-attached expiry/CVV stays in the same span per FINANCIAL_INFO's full-clause rule.",
+      "spec_rules": [
+        "B4"
+      ],
+      "value_kind": "value"
+    },
+    {
+      "name": "CRYPTO",
+      "tier": "A",
+      "gdpr": null,
+      "legacy_type": "FINANCIAL_INFO",
+      "definition": "A cryptocurrency wallet address or exchange account identifier tied to a named person.",
+      "include": [
+        "Wallet address string (e.g. a bech32/base58 string) under a \"Lommebok\"/\"Krypto\" label",
+        "Exchange account/reference number for a named crypto holding"
+      ],
+      "exclude": [
+        "A bare currency/amount figure with no address (that is FINANCIAL_INFO's own amount case)"
+      ],
+      "boundary": "Tag the address/identifier string alone; extend only to a directly-attached amount or exchange name per FINANCIAL_INFO's full-clause rule.",
+      "spec_rules": [],
+      "value_kind": "value"
+    },
+    {
+      "name": "DATE_OF_BIRTH",
+      "tier": "A",
+      "gdpr": null,
+      "legacy_type": "DATE_TIME",
+      "definition": "An explicit calendar date stated as a person's birth date, standalone or as the parenthetical of a fødselsnummer/name (\"f. 12.05.1972\").",
+      "include": [
+        "`12.05.1972` after \"f.\" or \"Født:\"",
+        "A birth date embedded as the parenthetical of a named person per B4"
+      ],
+      "exclude": [
+        "The fødselsnummer itself, even though its first 6 digits encode the same date — GOV_ID owns the whole number, never split off as DATE_TIME (mirrors the DATE_TIME×GOV_ID exclusivity rule)"
+      ],
+      "boundary": "Tag the date exactly as printed; per B4 a birth-date parenthetical attached to a named person is NOT absorbed into that person's span — it stays its own DATE_TIME span.",
+      "spec_rules": [
+        "B4",
+        "B13"
+      ],
+      "value_kind": "value"
+    },
+    {
+      "name": "DEVICE_ID",
+      "tier": "A",
+      "gdpr": null,
+      "legacy_type": null,
+      "definition": "A hardware/device identifier (IMEI, MAC address, serial number of a personal device) tied to a named person.",
+      "include": [
+        "IMEI number under a \"Enhet:\"/\"IMEI:\" label",
+        "MAC address, serial number of a phone/laptop/collar-tracker"
+      ],
+      "exclude": [
+        "A government-issued device registration (e.g. a firearms card number) — GOV_ID's own domain per B20"
+      ],
+      "boundary": "Tag the identifier string alone, stopping at the field label or following punctuation.",
+      "spec_rules": [],
+      "value_kind": "value"
+    },
+    {
+      "name": "DRIVER_LICENSE",
+      "tier": "A",
+      "gdpr": null,
+      "legacy_type": "GOV_ID",
+      "definition": "A driver's licence number (Førerkortnummer), a public-authority-issued identifier per B20.",
+      "include": [
+        "`Førerkortnummer: 12345678901`"
+      ],
+      "exclude": [
+        "A private vehicle-manufacturer serial number on the car itself"
+      ],
+      "boundary": "Tag the value exactly as printed after the Førerkortnummer label; issuer test (B20) puts it in GOV_ID because a public authority (Statens vegvesen/politiet) issues it.",
+      "spec_rules": [
+        "B20"
+      ],
+      "value_kind": "value"
+    },
+    {
+      "name": "EMAIL",
+      "tier": "A",
+      "gdpr": null,
+      "legacy_type": "EMAIL_ADDRESS",
+      "definition": "A complete local-part@domain email address.",
+      "include": [
+        "Standard address after an \"E-post:\" label",
+        "Norwegian-letter local parts printed verbatim"
+      ],
+      "exclude": [
+        "Any string without an `@` sign",
+        "A redaction placeholder following a non-email field label"
+      ],
+      "boundary": "Tag the full local-part@domain string only, per EMAIL_ADDRESS's own boundary rule.",
+      "spec_rules": [],
+      "value_kind": "value"
+    },
+    {
+      "name": "FAX_NUMBER",
+      "tier": "A",
+      "gdpr": null,
+      "legacy_type": null,
+      "definition": "A fax number under a \"Faks:\"/\"Fax:\" label.",
+      "include": [
+        "Digit string, grouped or solid, immediately after a Faks/Fax label"
+      ],
+      "exclude": [
+        "The same digit shape under a \"Telefon:\" label — that is NO_PHONE_NUMBER instead, by field-label authority"
+      ],
+      "boundary": "Tag the digits (and any interior spaces/plus-sign) only, stopping at the following punctuation or field label — mirrors NO_PHONE_NUMBER's own boundary rule but keyed to the Faks/Fax label instead of Telefon/Tlf.",
+      "spec_rules": [],
+      "value_kind": "value"
+    },
+    {
+      "name": "IBAN",
+      "tier": "A",
+      "gdpr": null,
+      "legacy_type": "FINANCIAL_INFO",
+      "definition": "An International Bank Account Number for a named person or organisation's account.",
+      "include": [
+        "`NO93 8601 1117 947` or solid form under a \"IBAN:\"/\"Kontonummer (IBAN):\" label"
+      ],
+      "exclude": [
+        "A domestic Kontonummer without IBAN formatting — still FINANCIAL_INFO, just not this specific surface form"
+      ],
+      "boundary": "Tag the full IBAN string including its country-code prefix and any group spacing.",
+      "spec_rules": [
+        "B4"
+      ],
+      "value_kind": "value"
+    },
+    {
+      "name": "IDENTITY_CARD",
+      "tier": "A",
+      "gdpr": null,
+      "legacy_type": "GOV_ID",
+      "definition": "A national identity card number issued by a public authority (politiet), per B20's issuer test.",
+      "include": [
+        "`Nasjonalt ID-kort nr.: ...`",
+        "\"ID-kort\" value under a police-issued-document label"
+      ],
+      "exclude": [
+        "A private membership/library card number — excluded by B20's private-issuer test"
+      ],
+      "boundary": "Tag the value exactly as printed after the ID-card label; apply B20's issuer test rather than the label text alone.",
+      "spec_rules": [
+        "B20"
+      ],
+      "value_kind": "value"
+    },
+    {
+      "name": "INSURANCE_NUMBER",
+      "tier": "A",
+      "gdpr": null,
+      "legacy_type": null,
+      "definition": "An insurance policy/claim number issued by a private insurer.",
+      "include": [
+        "`Forsikringsnummer: ...` / `Polisenummer: ...` / `Skadenummer: ...`"
+      ],
+      "exclude": [
+        "A NAV/folketrygd benefit case number issued by a public authority — that is GOV_ID under B20's issuer test, since a state agency issued it"
+      ],
+      "boundary": "Tag the number alone; per B20 a private insurer's own policy number is not government-issued and has no home in the 16-type schema (compare `medlemsnummer`/`lånenummer`, both explicitly excluded there).",
+      "spec_rules": [
+        "B20"
+      ],
+      "value_kind": "value"
+    },
+    {
+      "name": "IP_ADDRESS",
+      "tier": "A",
+      "gdpr": null,
+      "legacy_type": null,
+      "definition": "An IPv4 or IPv6 address tied to a named person's device or session.",
+      "include": [
+        "Dotted-quad IPv4 (`192.168.1.42`)",
+        "Colon-separated IPv6"
+      ],
+      "exclude": [
+        "A domain name with no numeric IP (URL's own domain, also unmapped)"
+      ],
+      "boundary": "Tag the address string alone, stopping at the following punctuation or field label.",
+      "spec_rules": [],
+      "value_kind": "value"
+    },
+    {
+      "name": "LICENSE_PLATE",
+      "tier": "A",
+      "gdpr": null,
+      "legacy_type": "GOV_ID",
+      "definition": "A vehicle registration number, state-assigned and GOV_ID by B20's explicit ruling.",
+      "include": [
+        "`registreringsnummer DK 45778`, `reg.nr. BT 12345`"
+      ],
+      "exclude": [
+        "The surrounding vehicle description (make/model/colour) — stays out of the span; the plate is tagged alone, never absorbed into or extending the description (B20)"
+      ],
+      "boundary": "Tag the plate alone; never extend the span to cover the label word or the vehicle description, per B20's explicit vehicle-registration ruling.",
+      "spec_rules": [
+        "B20"
+      ],
+      "value_kind": "value"
+    },
+    {
+      "name": "MEDICAL_LICENSE",
+      "tier": "A",
+      "gdpr": null,
+      "legacy_type": "GOV_ID",
+      "definition": "A healthcare professional's authorisation/licence number issued by a public health authority (Helsedirektoratet).",
+      "include": [
+        "`Autorisasjonsnummer: ...` for a doctor/nurse/veterinarian"
+      ],
+      "exclude": [
+        "A hospital's own internal staff ID — a private/institutional number, excluded per B20's `journalnummer`-style private-issuer test"
+      ],
+      "boundary": "Tag the value alone; B20's issuer test places a state health-authority licence in GOV_ID, alongside `Lisensnummer` (a state licence).",
+      "spec_rules": [
+        "B20"
+      ],
+      "value_kind": "value"
+    },
+    {
+      "name": "MILITARY_ID",
+      "tier": "A",
+      "gdpr": null,
+      "legacy_type": "GOV_ID",
+      "definition": "A Forsvaret (Norwegian Armed Forces) service/ID number, government-issued per B20.",
+      "include": [
+        "`Militært ID-nummer: ...` / `Tjenestenummer: ...`"
+      ],
+      "exclude": [
+        "A private security firm's badge number — not government-issued"
+      ],
+      "boundary": "Tag the value alone; issuer test (B20) places it in GOV_ID since the Armed Forces is a public authority.",
+      "spec_rules": [
+        "B20"
+      ],
+      "value_kind": "value"
+    },
+    {
+      "name": "NATIONAL_ID",
+      "tier": "A",
+      "gdpr": null,
+      "legacy_type": "GOV_ID",
+      "definition": "Fødselsnummer or D-nummer: an 11-digit Norwegian national identity number.",
+      "include": [
+        "11 digits solid, dash-separated after digit 6, or space-separated after digit 6",
+        "D-nummer, same shape, trigger label \"D-nummer\""
+      ],
+      "exclude": [
+        "The same 11-digit shape under a \"Telefon:\" label — NO_PHONE_NUMBER instead, by field-label authority"
+      ],
+      "boundary": "Tag the full 11 digits exactly as written, never splitting off the leading 6 as DATE_TIME (GOV_ID §Boundary rule).",
+      "spec_rules": [
+        "B4",
+        "B20"
+      ],
+      "value_kind": "value"
+    },
+    {
+      "name": "ORG_NUMBER",
+      "tier": "A",
+      "gdpr": null,
+      "legacy_type": "GOV_ID",
+      "definition": "Organisasjonsnummer: a 9-digit Norwegian organisation number.",
+      "include": [
+        "9 digits solid or grouped in 3s with spaces, trigger label \"Org.nr.:\""
+      ],
+      "exclude": [
+        "A Kontonummer of similar digit count — FINANCIAL_INFO, by field-label authority, even if shape-identical"
+      ],
+      "boundary": "Tag the full 9 digits exactly as written, including group spacing.",
+      "spec_rules": [
+        "B20"
+      ],
+      "value_kind": "value"
+    },
+    {
+      "name": "PASSPORT",
+      "tier": "A",
+      "gdpr": null,
+      "legacy_type": "GOV_ID",
+      "definition": "A passport number, issued by the police (a public authority), per B20.",
+      "include": [
+        "`Passnummer: ...`"
+      ],
+      "exclude": [
+        "A private travel-insurance policy number referenced alongside it — INSURANCE_NUMBER's own (unmapped) domain"
+      ],
+      "boundary": "Tag the value alone; issuer test (B20) places a police-issued passport number in GOV_ID.",
+      "spec_rules": [
+        "B20"
+      ],
+      "value_kind": "value"
+    },
+    {
+      "name": "PASSWORD",
+      "tier": "A",
+      "gdpr": null,
+      "legacy_type": null,
+      "definition": "A credential string (password, PIN, access code) attributed to a named person.",
+      "include": [
+        "A quoted password/PIN value in a security-incident narrative"
+      ],
+      "exclude": [
+        "A generic reference to \"passordet sitt\" with no literal string given — nothing verbatim to tag"
+      ],
+      "boundary": "Tag the literal credential string only, per the global verbatim rule; never paraphrase or redact it further.",
+      "spec_rules": [],
+      "value_kind": "value"
+    },
+    {
+      "name": "PHONE",
+      "tier": "A",
+      "gdpr": null,
+      "legacy_type": "NO_PHONE_NUMBER",
+      "definition": "A Norwegian telephone number under a Telefon/Tlf/Telefonnummer label.",
+      "include": [
+        "8 digits solid or grouped",
+        "With `+47` or bare `47` country-code prefix",
+        "Any digit string under a Telefon/Tlf label regardless of count, including 11-digit fødselsnummer-shaped strings"
+      ],
+      "exclude": [
+        "9-digit numbers under an \"Org.nr.:\" label",
+        "11-digit numbers under a \"Fødselsnummer:\" label"
+      ],
+      "boundary": "Tag the digits (and any interior spaces/plus-sign) only, stopping at the following punctuation or field label, per NO_PHONE_NUMBER's own boundary rule.",
+      "spec_rules": [],
+      "value_kind": "value"
+    },
+    {
+      "name": "POSTAL_CODE",
+      "tier": "A",
+      "gdpr": null,
+      "legacy_type": "POSTAL_CODE",
+      "definition": "The bare 4-digit Norwegian postal code, exactly as printed.",
+      "include": [
+        "4 digits alone, including a leading zero (`0182`)",
+        "4 digits nested inside a NO_ADDRESS clause's own text"
+      ],
+      "exclude": [
+        "The trailing place/city name",
+        "A 4-digit year (DATE_TIME) or case-number fragment (GOV_ID)"
+      ],
+      "boundary": "Exactly 4 digits, never the place name — the one documented exception to the full-clause global rule (POSTAL_CODE's own §Boundary rule).",
+      "spec_rules": [],
+      "value_kind": "value"
+    },
+    {
+      "name": "SOCIAL_MEDIA",
+      "tier": "A",
+      "gdpr": null,
+      "legacy_type": null,
+      "definition": "A social media handle, profile URL, or platform username tied to a named person.",
+      "include": [
+        "`@handle` form",
+        "Full profile URL (`facebook.com/navn.navnesen`)"
+      ],
+      "exclude": [
+        "A bare platform name with no handle/URL (\"har en Facebook-profil\" alone) — nothing verbatim to extract"
+      ],
+      "boundary": "Tag the handle or URL string alone, stopping at trailing punctuation or whitespace.",
+      "spec_rules": [],
+      "value_kind": "value"
+    },
+    {
+      "name": "STUDENT_ID",
+      "tier": "A",
+      "gdpr": null,
+      "legacy_type": null,
+      "definition": "A student identification number issued by an educational institution.",
+      "include": [
+        "`Studentnummer: ...` at a named university/school"
+      ],
+      "exclude": [
+        "A national student-loan (Lånekassen) case number issued by the state — that would be GOV_ID under B20's issuer test if it appeared, since Lånekassen is a public authority; a university's own student-ID is not"
+      ],
+      "boundary": "Tag the number alone; per B20's private/institutional-issuer reasoning (parallel to `medlemsnummer`), a university-issued student ID is not a government identifier and has no home in the 16-type schema.",
+      "spec_rules": [
+        "B20"
+      ],
+      "value_kind": "value"
+    },
+    {
+      "name": "TAX_ID",
+      "tier": "A",
+      "gdpr": null,
+      "legacy_type": "GOV_ID",
+      "definition": "A taxpayer identification number issued by Skatteetaten (a public tax authority), per B20.",
+      "include": [
+        "`Skatte-ID: ...` distinct from the fødselsnummer already used for tax purposes"
+      ],
+      "exclude": [
+        "A private accountant's own client-file number"
+      ],
+      "boundary": "Tag the value alone; issuer test (B20) places a state tax-authority ID in GOV_ID alongside fødselsnummer/org.nr.",
+      "spec_rules": [
+        "B20"
+      ],
+      "value_kind": "value"
+    },
+    {
+      "name": "URL",
+      "tier": "A",
+      "gdpr": null,
+      "legacy_type": null,
+      "definition": "A web address tied to a named person, organisation, or piece of evidence (e.g. a linked video/report).",
+      "include": [
+        "Full `https://...` or bare `www...` string"
+      ],
+      "exclude": [
+        "A bare domain word used as a proper noun with no path/scheme (arguably ORGANIZATION's territory instead)"
+      ],
+      "boundary": "Tag the URL string alone, stopping at trailing punctuation or whitespace.",
+      "spec_rules": [],
+      "value_kind": "value"
+    },
+    {
+      "name": "USERNAME",
+      "tier": "A",
+      "gdpr": null,
+      "legacy_type": null,
+      "definition": "A login/account username distinct from a full email address, tied to a named person.",
+      "include": [
+        "`Brukernavn: ...` value in an account-access narrative"
+      ],
+      "exclude": [
+        "A full email address used as a login — that is EMAIL's own domain (maps to EMAIL_ADDRESS)"
+      ],
+      "boundary": "Tag the username string alone, stopping at trailing punctuation or the following field label.",
+      "spec_rules": [],
+      "value_kind": "value"
+    },
+    {
+      "name": "VISA_NUMBER",
+      "tier": "A",
+      "gdpr": null,
+      "legacy_type": "GOV_ID",
+      "definition": "An immigration visa/residence-permit number issued by UDI (a public authority), per B20.",
+      "include": [
+        "`Visumnummer: ...` / `Oppholdstillatelse nr.: ...`"
+      ],
+      "exclude": [
+        "A private employer's own internal work-authorisation tracking number"
+      ],
+      "boundary": "Tag the value alone; issuer test (B20) places a UDI-issued visa/permit number in GOV_ID.",
+      "spec_rules": [
+        "B20"
+      ],
+      "value_kind": "value"
+    },
+    {
+      "name": "ACADEMIC_RECORD",
+      "tier": "B",
+      "gdpr": null,
+      "legacy_type": null,
+      "definition": "A named person's educational credential, degree, grade, or enrolment status at a specific institution.",
+      "include": [
+        "`fullført bachelorgrad i sykepleie ved OsloMet, avsluttet 2019`",
+        "A specific grade/exam result tied to a named person"
+      ],
+      "exclude": [
+        "A bare institution name with no credential/enrolment fact attached (LOCATION's own, unmapped, territory)",
+        "A professional licence resulting from the degree (MEDICAL_LICENSE, mapped to GOV_ID, is the separate identifier fact)"
+      ],
+      "boundary": "Tag the full descriptive clause — credential + institution + completion marker — following the same full-clause style as EMPLOYMENT_INFO's own boundary rule (B12); do not truncate to the bare degree name.",
+      "spec_rules": [
+        "B2",
+        "B9"
+      ],
+      "value_kind": "clause"
+    },
+    {
+      "name": "ADDRESS",
+      "tier": "B",
+      "gdpr": null,
+      "legacy_type": "NO_ADDRESS",
+      "definition": "The Norwegian street-address portion of a location: street + house number, optional suffix/qualifier.",
+      "include": [
+        "Street + number, with letter suffix or apartment/floor qualifier",
+        "Street + number + trailing postal code and city when all inside the same Adresse field value"
+      ],
+      "exclude": [
+        "A bare city/place name alone with no street",
+        "An institution/business name",
+        "The value of a standalone \"Poststed:\" field taken alone"
+      ],
+      "boundary": "Full clause = street + number + suffix + qualifier, and only when inside the same Adresse-field value, a trailing postal code + city, per NO_ADDRESS's own boundary rule.",
+      "spec_rules": [],
+      "value_kind": "value"
+    },
+    {
+      "name": "AGE",
+      "tier": "B",
+      "gdpr": null,
+      "legacy_type": "DATE_TIME",
+      "definition": "A person's or animal's age stated as a bare number of years, not embedded in a family-member clause.",
+      "include": [
+        "`10 år` standing alone in prose"
+      ],
+      "exclude": [
+        "An age absorbed as the parenthetical of a named/counted family member (`to barn, Elias (10) og Sofia (7)`) — that stays inside the FAMILY_RELATION span instead, per B4/FAMILY_RELATION's own boundary rule"
+      ],
+      "boundary": "Tag the bare number-plus-unit only; per FAMILY_RELATION's own resolved-conflicts note, a detached age numeral is DATE_TIME, not its own type.",
+      "spec_rules": [
+        "B4"
+      ],
+      "value_kind": "value"
+    },
+    {
+      "name": "ANIMAL_INFO",
+      "tier": "B",
+      "gdpr": null,
+      "legacy_type": null,
+      "definition": "A bare identifying descriptor of which animal is the subject of a document (species, name, count) — not its condition.",
+      "include": [
+        "`en grønn arapapegøye`",
+        "`schæferen`",
+        "A pet's proper name (`Rex`, `Balder`) used to identify which animal is meant"
+      ],
+      "exclude": [
+        "The animal's condition/symptom content — that is HEALTH_INFO's own animal-welfare population, not this type",
+        "A human's name that happens to resemble an animal name — PERSON, per the B21/PERSON gazetteer distinction"
+      ],
+      "boundary": "Tag the bare descriptor/name phrase identifying the animal, stopping before any condition or behavioural clause.",
+      "spec_rules": [],
+      "value_kind": "value"
+    },
+    {
+      "name": "DATE_TIME",
+      "tier": "B",
+      "gdpr": null,
+      "legacy_type": "DATE_TIME",
+      "definition": "Any explicit calendar date and/or clock time as printed, standalone or attached to an event/record.",
+      "include": [
+        "Full timestamp, date-only dotted, prose date with month name",
+        "ISO date when standalone",
+        "Compact multi-date prose sharing one month/year as a single span"
+      ],
+      "exclude": [
+        "A bare year/date structurally the prefix of a GOV_ID case number or fødselsnummer",
+        "Vague relative expressions (`nylig`, `flere anledninger`)",
+        "Durations (`14 dager`)"
+      ],
+      "boundary": "Full clause = day + month + year (if printed) + clock time (if printed), stopping before deictic qualifiers and ID suffixes, per DATE_TIME's own boundary rule.",
+      "spec_rules": [
+        "B13"
+      ],
+      "value_kind": "value"
+    },
+    {
+      "name": "EMPLOYMENT",
+      "tier": "B",
+      "gdpr": null,
+      "legacy_type": "EMPLOYMENT_INFO",
+      "definition": "A named person's occupation, job title, professional role, employer/workplace, or business ownership position.",
+      "include": [
+        "Bare occupation noun for a real specific job",
+        "Coordinated ownership/management titles as one clause",
+        "A bare company/employer name when it identifies where the person works and no role word is attached"
+      ],
+      "exclude": [
+        "Full personal names, even with a professional honorific — PERSON owns the name",
+        "Hobby/association memberships",
+        "Political candidacy — POLITICAL_CASE's domain"
+      ],
+      "boundary": "Tag the full coordinated title including a directly-attached \"av/i/ved <company>\" phrase with no intervening clause break, per B12; a comma introducing new information breaks the clause.",
+      "spec_rules": [
+        "B12",
+        "B19"
+      ],
+      "value_kind": "clause"
+    },
+    {
+      "name": "FAMILY_RELATION",
+      "tier": "B",
+      "gdpr": null,
+      "legacy_type": "FAMILY_RELATION",
+      "definition": "A clause naming a family, kinship, or intimate-partnership relationship between the data subject and another individual.",
+      "include": [
+        "Kinship nouns with descriptive clause",
+        "Marital/partnership status with named spouse/partner",
+        "Relationship-ending facts (skilsmisse, separasjon)"
+      ],
+      "exclude": [
+        "`eieren` (ownership role, not kinship)",
+        "`vold i nære relasjoner` / `besøksforbud` — CRIMINAL_RECORD",
+        "Non-kinship social ties (`nabo`, `venn`, `kollega`)"
+      ],
+      "boundary": "Span = relationship noun/phrase + any named individual + descriptive qualifier in the same clause; the named individual is additionally, separately tagged PERSON (nested), per FAMILY_RELATION's own boundary rule.",
+      "spec_rules": [
+        "B2",
+        "B4",
+        "B10",
+        "B11"
+      ],
+      "value_kind": "clause"
+    },
+    {
+      "name": "GENDER",
+      "tier": "B",
+      "gdpr": null,
+      "legacy_type": null,
+      "definition": "A person's stated biological sex or gender marker as a plain demographic field value (e.g. \"Kjønn: Mann\").",
+      "include": [
+        "`Mann` / `Kvinne` as the value of a \"Kjønn:\" field"
+      ],
+      "exclude": [
+        "A disclosure of gender identity as a GDPR-sensitive fact (e.g. being transgender) — that routes to SEXUAL_ORIENTATION instead, per its own definition covering \"gender identity\""
+      ],
+      "boundary": "Tag the bare field value only; this is the neutral demographic field, distinct from a gender-identity disclosure.",
+      "spec_rules": [],
+      "value_kind": "value"
+    },
+    {
+      "name": "LOCATION",
+      "tier": "B",
+      "gdpr": null,
+      "legacy_type": null,
+      "definition": "A named place broader than a street address: city, region, institution, or venue.",
+      "include": [
+        "Bare city/region name used to situate an event",
+        "A named institution/venue (`Bærum sykehus`) as a location reference"
+      ],
+      "exclude": [
+        "The street-address portion of an address (ADDRESS's own domain)",
+        "A postal code (POSTAL_CODE's own domain)"
+      ],
+      "boundary": "Tag the place/institution name alone; NO_ADDRESS's own Exclude list explicitly puts bare city names and institution names outside its scope, confirming this content has no home in the 16-type schema.",
+      "spec_rules": [],
+      "value_kind": "value"
+    },
+    {
+      "name": "MARITAL_STATUS",
+      "tier": "B",
+      "gdpr": null,
+      "legacy_type": "FAMILY_RELATION",
+      "definition": "A person's marital/partnership status, with or without a named partner.",
+      "include": [
+        "`gift`, `samboer`, `skilt`, `separert`",
+        "Status with named spouse/partner in the same clause"
+      ],
+      "exclude": [
+        "A same-sex or orientation-revealing relationship description where the orientation word is present — SEXUAL_ORIENTATION wins on those characters instead"
+      ],
+      "boundary": "Tag the status word/phrase plus any named partner in the same clause; longer form wins whenever a name directly attaches, per FAMILY_RELATION's own resolved-conflicts pattern.",
+      "spec_rules": [
+        "B2",
+        "B4"
+      ],
+      "value_kind": "value"
+    },
+    {
+      "name": "NATIONALITY",
+      "tier": "B",
+      "gdpr": null,
+      "legacy_type": null,
+      "definition": "A person's stated country of citizenship or national origin.",
+      "include": [
+        "`norsk statsborger`, `svensk statsborgerskap`",
+        "A stated country of origin in a biographical field"
+      ],
+      "exclude": [
+        "Ethnic/racial-origin content framed as identity or heritage — ETHNICITY's own (unmapped) Art. 9 territory, a categorically different fact"
+      ],
+      "boundary": "Tag the nationality adjective/phrase alone, stopping before any distinct ethnicity or immigration-status clause.",
+      "spec_rules": [],
+      "value_kind": "value"
+    },
+    {
+      "name": "ORGANIZATION",
+      "tier": "B",
+      "gdpr": null,
+      "legacy_type": "EMPLOYMENT_INFO",
+      "definition": "The name of an organisation that is a subject of the document — the entity under inspection or the workplace of a named subject.",
+      "include": [
+        "The value of a \"Navn på dyreeier eller virksomhet:\" field",
+        "The organisation named in an \"Org.nr.: NNNNNNNNN (Name)\" parenthetical"
+      ],
+      "exclude": [
+        "A company appearing only incidentally (the reporter's own employer, a neighbour's workplace) — not tagged, per B19's own test",
+        "A bank named only as a financial counterparty — FINANCIAL_INFO's domain, not this one"
+      ],
+      "boundary": "Tag the organisation name alone when it is a subject of the document, per B19's test (the organisation's role in the document, not whether a human owner is named).",
+      "spec_rules": [
+        "B19"
+      ],
+      "value_kind": "value"
+    },
+    {
+      "name": "PERSON",
+      "tier": "B",
+      "gdpr": null,
+      "legacy_type": "PERSON",
+      "definition": "The full referring expression for one identifiable, named human being — given name(s) + surname, plus any directly-adjacent honorific.",
+      "include": [
+        "Full name: first + last, with middle name(s)",
+        "Honorific/title directly prefixed, no comma",
+        "Single given name when context unambiguously identifies a human"
+      ],
+      "exclude": [
+        "Bare surname used as a family label (`Familien Eriksen`)",
+        "Animal/pet names, even proper nouns that look like personal names",
+        "Role/appositive phrases separated from the name by a comma"
+      ],
+      "boundary": "Full clause = title (if directly adjacent, no comma) + full given name(s) + surname, nothing more; stop before any comma, parenthesis, or role description, per PERSON's own boundary rule.",
+      "spec_rules": [
+        "B10",
+        "B21"
+      ],
+      "value_kind": "value"
+    },
+    {
+      "name": "AGE_INFO",
+      "tier": "C",
+      "gdpr": null,
+      "legacy_type": null,
+      "definition": "A clause where a person's age is itself the sensitive fact — vulnerability due to being a minor, elderly, or age-linked capacity — beyond a bare age numeral.",
+      "include": [
+        "`mindreårig og derfor særlig sårbar i saken`",
+        "A clause tying age to legal capacity or vulnerability, not just stating a number"
+      ],
+      "exclude": [
+        "A bare age numeral with no vulnerability/capacity framing — AGE (mapped to DATE_TIME) instead",
+        "An age absorbed as a family-member parenthetical — stays inside FAMILY_RELATION"
+      ],
+      "boundary": "Tag the full clause connecting the age to the sensitive inference, per B1 (start at the predicate, drop the bare subject) and B17 (keep a nominalised fact-bearing subject).",
+      "spec_rules": [
+        "B1",
+        "B17"
+      ],
+      "value_kind": "clause"
+    },
+    {
+      "name": "BEHAVIORAL_PATTERN",
+      "tier": "C",
+      "gdpr": null,
+      "legacy_type": "BEHAVIORAL_PATTERN",
+      "definition": "A clause describing a recurring or characteristic pattern of conduct performed by an identified natural person (never an animal's own conduct).",
+      "include": [
+        "Owner/subject conduct with an explicit human subject",
+        "Recurring conduct toward people or animals stated as an action of the person",
+        "Non-cooperation/evasiveness with authorities, stated as a pattern"
+      ],
+      "exclude": [
+        "Any span whose full subject is an animal, not the person (routes to HEALTH_INFO instead)",
+        "The reporter's/witness's own routine behaviour",
+        "Bare adjectives with no subject and no repetition marker"
+      ],
+      "boundary": "This is the one documented exception to B1: the span starts at the earliest word establishing WHO performs the pattern and keeps that subject, per B18; ends before a new independent clause.",
+      "spec_rules": [
+        "B18",
+        "B22"
+      ],
+      "value_kind": "clause"
+    },
+    {
+      "name": "BIOMETRIC_DATA",
+      "tier": "C",
+      "gdpr": "Art. 9 — biometric data",
+      "legacy_type": null,
+      "definition": "A clause disclosing biometric data used or intended for unique identification of a natural person (fingerprint, facial/iris scan, voice/gait pattern used as an ID method).",
+      "include": [
+        "`avga fingeravtrykk i forbindelse med...`",
+        "`identifisert ved hjelp av ansiktsgjenkjenning`"
+      ],
+      "exclude": [
+        "A routine physical description with no identification purpose (\"høy og mørkhåret\") — not biometric data in the Art. 9 sense",
+        "A photo/video reference with no unique-identification method named — IDENTIFIABLE_IMAGE's own (unmapped) territory"
+      ],
+      "boundary": "Tag the full clause naming the biometric method and its identification purpose, per B1/B2 (predicate-first, drop bare subject/determiner) and B9 (no terminal punctuation).",
+      "spec_rules": [
+        "B1",
+        "B2",
+        "B9"
+      ],
+      "value_kind": "clause"
+    },
+    {
+      "name": "CONTEXT_SENSITIVE",
+      "tier": "C",
+      "gdpr": null,
+      "legacy_type": null,
+      "definition": "A residual 'other sensitive fact' clause with no positive membership test and no home in any other type.",
+      "include": [
+        "Nothing — ANNOTATION_SPEC cut this type entirely for exactly this reason: it behaved as a dumping ground (3,345 presence conflicts, 338 type migrations, no keyword bucket over ~11% of its own content)"
+      ],
+      "exclude": [
+        "Everything the old CONTEXT_SENSITIVE type held: suspicion-of-crime phrasing (now CRIMINAL_RECORD), political/organisation affiliation (now POLITICAL_CASE), a person's own conduct (now BEHAVIORAL_PATTERN), animal disease/administrative metadata/bare org names (dropped, not tagged)"
+      ],
+      "boundary": "Do not use this type in generation; the gold-scoring legacy_map has no destination for it and any synthetic record built under it will not score against the 400-doc gold set.",
+      "spec_rules": [],
+      "value_kind": "clause"
+    },
+    {
+      "name": "CRIMINAL",
+      "tier": "C",
+      "gdpr": "Art. 10 — criminal convictions and offences",
+      "legacy_type": "CRIMINAL_RECORD",
+      "definition": "A clause naming a conviction, sentence, criminal charge, formal accusation, police report, or investigator-stated suspicion of a specific criminal offense against an identified person.",
+      "include": [
+        "Convictions/sentences with trailing time qualifier",
+        "Charges/reports/accusations under active or past legal process",
+        "A bare offense noun with no accompanying accusation/conviction verb"
+      ],
+      "exclude": [
+        "Bare case/docket numbers and court names standing entirely alone with no accusation clause nearby",
+        "Lawful, registered possession with no illegality asserted",
+        "Bare financial amounts/state with no offense word"
+      ],
+      "boundary": "Span = [optional leading verb/noun, optional since a bare offense noun qualifies] + [offense noun phrase incl. victim] + [trailing time qualifier] + [any case/docket reference directly attached, kept inside], per CRIMINAL_RECORD's own boundary rule; nested GOV_ID on the attached case number.",
+      "spec_rules": [
+        "B3",
+        "B13",
+        "B16",
+        "B20",
+        "B23",
+        "B24"
+      ],
+      "value_kind": "clause"
+    },
+    {
+      "name": "DISABILITY",
+      "tier": "C",
+      "gdpr": "Art. 9 — health",
+      "legacy_type": "HEALTH_INFO",
+      "definition": "A clause stating or strongly implying a physical or cognitive disability of a named person.",
+      "include": [
+        "A named disability/impairment tied to a person, per HEALTH_INFO's own disability inclusion",
+        "A functional-limitation clause used as the disclosed fact (per B17, when the nominalised limitation IS the fact)"
+      ],
+      "exclude": [
+        "A bare accommodation/adaptation noun with no named condition (\"tilrettelagt arbeidsplass\" alone) — too vague to tag on its own"
+      ],
+      "boundary": "Span = [diagnostic/affliction phrase] + [condition/limitation], stopping at the first conjunction introducing a second fact, per HEALTH_INFO's own boundary rule (a); B17 keeps a fact-bearing nominalised subject.",
+      "spec_rules": [
+        "B1",
+        "B17"
+      ],
+      "value_kind": "clause"
+    },
+    {
+      "name": "ECONOMIC_STATUS",
+      "tier": "C",
+      "gdpr": null,
+      "legacy_type": "ECONOMIC_STATUS",
+      "definition": "A subjective, evaluative characterization of a person's or organization's overall financial condition, with no attached number, account, or named instrument.",
+      "include": [
+        "Hedged hardship judgements (`sliter økonomisk`, `dårlig økonomi`)",
+        "Wealth judgements",
+        "Narrative financial-behaviour descriptions used as circumstantial evidence, without a figure"
+      ],
+      "exclude": [
+        "Any span containing a NOK/kr amount — FINANCIAL_INFO instead",
+        "Any span whose head word names a criminal offense — CRIMINAL_RECORD instead",
+        "Bare financial nouns with no evaluative language — FINANCIAL_INFO by the tie-break default"
+      ],
+      "boundary": "Tag the complete evaluative clause including the hedging frame up to the object of concern, plus trailing cause/effect qualifiers, per ECONOMIC_STATUS's own boundary rule; lowest precedence in the CRIMINAL_RECORD > FINANCIAL_INFO > ECONOMIC_STATUS chain.",
+      "spec_rules": [
+        "B1",
+        "B2",
+        "B9"
+      ],
+      "value_kind": "clause"
+    },
+    {
+      "name": "ETHNICITY",
+      "tier": "C",
+      "gdpr": "Art. 9 — racial or ethnic origin",
+      "legacy_type": null,
+      "definition": "A clause disclosing a named person's racial or ethnic origin, stated neutrally in bureaucratic register.",
+      "include": [
+        "A stated ethnic-origin fact in a caseworker's own descriptive register, e.g. an origin/heritage attribution tied to the data subject"
+      ],
+      "exclude": [
+        "A nationality/citizenship fact with no ethnic-origin framing — NATIONALITY's own (unmapped) territory, a categorically different fact",
+        "A stereotyping or derogatory characterisation — never generate this; ethnicity content must be neutral and non-stereotyping"
+      ],
+      "boundary": "Tag the full clause per B1/B2 (predicate-first, drop bare subject/determiner) and B9 (no terminal punctuation); measured at zero real instances in the current gold set (PROJECT_SPEC_V2 §1), so there is no existing boundary precedent to follow beyond the general clause rules.",
+      "spec_rules": [
+        "B1",
+        "B2",
+        "B9"
+      ],
+      "value_kind": "clause"
+    },
+    {
+      "name": "FINANCIAL",
+      "tier": "C",
+      "gdpr": null,
+      "legacy_type": "FINANCIAL_INFO",
+      "definition": "A concrete, verifiable financial fact: a specific amount, account/loan/case number, named creditor or bank, or a specific named debt instrument.",
+      "include": [
+        "Any NOK/currency amount, however formatted",
+        "Named financial institutions/creditors attached to a debt or account",
+        "Specific debt/credit instruments even without a number"
+      ],
+      "exclude": [
+        "Pure evaluative wrappers with no attached number/named instrument — ECONOMIC_STATUS instead",
+        "Spans whose primary content is a criminal-law characterization — CRIMINAL_RECORD by precedence"
+      ],
+      "boundary": "Tag the complete quantified financial clause: amount + qualifier + creditor/debt-type phrase + itemised appositive, per FINANCIAL_INFO's own boundary rule; do not truncate to the bare number or bare noun.",
+      "spec_rules": [
+        "B4",
+        "B11"
+      ],
+      "value_kind": "clause"
+    },
+    {
+      "name": "GENETIC_DATA",
+      "tier": "C",
+      "gdpr": "Art. 9 — genetic data",
+      "legacy_type": null,
+      "definition": "A clause disclosing genetic data about a named person (a DNA/genetic test result or a stated hereditary condition confirmed by genetic testing).",
+      "include": [
+        "`DNA-test bekreftet farskap`",
+        "`genetisk test viste disposisjon for...`"
+      ],
+      "exclude": [
+        "A named diagnosis with no genetic-testing method stated — HEALTH_INFO's own domain instead",
+        "A family medical-history mention with no genetic test named (\"arvelig i familien\" alone, no test) — too vague, stays HEALTH_INFO if a condition is named, otherwise untagged"
+      ],
+      "boundary": "Tag the full clause naming the genetic-testing method and its result, per B1 (predicate-first) and B13 (any attached date nests as DATE_TIME).",
+      "spec_rules": [
+        "B1",
+        "B13"
+      ],
+      "value_kind": "clause"
+    },
+    {
+      "name": "HEALTH",
+      "tier": "C",
+      "gdpr": "Art. 9 — health",
+      "legacy_type": "HEALTH_INFO",
+      "definition": "A clause stating or strongly implying a medical condition, diagnosis, disability, medication, or treatment — of a human or, in the animal-welfare threat model, of an animal whose condition evidences owner negligence.",
+      "include": [
+        "Named diagnoses/disorders, diagnosis codes, medications tied to a person",
+        "Animal physical/behavioural/medical condition: pelage, weight, gait, wounds, parasites, named livestock disease"
+      ],
+      "exclude": [
+        "Generic behavioural description of a human with no medical content (BEHAVIORAL_PATTERN instead)",
+        "Financial/behavioural euphemisms that aren't a diagnosis (`spilleavhengighet` unless clinically framed)"
+      ],
+      "boundary": "Subcategory boundary rules per HEALTH_INFO §Boundary rule: diagnoses keep the diagnostic verb, medications keep the usage verb, symptoms keep intensifiers/body-part qualifiers, hedged conditions keep the hedge word (B1, B13, B14, B15, B22 all apply).",
+      "spec_rules": [
+        "B1",
+        "B13",
+        "B14",
+        "B15",
+        "B22"
+      ],
+      "value_kind": "clause"
+    },
+    {
+      "name": "IDENTIFIABLE_IMAGE",
+      "tier": "C",
+      "gdpr": null,
+      "legacy_type": null,
+      "definition": "A reference to a photo, video, or recording that depicts an identifiable person's likeness.",
+      "include": [
+        "Nothing with a verified genuine hit — ANNOTATION_SPEC's own targeted check for person-referencing image spans found zero genuine hits in the corpus"
+      ],
+      "exclude": [
+        "Generic attachment references that identify nobody (`bilder av dyrene`, `video tatt fra offentlig vei`) — the overwhelming majority of the old type's population, cut entirely per its own Removed-types verdict"
+      ],
+      "boundary": "If ever generated, tag the short noun-phrase reference to the image/recording itself (not a full narrative clause) — this is the one Tier C type whose surface form is short, matching its pre-cut examples; but default to NOT generating this type at all (see TAXONOMY_NOTES contradiction).",
+      "spec_rules": [],
+      "value_kind": "value"
+    },
+    {
+      "name": "IMMIGRATION_STATUS",
+      "tier": "C",
+      "gdpr": null,
+      "legacy_type": null,
+      "definition": "A clause disclosing a named person's immigration, residence, or asylum status.",
+      "include": [
+        "`har midlertidig oppholdstillatelse`",
+        "`søker om asyl`",
+        "`er statsløs`"
+      ],
+      "exclude": [
+        "A bare nationality/citizenship fact with no immigration-process content — NATIONALITY's own (unmapped) territory",
+        "A visa/permit reference number alone with no status statement — VISA_NUMBER (mapped to GOV_ID) instead"
+      ],
+      "boundary": "Tag the full clause per B1/B2 (predicate-first, drop bare subject/determiner) and B9 (no terminal punctuation).",
+      "spec_rules": [
+        "B1",
+        "B2",
+        "B9"
+      ],
+      "value_kind": "clause"
+    },
+    {
+      "name": "MEDICATION",
+      "tier": "C",
+      "gdpr": "Art. 9 — health",
+      "legacy_type": "HEALTH_INFO",
+      "definition": "A medication or treatment tied to a named person, as its own fact distinct from the diagnosis it treats.",
+      "include": [
+        "`bruker antidepressiva`, `tar Metformin daglig`, `behandles med antidepressiva`"
+      ],
+      "exclude": [
+        "A medication named only as part of a combined diagnosis+medication clause with a distinct purpose — split per HEALTH_INFO's own rule (b): `Metformin for diabetes type 2` becomes two spans"
+      ],
+      "boundary": "Span = [usage/treatment verb] + [medication name], stopped before any trailing purpose clause naming a different fact, per HEALTH_INFO's own boundary rule (b).",
+      "spec_rules": [
+        "B1",
+        "B13"
+      ],
+      "value_kind": "clause"
+    },
+    {
+      "name": "POLITICAL",
+      "tier": "C",
+      "gdpr": "Art. 9 — political opinions",
+      "legacy_type": "POLITICAL_CASE",
+      "definition": "A clause stating that an identified person holds, has stated, or is affiliated with a political party, movement, or opinion.",
+      "include": [
+        "Membership clauses with the full verb + org name",
+        "Quoted movement/party names embedded in a membership/activity clause",
+        "Stated political opinions/positions attributed to the person"
+      ],
+      "exclude": [
+        "A bare organisation/party name with no attached affiliation verb",
+        "Religious affiliation with no stated political character",
+        "Local/professional roles with no ideological content"
+      ],
+      "boundary": "Span = [affiliation/opinion verb or noun] + [full name of party/movement, incl. genuine quotation marks] + [ideological descriptor if present]; never the bare proper noun alone, per POLITICAL_CASE's own boundary rule.",
+      "spec_rules": [
+        "B2",
+        "B9"
+      ],
+      "value_kind": "clause"
+    },
+    {
+      "name": "RELIGIOUS_BELIEF",
+      "tier": "C",
+      "gdpr": "Art. 9 — religious or philosophical beliefs",
+      "legacy_type": null,
+      "definition": "A clause stating or disclosing a named person's religious or philosophical belief or affiliation.",
+      "include": [
+        "`medlem av Jehovas Vitner`",
+        "`tilhører Den norske kirke`",
+        "`praktiserende muslim`",
+        "A stated philosophical-belief affiliation (`Human-Etisk Forbund`)"
+      ],
+      "exclude": [
+        "A political-movement affiliation with a stated ideological/political (not religious) character — POLITICAL_CASE's own domain",
+        "An organisation named only in an employer-field role, per B19 (e.g. `Org.nr.: ... (Stavanger Menighetssenter)` as the employer of a named staff member) — that stays EMPLOYMENT_INFO, not this type, per B19's explicit \"a congregation is treated exactly like a farm or a company\" rule"
+      ],
+      "boundary": "Tag the full affiliation/belief clause including the affiliation verb and organisation/tradition name, per the same style as POLITICAL_CASE's own boundary rule (B2 determiner-drop, B9 no terminal punctuation); this is the type ANNOTATION_SPEC's Open Question 17 says the 16-type schema has no home for, despite religion appearing in 40% of the corpus (PROJECT_SPEC_V2 §1).",
+      "spec_rules": [
+        "B2",
+        "B9"
+      ],
+      "value_kind": "clause"
+    },
+    {
+      "name": "SEXUAL_ORIENTATION",
+      "tier": "C",
+      "gdpr": "Art. 9 — sex life / sexual orientation",
+      "legacy_type": "SEXUAL_ORIENTATION",
+      "definition": "A clause stating, disclosing, or credibly alleging a named individual's sexual orientation, gender identity, or GDPR-Art.-9 'sex life' fact.",
+      "include": [
+        "Orientation self-identifiers with immediate modifiers",
+        "Adverbial-modified form (`åpent homofil`)",
+        "Consensual-non-monogamy relationship structure",
+        "Third-party allegation/rumour about orientation (tag the substantive clause, drop the reporting frame)"
+      ],
+      "exclude": [
+        "Plain relationship-status nouns with no orientation word (`samboer`, `gift`) — FAMILY_RELATION instead",
+        "Extramarital-affair language with no orientation content",
+        "A stated refusal to disclose orientation — B7, nothing is revealed"
+      ],
+      "boundary": "Include leading intensifying adverbs and trailing descriptive/appositive nouns in the same noun phrase; exclude reporting verbs outside it, per SEXUAL_ORIENTATION's own boundary rule; B24 routes a minor-involving relationship to CRIMINAL_RECORD instead.",
+      "spec_rules": [
+        "B7",
+        "B24"
+      ],
+      "value_kind": "clause"
+    },
+    {
+      "name": "TRADE_UNION",
+      "tier": "C",
+      "gdpr": "Art. 9 — trade union membership",
+      "legacy_type": null,
+      "definition": "A clause disclosing a named person's trade union membership or organising activity.",
+      "include": [
+        "`medlem av Fellesforbundet`",
+        "`tillitsvalgt i LO-forbundet ved...`",
+        "A stated organising/strike-participation fact tied to a named person"
+      ],
+      "exclude": [
+        "A bare case-reference number containing the letters \"LO\" — PROJECT_SPEC_V2 §1 found that every apparent trade-union hit in the gold set was actually a case-number artifact, not real union content; never generate a fake union hit by way of an \"LO\"-containing case number",
+        "A generic employer/workplace fact with no union-specific content — EMPLOYMENT_INFO instead"
+      ],
+      "boundary": "Tag the full affiliation clause including the affiliation verb and union name, per the same style as POLITICAL_CASE's own boundary rule (B2, B9); measured at zero real instances in the gold set (PROJECT_SPEC_V2 §1), so there is no existing boundary precedent beyond the general clause rules.",
+      "spec_rules": [
+        "B2",
+        "B9"
+      ],
+      "value_kind": "clause"
+    }
+  ],
+  "legacy_map": {
+    "BANK_ACCOUNT": "FINANCIAL_INFO",
+    "CASE_NUMBER": "GOV_ID",
+    "CREDIT_CARD": "FINANCIAL_INFO",
+    "CRYPTO": "FINANCIAL_INFO",
+    "DATE_OF_BIRTH": "DATE_TIME",
+    "DEVICE_ID": null,
+    "DRIVER_LICENSE": "GOV_ID",
+    "EMAIL": "EMAIL_ADDRESS",
+    "FAX_NUMBER": null,
+    "IBAN": "FINANCIAL_INFO",
+    "IDENTITY_CARD": "GOV_ID",
+    "INSURANCE_NUMBER": null,
+    "IP_ADDRESS": null,
+    "LICENSE_PLATE": "GOV_ID",
+    "MEDICAL_LICENSE": "GOV_ID",
+    "MILITARY_ID": "GOV_ID",
+    "NATIONAL_ID": "GOV_ID",
+    "ORG_NUMBER": "GOV_ID",
+    "PASSPORT": "GOV_ID",
+    "PASSWORD": null,
+    "PHONE": "NO_PHONE_NUMBER",
+    "POSTAL_CODE": "POSTAL_CODE",
+    "SOCIAL_MEDIA": null,
+    "STUDENT_ID": null,
+    "TAX_ID": "GOV_ID",
+    "URL": null,
+    "USERNAME": null,
+    "VISA_NUMBER": "GOV_ID",
+    "ACADEMIC_RECORD": null,
+    "ADDRESS": "NO_ADDRESS",
+    "AGE": "DATE_TIME",
+    "ANIMAL_INFO": null,
+    "DATE_TIME": "DATE_TIME",
+    "EMPLOYMENT": "EMPLOYMENT_INFO",
+    "FAMILY_RELATION": "FAMILY_RELATION",
+    "GENDER": null,
+    "LOCATION": null,
+    "MARITAL_STATUS": "FAMILY_RELATION",
+    "NATIONALITY": null,
+    "ORGANIZATION": "EMPLOYMENT_INFO",
+    "PERSON": "PERSON",
+    "AGE_INFO": null,
+    "BEHAVIORAL_PATTERN": "BEHAVIORAL_PATTERN",
+    "BIOMETRIC_DATA": null,
+    "CONTEXT_SENSITIVE": null,
+    "CRIMINAL": "CRIMINAL_RECORD",
+    "DISABILITY": "HEALTH_INFO",
+    "ECONOMIC_STATUS": "ECONOMIC_STATUS",
+    "ETHNICITY": null,
+    "FINANCIAL": "FINANCIAL_INFO",
+    "GENETIC_DATA": null,
+    "HEALTH": "HEALTH_INFO",
+    "IDENTIFIABLE_IMAGE": null,
+    "IMMIGRATION_STATUS": null,
+    "MEDICATION": "HEALTH_INFO",
+    "POLITICAL": "POLITICAL_CASE",
+    "RELIGIOUS_BELIEF": null,
+    "SEXUAL_ORIENTATION": "SEXUAL_ORIENTATION",
+    "TRADE_UNION": null
+  }
+}

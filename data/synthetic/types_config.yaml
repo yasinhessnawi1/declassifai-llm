@@ -1,0 +1,119 @@
+entity_types:
+  BANK_ACCOUNT:
+    tier: A
+  CASE_NUMBER:
+    tier: A
+  CREDIT_CARD:
+    tier: A
+  CRYPTO:
+    tier: A
+  DATE_OF_BIRTH:
+    tier: A
+  DEVICE_ID:
+    tier: A
+  DRIVER_LICENSE:
+    tier: A
+  EMAIL:
+    tier: A
+  FAX_NUMBER:
+    tier: A
+  IBAN:
+    tier: A
+  IDENTITY_CARD:
+    tier: A
+  INSURANCE_NUMBER:
+    tier: A
+  IP_ADDRESS:
+    tier: A
+  LICENSE_PLATE:
+    tier: A
+  MEDICAL_LICENSE:
+    tier: A
+  MILITARY_ID:
+    tier: A
+  NATIONAL_ID:
+    tier: A
+  ORG_NUMBER:
+    tier: A
+  PASSPORT:
+    tier: A
+  PASSWORD:
+    tier: A
+  PHONE:
+    tier: A
+  POSTAL_CODE:
+    tier: A
+  SOCIAL_MEDIA:
+    tier: A
+  STUDENT_ID:
+    tier: A
+  TAX_ID:
+    tier: A
+  URL:
+    tier: A
+  USERNAME:
+    tier: A
+  VISA_NUMBER:
+    tier: A
+  ACADEMIC_RECORD:
+    tier: B
+  ADDRESS:
+    tier: B
+  AGE:
+    tier: B
+  ANIMAL_INFO:
+    tier: B
+  DATE_TIME:
+    tier: B
+  EMPLOYMENT:
+    tier: B
+  FAMILY_RELATION:
+    tier: B
+  GENDER:
+    tier: B
+  LOCATION:
+    tier: B
+  MARITAL_STATUS:
+    tier: B
+  NATIONALITY:
+    tier: B
+  ORGANIZATION:
+    tier: B
+  PERSON:
+    tier: B
+  AGE_INFO:
+    tier: C
+  BEHAVIORAL_PATTERN:
+    tier: C
+  BIOMETRIC_DATA:
+    tier: C
+  CONTEXT_SENSITIVE:
+    tier: C
+  CRIMINAL:
+    tier: C
+  DISABILITY:
+    tier: C
+  ECONOMIC_STATUS:
+    tier: C
+  ETHNICITY:
+    tier: C
+  FINANCIAL:
+    tier: C
+  GENETIC_DATA:
+    tier: C
+  HEALTH:
+    tier: C
+  IDENTIFIABLE_IMAGE:
+    tier: C
+  IMMIGRATION_STATUS:
+    tier: C
+  MEDICATION:
+    tier: C
+  POLITICAL:
+    tier: C
+  RELIGIOUS_BELIEF:
+    tier: C
+  SEXUAL_ORIENTATION:
+    tier: C
+  TRADE_UNION:
+    tier: C
