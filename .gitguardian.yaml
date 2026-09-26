@@ -1,0 +1,34 @@
+# GitGuardian configuration
+#
+# The document corpora under data/ are entirely synthetic. They are LLM-generated
+# Norwegian government documents written to look like real case files, which is the
+# point of them -- they train and evaluate a PII detector, so they must contain
+# realistic-looking personal data. None of it belongs to a real person.
+#
+# That makes them a permanent source of false positives. A single example, the one
+# that prompted this file:
+#
+#   data/combined_data.jsonl, a fictional Mattilsynet inspection report --
+#   `e-postkorrespondanse funnet på hennes laptop (passord: "GroentLys123")`
+#   alongside `E-post: astrid.b.hansen@email.no`
+#
+# "Astrid Bjørg Hansen" does not exist, `email.no` is a placeholder domain used 7,909
+# times across the corpus, and `GroentLys123` was generated from the fictional party
+# "Grønt Lys" named in the same sentence. Nothing is rotatable because nothing is real.
+#
+# The synthetic document generator (tools/generate_documents.py) emits a PASSWORD
+# entity type by design, so once it runs at scale this would otherwise produce a
+# steady stream of alerts.
+#
+# Scanning stays ON everywhere else -- src/, tools/, configs/, scripts/ and the repo
+# root. A real credential committed there is exactly what this tool should catch, and
+# nothing here weakens that.
+
+version: 2
+
+secret:
+  ignored-paths:
+    # Raw corpus, adjudicated gold set, relabel slice, generated documents.
+    - "data/**"
+
+  show-secrets: false
