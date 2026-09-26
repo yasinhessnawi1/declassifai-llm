@@ -401,6 +401,15 @@ term and no offence (`beruset ved flere anledninger`) is BEHAVIORAL_PATTERN. Gol
 18 / 17 / 4 across those three readings, and the split follows this test rather than any
 single keyword. HEALTH_INFO's own positive example `alkoholpåvirket tilstand` and the
 HEALTH_INFO x BEHAVIORAL_PATTERN exclusivity note previously disagreed about this.
+- **A dependency noun is always HEALTH_INFO, including when hedged or merely suspected.**
+  `rusmisbruk`, `rusproblem`, `alkoholmisbruk`, `alkoholproblem` — and equally
+  `mulig rusproblemer`, `tegn til rusmisbruk`, `eierens tilsynelatende alkoholproblem`.
+  Measured across gold and the slice this is 21 HEALTH_INFO to 1, with no CRIMINAL_RECORD
+  at all. The removed-types table previously listed `mistenker rusmisbruk` as
+  suspicion-of-crime phrasing; that entry was wrong and has been struck, since suspected
+  dependency is a health matter and not an alleged offence.
+- BEHAVIORAL_PATTERN therefore takes only conduct with no dependency noun in it:
+  `beruset ved flere anledninger`, `observert ruset i hagen`.
 
 **B23 — A case number takes its authority with it, preposition or not.** `2018-12345 Oslo
 Tingrett`, `2019/12345 ved Bergen Politistasjon`, `18/00345 ved Ålesund Tingrett` and
@@ -441,7 +450,7 @@ Two types that existed in earlier drafts of this schema are cut entirely. Neithe
 
 | Former CONTEXT_SENSITIVE content | New home |
 |---|---|
-| Suspicion-of-crime phrasing (`mistenker rusmisbruk`, `muligens ulovlig spillvirksomhet`, weapon possession, financial-fraud phrasing) | CRIMINAL_RECORD |
+| Suspicion-of-crime phrasing (`muligens ulovlig spillvirksomhet`, weapon possession, financial-fraud phrasing) | CRIMINAL_RECORD |
 | Political/organisation affiliation with a stated membership verb | POLITICAL_CASE |
 | A person's own conduct/pattern (aggression, drinking, neglect performed by a named person) | BEHAVIORAL_PATTERN |
 | Animal disease, animal physical condition, animal-only behaviour, and administrative metadata (Fylke/Kommune/Referanse/Poststed values, bare organisation names) | **not tagged at all** — this is a distinct pool of spans from HEALTH_INFO's own animal-condition content (see HEALTH_INFO below); it is dropped, not migrated |
