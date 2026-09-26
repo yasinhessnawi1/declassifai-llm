@@ -178,6 +178,11 @@ grammatical subject is the animal or the enclosure.
   precedent (R003) and it reads this way. It applies to an assertion, not a question:
   `er bekymret for om han har råd til å ta godt vare på dyrene` wonders aloud and states no
   unmet need, so it stays untagged.
+  **It also covers only a standalone affordability clause.** Where a hardship judgement
+  leads and the affordability is its attached consequence, ECONOMIC_STATUS's own rule
+  against truncating the clause wins and the whole thing is one ECONOMIC_STATUS span:
+  `sliter økonomisk og ikke har råd til for til sauene`. The test is which fact the clause
+  is built around — the unmet need, or the hardship.
 - **Enclosure size and stocking density on their own are structure, not deprivation.**
   `Burene er for små`, `overfylte bur`, `Overbefolkning i primatavdelingen`, `lite og
   trangt` are untagged. Gold leaves this bare form untagged 28 times and tags it 3.
@@ -274,6 +279,14 @@ field means *employer*, not *belief*.
   excluded by FINANCIAL_INFO's own section and is not EMPLOYMENT_INFO.
 - **Not** a placeholder occupying the field without naming anything: `Privatperson`,
   `Ukjent`, `Not applicable`, `N/A`.
+
+**B30 — A shortened name is its own PERSON span.** Once `Lars Magnus Olsen` is tagged, a
+later `Lars Olsen` is tagged too. It is not the sub-token case B10 excludes, because it is
+not a substring of the full name — it is a different surface string, exactly as with the
+honorific forms in B21. Gold and the slice split 14 to 12 on this before it was written
+down, so there was no convention to preserve; the 12 misses are normalised.
+- This does **not** reopen the bare-surname case. `Halvorsen` alone, after
+  `Bjørnar Halvorsen`, stays untagged: it *is* a substring, and gold is unanimous at 0/743.
 
 **B29 — The reporter's own address is NO_ADDRESS.** `Jeg bor i nabohuset (Granveien 14)`,
 `Jeg bor i nabobygget (Furulundveien 29)`. NO_ADDRESS is not scoped to the document's
