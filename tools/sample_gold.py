@@ -150,21 +150,56 @@ def select(
         bucket = "interview" if INTERVIEW.search(record["text_input"]) else "dossier"
         by_template[bucket].append(record)
 
+    # Fill to the pool's own template ratio rather than 50/50. Passes 1 and 2
+    # both skew towards dossiers -- rare types and conflicting duplicates alike
+    # cluster there -- so an even fill here leaves the sample unrepresentative of
+    # what the model will actually see. Track the shortfall against the target
+    # share and always take from whichever bucket is furthest behind.
+    pool_share = len(by_template["interview"]) / max(1, len(pool))
+
+    def _interview_deficit() -> float:
+        picked = sum(1 for r in chosen.values() if r["_gold"]["template"] == "interview")
+        return pool_share - (picked / max(1, len(chosen)))
+
     while len(chosen) < size:
+        order = (
+            ("interview", "dossier") if _interview_deficit() > 0
+            else ("dossier", "interview")
+        )
         progressed = False
-        for bucket in ("interview", "dossier"):
-            if len(chosen) >= size:
-                break
+        for bucket in order:
             while by_template[bucket]:
                 record = by_template[bucket].pop()
                 if _digest(record) not in chosen:
                     take(record, f"random:{bucket}")
                     progressed = True
                     break
+            if progressed:
+                break
         if not progressed:
             break
 
     return list(chosen.values())
+
+
+def load_excluded(paths: List[str]) -> set:
+    """Return text digests of documents already annotated elsewhere.
+
+    A second sampling round must not re-draw the documents the first round
+    already produced, or the new slice silently overlaps the gold set and
+    stops being an independent measurement.
+    """
+    digests = set()
+    for path in paths:
+        for line in open(path, encoding="utf-8"):
+            line = line.strip()
+            if not line:
+                continue
+            record = json.loads(line)
+            text = record.get("text_input")
+            if text:
+                digests.add(hashlib.md5(text.encode()).hexdigest())
+    return digests
 
 
 def main() -> None:
@@ -176,11 +211,22 @@ def main() -> None:
     parser.add_argument("--min-per-type", type=int, default=30)
     parser.add_argument("--conflict-share", type=float, default=0.25)
     parser.add_argument("--seed", type=int, default=20260921)
+    parser.add_argument(
+        "--exclude", nargs="*", default=[],
+        help="JSONL files whose documents must not be drawn again",
+    )
     args = parser.parse_args()
 
     records, conflicted = load(args.path)
     print(f"distinct documents      : {len(records):,}")
     print(f"with conflicting dupes  : {sum(conflicted.values()):,}")
+
+    if args.exclude:
+        excluded = load_excluded(args.exclude)
+        before = len(records)
+        records = [r for r in records if _digest(r) not in excluded]
+        print(f"excluded (already done) : {before - len(records):,}")
+        print(f"eligible pool           : {len(records):,}")
 
     sample = select(
         records, conflicted, args.size,

@@ -51,3 +51,6 @@ data/gold/*_annotator*.jsonl
 data/gold/*_calibration.jsonl
 data/gold/*_reference.jsonl
 data/gold/candidates.jsonl
+
+# slice annotation intermediates
+data/slice/*_annotator*.jsonl
