@@ -253,15 +253,6 @@ field means *employer*, not *belief*.
 - **Not** a placeholder occupying the field without naming anything: `Privatperson`,
   `Ukjent`, `Not applicable`, `N/A`.
 
-**B21 — Honorific + surname is PERSON; the genitive `-s` is not part of the name.**
-`Fru Olsen`, `Herr Hansen`, `Mr. Olsen`, `Dr. Eriksen` are all PERSON, whether or not the
-same person's full name is tagged elsewhere in the document — the surface form differs, so
-this is not the bare sub-token case that B10 excludes. Measured before this rule was
-written, gold tagged the form 65 times and missed it 16, with `Herr` carrying 10 of the 16;
-those 16 have been normalised. A genitive occurrence is tagged in its bare form only
-(`Fru Hansens personlige omstendigheter` → `Fru Hansen`), matching PERSON's general
-treatment of possessives, which is unanimous at 31-0 across the gold set.
-
 **B20 — GOV_ID is decided by the issuer, not by the label.** Tag an identifier when a
 **public authority** issued it, whatever the field is called. Leave it untagged when a
 private body issued it, however official the label looks. This replaces reliance on the
@@ -278,6 +269,15 @@ documents (3.6%) carry an identifier label that list does not name.
   covers it, so it is left untagged — as with religious affiliation.
 - `Referanse:` remains untagged regardless: it is the agency's own intake routing, not an
   identifier of a person.
+
+**B21 — Honorific + surname is PERSON; the genitive `-s` is not part of the name.**
+`Fru Olsen`, `Herr Hansen`, `Mr. Olsen`, `Dr. Eriksen` are all PERSON, whether or not the
+same person's full name is tagged elsewhere in the document — the surface form differs, so
+this is not the bare sub-token case that B10 excludes. Measured before this rule was
+written, gold tagged the form 65 times and missed it 16, with `Herr` carrying 10 of the 16;
+those 16 have been normalised. A genitive occurrence is tagged in its bare form only
+(`Fru Hansens personlige omstendigheter` → `Fru Hansen`), matching PERSON's general
+treatment of possessives, which is unanimous at 31-0 across the gold set.
 
 
 ---
