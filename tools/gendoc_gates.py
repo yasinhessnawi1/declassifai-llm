@@ -28,8 +28,9 @@ describes; see the final report for this discrepancy.
 from __future__ import annotations
 
 import hashlib
+import collections
 import re
-from typing import Dict, Iterable, List, Sequence, Set, Tuple
+from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
 import gendoc_data as data
 
@@ -265,6 +266,20 @@ TIER_A_PATTERNS: Dict[str, re.Pattern] = {
     "iban_like": re.compile(r"\bNO\d{2}[ \t]?(?:\d{4}[ \t]?){2}\d{3}\b"),
     "url_like": re.compile(r"https?://\S+|\bwww\.\S+"),
     "ip_like": re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b"),
+    # The Tier A set grew from 7 types to 28, and an identifier shape the sweep
+    # does not know is an unplanned identifier it cannot reject. These cover the
+    # shapes the new generators produce: IPv6, a MAC address, a card or IMEI or
+    # policy number as a long solid digit run, a passport/ID-card number, and a
+    # wallet address in either the bech32 or the legacy base58 form.
+    # MAC before IPv6: a MAC address matches the IPv6 pattern too, and the
+    # dedup keeps whichever pattern is tried first at the same offset, so the
+    # reported pattern name should be the specific one.
+    "mac_like": re.compile(r"\b(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}\b"),
+    "ipv6_like": re.compile(r"\b(?:[0-9a-fA-F]{1,4}:){2,7}(?::|[0-9a-fA-F]{1,4})\b"),
+    "long_digit_run": re.compile(r"(?<![\d.,/\-])\d{10,19}(?![\d])"),
+    "document_number_like": re.compile(r"\b[A-Z]{1,2}\d{7,8}\b"),
+    "wallet_like": re.compile(r"\b(?:bc1[023456789acdefghjklmnpqrstuvwxyz]{20,}"
+                              r"|[13][1-9A-HJ-NP-Za-km-z]{25,34})\b"),
 }
 
 DATE_PATTERNS: List[re.Pattern] = [
@@ -382,7 +397,18 @@ def sweep_tier_a(text: str, covered: List[Tuple[int, int]], place_names: Set[str
                     continue
             findings.append({"pattern": name, "match": m.group(0), "start": m.start(),
                              "end": m.end(), "action": "reject"})
-    return findings
+    # Several patterns describe the same shapes at different widths -- an
+    # 11-digit fødselsnummer is also a long digit run -- so a hit fully inside
+    # another hit is the same finding counted twice, and reporting it twice
+    # makes a single invented identifier look like two.
+    findings.sort(key=lambda f: (f["start"], -(f["end"] - f["start"])))
+    deduped: List[dict] = []
+    for finding in findings:
+        if any(kept["start"] <= finding["start"] and finding["end"] <= kept["end"]
+               for kept in deduped):
+            continue
+        deduped.append(finding)
+    return deduped
 
 
 # A stated age ("som er 75 år", "(42 år)", "44 år gammel", "37-årig") is AGE,
@@ -604,6 +630,28 @@ _CATEGORY_LABEL_RE = re.compile(
 )
 
 
+def _preceding_heading(text: str, line_start: int) -> Optional[str]:
+    """Return the nearest heading-like line above `line_start`, or None.
+
+    A heading is a short line with no sentence-ending punctuation -- what a
+    model writes when it groups the judgement clauses under a rubric. A smoke
+    probe produced a nynorsk debt-counselling note whose medication, disability
+    and behaviour clauses all sat under `Helserelaterte opplysningar og
+    risikovurdering`, which teaches the detector to read the rubric rather than
+    the clause. The label-on-the-same-line test could not see it, because the
+    heading is its own line.
+    """
+    above = text[:line_start].rstrip("\n").split("\n")
+    for raw in reversed(above[-3:]):
+        candidate = raw.strip().strip("*_#>-•· ")
+        if not candidate:
+            continue
+        if len(candidate) > 70 or candidate[-1] in ".!?;":
+            return None
+        return candidate
+    return None
+
+
 def gate_slot_labels(text: str, clauses: Iterable[str]) -> Tuple[bool, List[dict]]:
     """Reject a document whose judgement clauses sit in table rows or category-labelled fields.
 
@@ -631,6 +679,10 @@ def gate_slot_labels(text: str, clauses: Iterable[str]) -> Tuple[bool, List[dict
                 label = re.sub(r"[*_#>\-•·\d.)\s]+", " ", prefix[:prefix.index(":")]).strip()
                 if label and len(label.split()) <= 6 and _CATEGORY_LABEL_RE.search(label):
                     kind = "category_label"
+            if kind is None:
+                heading = _preceding_heading(text, line_start)
+                if heading and _CATEGORY_LABEL_RE.search(heading):
+                    kind = "category_heading"
             if kind:
                 violations.append({"clause": clause, "kind": kind, "line": line.strip()[:160]})
                 break
@@ -658,3 +710,106 @@ def gate_length(text: str, hard_max_chars: int = 7000) -> Tuple[bool, int]:
         Tuple of (passed, actual length).
     """
     return len(text) <= hard_max_chars, len(text)
+
+# -- Seeded-clause boundary: a clause the model completed with a date --------------
+#
+# `docs/ANNOTATION_SPEC.md` requires the full clause, and the model routinely
+# finishes a seeded one: the record seeded `har hatt vedvarande ryggsmerter sidan
+# hausten` and the document reads `... sidan hausten 2025`, so the located label
+# stops one word short of the clause the spec asks for. Extending the span is
+# only safe for a closed set of completions whose own boundary is unambiguous --
+# a bare year, `i YYYY`, or a full date, with nothing but a single space between
+# them and the clause. Anything else (another noun phrase, a comma, a
+# subordinate clause) is left alone: guessing a clause boundary is the failure
+# mode this whole pipeline exists to avoid.
+
+_CLAUSE_COMPLETION_RE = re.compile(
+    r"^ (?:i )?(?:"
+    r"(?:19|20)\d{2}"
+    r"|[0-3]?\d\.[01]?\d\.(?:19|20)\d{2}"
+    r"|[0-3]?\d\.[ \t]?(?:januar|februar|mars|april|mai|juni|juli|august|september|"
+    r"oktober|november|desember)(?:[ \t]+(?:19|20)\d{2})?"
+    # A year at the end of a sentence is followed by a full stop, which is fine;
+    # `2025.03.12`, `2025/2026` and `2025-2026` are not completions at all, so
+    # only a separator followed by a digit blocks the match.
+    r")(?![\w])(?![./\-]\d)"
+)
+
+
+def extend_seeded_clause_spans(text: str, clauses: Sequence[str]) -> Tuple[Dict[str, str], int]:
+    """Extend a seeded clause label over a date that immediately completes it.
+
+    A clause is extended only when *every* occurrence of it in the text is
+    followed by such a completion, so the document never carries both the short
+    and the long form of the same clause (which `validate_labels.py` reports as
+    a redundant nested span).
+
+    Args:
+        text: The document text.
+        clauses: The seeded clause strings located in the text.
+
+    Returns:
+        Tuple of (mapping from original clause to extended clause, number of
+        clauses extended).
+    """
+    mapping: Dict[str, str] = {}
+    for clause in clauses:
+        if not clause or _YEAR_RE.search(clause[-5:]):
+            continue
+        spots = _covered_intervals(text, [clause])
+        if not spots:
+            continue
+        completions = set()
+        for _start, end in spots:
+            match = _CLAUSE_COMPLETION_RE.match(text[end:end + 40])
+            if not match:
+                completions = set()
+                break
+            completions.add(match.group(0))
+        if len(completions) == 1:
+            mapping[clause] = clause + completions.pop()
+    return mapping, len(mapping)
+
+
+# -- G12: intra-document degeneration ----------------------------------------------
+
+def repetition_share(text: str, n: int = 8) -> float:
+    """Return the share of word n-grams in the text that are exact repeats.
+
+    Args:
+        text: The generated document text.
+        n: N-gram width; 8 words is long enough that ordinary Norwegian
+            administrative boilerplate does not trip it.
+
+    Returns:
+        Duplicated n-grams as a share of all n-grams, 0.0 for a short text.
+    """
+    words = re.findall(r"\S+", text)
+    if len(words) < n * 2:
+        return 0.0
+    grams = collections.Counter(tuple(words[i:i + n]) for i in range(len(words) - n + 1))
+    duplicated = sum(count - 1 for count in grams.values() if count > 1)
+    return duplicated / max(1, sum(grams.values()))
+
+
+def gate_internal_repetition(text: str, threshold: float) -> Tuple[bool, float]:
+    """Reject a document that has started repeating itself.
+
+    Raising the length cap so long documents are not discarded for overshooting
+    their band lets in the other long-generation failure: the model stops
+    writing and starts looping. A smoke-run whistleblowing letter repeated
+    "Vi gitt deg fire dagar til å svare, og vi vil deretter vurdere neste steg i
+    saka" verbatim and closed with a dump of every planted value in a field
+    list, and no gate saw it. Measured on 40 `data/gold/` documents the 8-gram
+    repeat share has median 0.000, 90th percentile 0.015 and maximum 0.035, so
+    a threshold of 0.06 leaves real Norwegian administrative prose alone.
+
+    Args:
+        text: The generated document text.
+        threshold: Maximum allowed duplicated-8-gram share.
+
+    Returns:
+        Tuple of (passed, the measured share).
+    """
+    share = repetition_share(text)
+    return share <= threshold, round(share, 4)

@@ -232,6 +232,15 @@ PUBLIC_FIGURES: List[str] = [
     "Marit Knutsdatter Strand", "Ole André Myhrvold",
     "Nils Kristen Sandtrøen", "Anette Trettebergstuen",
     "Ingvild Kjerkol", "Jan Bøhler", "Lubna Jaffery",
+    # Internationally known people whose full name the FOREIGN_NAMES pools can
+    # compose by accident -- a mock run produced a veterinary record about
+    # "Mahmoud Darwish". The list is Norwegian by design, so this is a patch on
+    # a residual risk rather than a fix: any first-name pool crossed with any
+    # surname pool can hit a real person somewhere, and the only real fix is a
+    # broader reference list than this project has. Flagged in the run report.
+    "Mahmoud Darwish", "Taras Shevchenko", "Andrii Shevchenko", "Ali Karimi",
+    "Piotr Nowak", "Bashar Assad", "Mohamed Farah", "Ahmed Hassan",
+    "Samuel Haile", "Oleksandr Usyk", "Reza Pahlavi", "Omar Khalil",
 ]
 
 AGENCY_NAMES: List[str] = [

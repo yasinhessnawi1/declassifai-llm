@@ -9,15 +9,20 @@ this generator's own tests can rely on, and implements it twice:
   all. It exists so every gate in this pipeline (verbatim presence, name
   collision, checksum consistency, diversity, unplanned-PII sweep) can be
   exercised and proven to catch injected failures without a GPU or a chosen
-  model. This is the backend used for the 50-document pilot run.
-* `HFBackend` -- the real backend, written to the same contract, for whichever
-  instruct model model-selection settles on. It is implemented in full
-  (fp16, sdpa attention, chat template, batched generation, a hook to disable
-  Qwen3-style "thinking" via `enable_thinking=False`) but is not exercised in
-  this workstream: the machine's GPU is in use by a concurrent model-screening
-  job, and no model has been chosen yet. `torch`/`transformers` are imported
-  lazily inside `HFBackend.__init__` so importing this module, or running with
-  `--backend mock`, never requires them.
+  model -- see `tools/check_generator_gates.py`, which drives every gate through
+  it. Its G11 audit reports the two cue phrases `MOCK_ELABORATION_CUE` and
+  `MOCK_FRAMING_CUE`, so the content-audit gate can be tested without a
+  language model's judgement in the loop.
+* `HFBackend` -- the real backend, used for every pilot and smoke run with the
+  model `docs/MODEL_SELECTION.md` settles on (`Qwen/Qwen3.5-9B`): fp16, sdpa
+  attention, chat template, batched generation, and a hook to disable
+  Qwen3-style "thinking" via `enable_thinking=False`, probed once at
+  construction rather than assumed. `temperature=0` switches it to greedy
+  decoding, which is what the G11 content audit needs -- the same document must
+  audit the same way every time, and passing a zero temperature to a sampling
+  `generate()` divides by zero in the logits warper. `torch`/`transformers` are
+  imported lazily inside `HFBackend.__init__` so importing this module, or
+  running with `--backend mock`, never requires them.
 
 Both backends implement the same method:
 
@@ -77,7 +82,24 @@ class GenerationBackend(abc.ABC):
         raise NotImplementedError
 
 
-_MANIFEST_LINE_RE = re.compile(r"^(VALUE|CLAUSE_SEEDED|CLAUSE_MARKED|SEED|META|REPAIR|MISSING)\|(.*)$")
+_MANIFEST_LINE_RE = re.compile(
+    r"^(VALUE|CLAUSE_SEEDED|CLAUSE_MARKED|SEED|META|REPAIR|MISSING|AUDIT|AUDIT_REPAIR|REMOVE|KEEP)\|(.*)$"
+)
+
+# Sentinels the audit prompt wraps the document in; duplicated from
+# `gendoc_audit` so this module keeps no import of it and stays the leaf
+# both the generator and the audit module depend on.
+AUDIT_OPEN = "<<<DOKUMENT>>>"
+AUDIT_CLOSE = "<<<SLUTT PÅ DOKUMENT>>>"
+
+# What `MockBackend` treats as a sensitive elaboration and as a framing
+# violation. The mock has no language model, so G11 needs a deterministic
+# trigger the injected-failure harness can plant: a sentence carrying
+# `MOCK_ELABORATION_CUE` is reported as unlabelled sensitive content and one
+# carrying `MOCK_FRAMING_CUE` as sensitive framing. No generated Norwegian
+# contains either, so a clean mock document audits clean.
+MOCK_ELABORATION_CUE = "og har difor eit vedvarande rusproblem"
+MOCK_FRAMING_CUE = "relevant for etterforskningen"
 
 _BOILERPLATE_NB = [
     "Saken er behandlet i samsvar med gjeldende regelverk.",
@@ -117,7 +139,56 @@ class MockBackend(GenerationBackend):
         temperature: float = 0.9, seed: Optional[int] = None,
     ) -> List[str]:
         self.last_finished = [True] * len(prompts)
-        return [self._repair(p) if "\nREPAIR|" in p else self._fill(p) for p in prompts]
+        outputs = []
+        for prompt in prompts:
+            if "\nAUDIT|1" in prompt:
+                outputs.append(self._audit(prompt))
+            elif "\nAUDIT_REPAIR|1" in prompt:
+                outputs.append(self._audit_repair(prompt))
+            elif "\nREPAIR|" in prompt:
+                outputs.append(self._repair(prompt))
+            else:
+                outputs.append(self._fill(prompt))
+        return outputs
+
+    @staticmethod
+    def _audited_document(prompt: str) -> str:
+        return prompt.split(AUDIT_OPEN + "\n", 1)[1].split("\n" + AUDIT_CLOSE, 1)[0]
+
+    def _audit(self, prompt: str) -> str:
+        """Mock a G11 audit pass by reporting sentences carrying the mock cues."""
+        document = self._audited_document(prompt)
+        findings = []
+        for sentence in re.split(r"(?<=[.!?])\s+|\n+", document):
+            stripped = sentence.strip().rstrip(".")
+            if not stripped:
+                continue
+            if MOCK_FRAMING_CUE in stripped:
+                findings.append(f"FUNN|RAMME|{stripped}")
+            elif MOCK_ELABORATION_CUE in stripped:
+                findings.append(f"FUNN|SENSITIV|{stripped}")
+        return "\n".join(findings) if findings else "INGEN"
+
+    def _audit_repair(self, prompt: str) -> str:
+        """Mock a targeted repair: delete the quoted material, keep the listed values.
+
+        A real model is asked to delete or neutralise exactly the audited
+        sentences while keeping every planned value and clause verbatim, so the
+        mock does the same -- it replaces each quote with whatever `KEEP` values
+        sat inside it, which is what makes the repaired draft able to pass G2
+        again rather than failing on a value the deletion took with it.
+        """
+        document = self._audited_document(prompt)
+        manifest = prompt.split(MANIFEST_SENTINEL, 1)[1]
+        removes = [l.split("|", 1)[1] for l in manifest.splitlines() if l.startswith("REMOVE|")]
+        keeps = [l.split("|", 1)[1] for l in manifest.splitlines() if l.startswith("KEEP|")]
+        for quote in removes:
+            kept = [k for k in keeps if k and k in quote]
+            document = document.replace(quote, "; ".join(kept))
+        document = re.sub(r"[ \t]{2,}", " ", document)
+        document = re.sub(r" +([.,;:])", r"\1", document)
+        document = re.sub(r"(?<=[.;:])\s*\.", "", document)
+        return re.sub(r"\n{3,}", "\n\n", document).strip()
 
     def _repair(self, prompt: str) -> str:
         """Mock a minimal-edit repair: append each missing value in a sentence."""
@@ -251,10 +322,17 @@ class HFBackend(GenerationBackend):
         encoded = self.tokenizer(
             chat_texts, return_tensors="pt", padding=True, truncation=True,
         ).to(self.device)
+        # Temperature 0 means greedy, not "sample from a zero-temperature
+        # distribution": the G11 audit pass needs the same answer every time it
+        # sees the same document, and passing temperature=0.0 to a sampling
+        # generate() is a divide-by-zero in transformers' logits warper.
+        sampling = {"do_sample": True, "temperature": temperature, "top_p": 0.9}
+        if temperature <= 0:
+            sampling = {"do_sample": False}
         with torch.no_grad():
             output_ids = self.model.generate(
-                **encoded, max_new_tokens=max_new_tokens, do_sample=True,
-                temperature=temperature, top_p=0.9, pad_token_id=self.tokenizer.pad_token_id,
+                **encoded, max_new_tokens=max_new_tokens,
+                pad_token_id=self.tokenizer.pad_token_id, **sampling,
             )
         generated = output_ids[:, encoded["input_ids"].shape[1]:]
         eos = self.model.generation_config.eos_token_id
