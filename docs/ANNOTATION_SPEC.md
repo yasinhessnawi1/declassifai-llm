@@ -243,6 +243,23 @@ field means *employer*, not *belief*.
 - **Not** a placeholder occupying the field without naming anything: `Privatperson`,
   `Ukjent`, `Not applicable`, `N/A`.
 
+**B20 — GOV_ID is decided by the issuer, not by the label.** Tag an identifier when a
+**public authority** issued it, whatever the field is called. Leave it untagged when a
+private body issued it, however official the label looks. This replaces reliance on the
+surface-form list above, which cannot anticipate every label the corpus uses — 1,171
+documents (3.6%) carry an identifier label that list does not name.
+- GOV_ID: `Førerkortnummer` (driver's licence), `Våpenkortnummer` (firearms card),
+  `Lisensnummer` (a state licence), alongside the enumerated fødselsnummer, D-nummer,
+  org.nr and case/reference numbers.
+- Not tagged: `journalnummer` and `pasientjournal` (a hospital's internal record),
+  `lånenummer` (a bank's), `medlemsnummer` (a private association's), `våpennummer`
+  (a manufacturer's serial on the weapon itself, as distinct from the state-issued card).
+- The test is who issued the number, not whether it identifies a person. A hospital record
+  number does identify someone, but it is not a government identifier and no other type
+  covers it, so it is left untagged — as with religious affiliation.
+- `Referanse:` remains untagged regardless: it is the agency's own intake routing, not an
+  identifier of a person.
+
 
 ---
 
@@ -519,7 +536,9 @@ Action for re-labeling: tag animal condition/symptom content as HEALTH_INFO on t
 #### Definition
 Any government-issued or government-assigned identifier for a person, entity, or case: fødselsnummer, D-nummer, organisasjonsnummer, generic "ID-nummer" values, and police/court/case reference numbers ("saksnummer", "sak nr.", "Vår ref", "Deres ref" when populated). Excludes plain calendar dates and durations that merely resemble part of an ID.
 
-#### Include — exhaustive surface-form enumeration
+#### Include — surface-form enumeration (not closed; see B20)
+The forms below are the ones observed in this corpus. They are **not** a closed list:
+where a label is not listed, apply B20's issuer test rather than defaulting to untagged.
 - `Førerkortnummer:` — a driver's licence number is government-issued; tag the value as GOV_ID. (Distinct from `Referanse:`, which is excluded below.)
 
 1. **Fødselsnummer/personnummer** — 11 digits, `DDMMYY` + 5-digit personal number, written with no separator (`12127012345`), a single dash after digit 6 (`120378-12345`), or a single space after digit 6 (`150701 44556`). Trigger labels: "Fødselsnummer:", "fødselsnummer", "personnummer:", "personnummer".
