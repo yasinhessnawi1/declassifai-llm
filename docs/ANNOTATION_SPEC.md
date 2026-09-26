@@ -175,7 +175,9 @@ grammatical subject is the animal or the enclosure.
   change what is disclosed. ECONOMIC_STATUS still takes hardship with no welfare need named
   (`sliter økonomisk`, `økonomiske problemer de siste årene`). The phrasing appears in 57
   corpus documents, so it is worth fixing rather than deciding case by case. Gold has one
-  precedent (R003) and it reads this way.
+  precedent (R003) and it reads this way. It applies to an assertion, not a question:
+  `er bekymret for om han har råd til å ta godt vare på dyrene` wonders aloud and states no
+  unmet need, so it stays untagged.
 - **Enclosure size and stocking density on their own are structure, not deprivation.**
   `Burene er for små`, `overfylte bur`, `Overbefolkning i primatavdelingen`, `lite og
   trangt` are untagged. Gold leaves this bare form untagged 28 times and tags it 3.
@@ -294,6 +296,12 @@ address (`Adresse: Ukjent, mistenkes a vaere et lagerlokale i et industriomrade`
 nobody, and its allegations stay untagged.
 - The reporter and the receiving officer being named does not help. They are not the
   accused, and their presence cannot make an unnamed third party identifiable.
+- **This rule is about identifying a natural person, and does not override B16.** Where the
+  conduct belongs to an *organisation*, B16 governs and still requires a named principal;
+  a commercial address does not substitute for one. A shop at `Storgata 42` relabelling
+  expired dairy, with only the reporter and the intake officer named, stays untagged. The
+  contrast with `Nedre Ila 47` is that a residential address is where a natural person
+  keeps animals, while a business address identifies the business.
 - **Animal-welfare facts are unaffected.** HEALTH_INFO does not require a human subject, so
   `alvorlig mishandling og skader` is tagged in both documents regardless.
 - Two annotators reached opposite verdicts on these two documents and both were right; the
