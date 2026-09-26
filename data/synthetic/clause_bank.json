@@ -1,0 +1,3203 @@
+{
+  "version": 2,
+  "clause_bank": {
+    "RELIGIOUS_BELIEF": [
+      {
+        "text": "medlem av Jehovas Vitner",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "tilhører Den norske kirke",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "praktiserende muslim",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "aktivt medlem av Human-Etisk Forbund",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "konvertert til islam i 2019",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": "trailing time qualifier kept, mirrors CRIMINAL_RECORD/POLITICAL_CASE style"
+      },
+      {
+        "text": "praktiserende katolikk og deltar jevnlig i messen",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "medlem av Den Evangelisk Lutherske Frikirke",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "tilhenger av buddhismen",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "aktiv i den lokale pinsemenigheten",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "bekjennende kristen og ber daglig",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "medlem av Scientologikirken",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "utøver jødisk tro og feirer sabbat",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "konvertitt til jødedommen",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "praktiserende sikh og bærer turban av religiøse grunner",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "mistenkes for å tilhøre en ekstrem religiøs sekt",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "hedge verb 'mistenkes for' stays inside the span, parallel to CRIMINAL_RECORD's 'mistanke om' treatment"
+      },
+      {
+        "text": "regnes i familien som praktiserende jøde",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "third-party attribution frame kept because it is the only source of the fact, not a bare reporting verb to strip"
+      },
+      {
+        "text": "medlem av Jehovas Vitner",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": "duplicate surface form deliberately reused with a different document context to test slot-position variation"
+      },
+      {
+        "text": "hevder selv å ha forlatt trossamfunnet Jehovas Vitner",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "self-report of leaving a faith community; still a belief-affiliation disclosure"
+      },
+      {
+        "text": "konvertert til kristendommen etter et opphold på et bedehus",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "aktivt medlem av et hinduistisk trossamfunn i lokalmiljøet",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "er medlem av Den Evangelisk Lutherske Frikyrkja",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "praktiserande muslim",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "tilhøyrer Den norske kyrkja",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "konvertert til buddhismen i 2020",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "utøvar jødisk tru og feirar sabbat",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "aktiv i den lokale pinserørsla",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "mistenkjast for å tilhøyre ein ekstrem religiøs sekt",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "Nynorsk hedge form, mirrors bokmål hard case above"
+      }
+    ],
+    "TRADE_UNION": [
+      {
+        "text": "medlem av Fellesforbundet",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "tillitsvalgt i Norsk Sykepleierforbund",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "medlem av Landsorganisasjonen i Norge",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": "spelled out in full precisely to avoid the 'LO' case-number confusion documented in PROJECT_SPEC_V2 §1"
+      },
+      {
+        "text": "aktiv tillitsvalgt i Handel og Kontor",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "medlem av Utdanningsforbundet siden 2015",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": "trailing time qualifier kept"
+      },
+      {
+        "text": "streikeleder for de ansatte ved fabrikken, organisert i Fellesforbundet",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "verneombud og fagorganisert i Norsk Transportarbeiderforbund",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "meldte seg inn i fagforeningen etter en konflikt med arbeidsgiver",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "membership fact stated as an event; no union name given, so it still qualifies as an affiliation disclosure per the same style as POLITICAL_CASE's 'lokal politiker' contrast — union identity absent is a boundary judgement call"
+      },
+      {
+        "text": "mistenkes for å ha organisert en ulovlig streik gjennom fagforeningen",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "hedge 'mistenkes for' kept inside the span; conduct itself may separately be CRIMINAL_RECORD-adjacent, kept as two facts"
+      },
+      {
+        "text": "tillitsvalgt for LO-forbundet Fagforbundet ved sykehjemmet",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "the literal string 'LO' appears here as part of the umbrella name, not a case number — contrast with the negative example below"
+      },
+      {
+        "text": "nektet å oppgi om han er fagorganisert",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "a stated refusal to disclose is not a disclosure per B7 — this is the untagged frame; kept here only as a template for the negatives bank pairing"
+      },
+      {
+        "text": "aktivt medlem av Fagforbundet og sitter i lokalstyret",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "er tillitsvald i Fellesforbundet",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "medlem av Landsorganisasjonen i Noreg",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "fagorganisert i Utdanningsforbundet sidan 2016",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "verneombod og tillitsvald i Norsk Transportarbeidarforbund",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "mistenkjast for å ha organisert ein ulovleg streik gjennom fagforeininga",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "aktiv tillitsvald i Handel og Kontor",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "medlem av Norsk Arbeidsmandsforbund",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "tillitsvalgt ved fabrikken for Industri Energi",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "meldte seg inn i Fagforbundet etter oppstart i ny jobb",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "aktiv i streikekomiteen organisert gjennom LO",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "'LO' as the umbrella confederation's own name, not a case-number artifact — kept whole per the affiliation clause"
+      },
+      {
+        "text": "innmeldt i Parat som følge av omorganiseringen",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "leiar for den lokale fagforeininga ved verksemda",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "innmeld i Parat som følgje av omorganiseringa",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      }
+    ],
+    "ETHNICITY": [
+      {
+        "text": "opplyser å ha samisk bakgrunn",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "identifiserer seg som etnisk somalisk",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "har romani bakgrunn ifølge egne opplysninger",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "oppgir norsk-pakistansk bakgrunn på skjemaet",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "identifiserer seg som kven",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "har vietnamesisk opprinnelse på farssiden",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": "partial/mixed-heritage framing kept neutral, no stereotyping content"
+      },
+      {
+        "text": "beskriver seg selv som etnisk tamilsk",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "oppgir å tilhøre den samiske urbefolkningen",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "registrert med somalisk etnisk bakgrunn i tidligere sak",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "an administrative record restating the fact in a different clause; B6 restatement rule — both instances are tagged"
+      },
+      {
+        "text": "mistenkes av naboen for å skjule sin egentlige etniske bakgrunn",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "a rumour/allegation about ethnicity is still tagged per the same GDPR logic as SEXUAL_ORIENTATION's third-party-allegation rule — the sensitivity attaches to the processing of the claim"
+      },
+      {
+        "text": "hevder selv å ha assyrisk/syrisk-ortodoks bakgrunn",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "self-report retained; the hedge 'hevder' here introduces the person's own statement rather than a third party's, so the substantive clause is kept"
+      },
+      {
+        "text": "har afghansk-hazara bakgrunn",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "opplyser å ha samisk bakgrunn",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "identifiserer seg som etnisk somalisk",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "har romani bakgrunn ifølgje eigne opplysningar",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "oppgjev å tilhøyre den samiske urbefolkninga",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "skildrar seg sjølv som etnisk tamilsk",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "har vietnamesisk opphav på farssida",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "mistenkjest av naboen for å skjule si eigentlege etniske bakgrunn",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "opplyser om samisk familiebakgrunn på morssiden",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "beskriver familien som etnisk kurdisk",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "registrert med thailandsk etnisk bakgrunn i journalen",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "oppgir eritreisk bakgrunn ved ankomst til Norge",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "identifiserer seg som etnisk usbekisk",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "skildrar familien som etnisk kurdisk",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      }
+    ],
+    "HEALTH": [
+      {
+        "text": "diagnostisert med diabetes type 2",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "lider av kronisk depresjon",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "diagnosekode F32.9",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "innlagt på Bærum sykehus etter et illebefinnende",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "ustabil mental helse over lengre tid",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "mistanke om rabies",
+        "form": "nb",
+        "subject": "animal",
+        "difficulty": "medium",
+        "note": "hedge kept per HEALTH_INFO's own rule (d), same treatment regardless of species"
+      },
+      {
+        "text": "mistenkt tuberkulose hos flere av dyrene i besetningen",
+        "form": "nb",
+        "subject": "animal",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "skorper rundt øynene",
+        "form": "nb",
+        "subject": "animal",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "synlige sår og betente sår på bakbeina",
+        "form": "nb",
+        "subject": "animal",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "halter tydelig på venstre forbein",
+        "form": "nb",
+        "subject": "animal",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "matt og flokete pels over hele kroppen",
+        "form": "nb",
+        "subject": "animal",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "bovine tuberkulose bekreftet ved funn av mistenkelige lesjoner",
+        "form": "nb",
+        "subject": "animal",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "paratuberkulose (Johne's sykdom)",
+        "form": "nb",
+        "subject": "animal",
+        "difficulty": "medium",
+        "note": "parenthetical alternative disease name absorbed per B4"
+      },
+      {
+        "text": "åpenbart en hudsykdom",
+        "form": "nb",
+        "subject": "animal",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "sikler kraftig og virker desorientert",
+        "form": "nb",
+        "subject": "animal",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "fortsatt ikke hadde tilgang til mat eller vann",
+        "form": "nb",
+        "subject": "animal",
+        "difficulty": "hard",
+        "note": "incriminating absence per B15, deprivation of a basic welfare need per B14"
+      },
+      {
+        "text": "ikke får den nødvendige veterinærbehandlingen",
+        "form": "nb",
+        "subject": "animal",
+        "difficulty": "hard",
+        "note": "welfare-need deprivation, B14"
+      },
+      {
+        "text": "ikke har råd til nødvendig veterinærbehandling",
+        "form": "nb",
+        "subject": "animal",
+        "difficulty": "hard",
+        "note": "financially-caused welfare deprivation is still HEALTH_INFO per B14, not ECONOMIC_STATUS"
+      },
+      {
+        "text": "apatiske og beveger seg lite",
+        "form": "nb",
+        "subject": "animal",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "alvorlig depresjon, bekreftet av journalnotater",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "tegn på alvorlig underernæring hos flere av dyrene",
+        "form": "nb",
+        "subject": "animal",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "diagnostisert med kronisk utmattelsessyndrom",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "diagnostisert med diabetes type 2",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "lid av kronisk depresjon",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "skorper kring augo",
+        "form": "nn",
+        "subject": "animal",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "haltar tydeleg på venstre forbein",
+        "form": "nn",
+        "subject": "animal",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "matt og flokut pels over heile kroppen",
+        "form": "nn",
+        "subject": "animal",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "fekk ikkje naudsynt veterinærbehandling",
+        "form": "nn",
+        "subject": "animal",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "mistanke om rabies",
+        "form": "nn",
+        "subject": "animal",
+        "difficulty": "medium",
+        "note": null
+      }
+    ],
+    "DISABILITY": [
+      {
+        "text": "født med cerebral parese",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "har en synlig fysisk funksjonsnedsettelse etter en ulykke",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "bruker rullestol som følge av en ryggmargsskade",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "diagnostisert med en lett kognitiv utviklingshemning",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "hørselshemmet og bruker høreapparat på begge ører",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "blind på det ene øyet etter en arbeidsulykke",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "har Downs syndrom",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "mistet førligheten i høyre arm etter et illebefinnende",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "nominalised loss-of-function phrase kept per B17"
+      },
+      {
+        "text": "registrert som uføretrygdet på grunn av en varig funksjonsnedsettelse",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "har autismespekterforstyrrelse",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "sterkt svekket syn som krever hjelpemidler i hverdagen",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "lever med en kronisk muskelsykdom som begrenser bevegeligheten",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "har en medfødt hjerneskade som påvirker taleevnen",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "mistanke om en udiagnostisert lærevanske hos eleven",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "hedge kept, mirrors HEALTH_INFO's hedged-condition treatment"
+      },
+      {
+        "text": "bruker førerhund på grunn av synshemning",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "fødd med cerebral parese",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "brukar rullestol som følgje av ei ryggmargsskade",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "høyrselshemma og brukar høyreapparat på begge øyro",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "har ein medfødd hjerneskade som påverkar taleevna",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "registrert som uføretrygda på grunn av ei varig funksjonsnedsetjing",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "lever med ein kronisk muskelsjukdom som avgrensar rørsleevna",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      }
+    ],
+    "MEDICATION": [
+      {
+        "text": "bruker antidepressiva",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "tar Metformin daglig",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "behandles med Sertralin",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "bruk av insulin flere ganger daglig",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "medisineres med antipsykotika på grunn av tilstanden",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "brukt cannabis på medisinsk resept mot kroniske smerter",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "medical-use framing keeps this in MEDICATION rather than CRIMINAL_RECORD, per HEALTH_INFO's own cannabis resolved-conflict note"
+      },
+      {
+        "text": "tar smertestillende opioider foreskrevet av fastlegen",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "behandles med kjemoterapi hver tredje uke",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "bruker blodfortynnende medisin etter hjerteoperasjonen",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "mistenkes å ha sluttet å ta sine foreskrevne medisiner",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "hedge kept; a stopped-medication fact is still a medication disclosure"
+      },
+      {
+        "text": "gis daglig medisin mot epilepsi",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "bruker ADHD-medisin på skoledager",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "behandles med Litium for den bipolare lidelsen",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "tar veterinærforeskrevet smertestillende til hunden daglig",
+        "form": "nb",
+        "subject": "animal",
+        "difficulty": "medium",
+        "note": "medication given to an animal, tied to the owner as the responsible party"
+      },
+      {
+        "text": "behandles med antibiotika for en luftveisinfeksjon",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "brukar antidepressiva",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "tek Metformin dagleg",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "vert behandla med Sertralin",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "får dagleg medisin mot epilepsi",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "brukar blodfortynnande medisin etter hjarteoperasjonen",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "vert behandla med kjemoterapi kvar tredje veke",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      }
+    ],
+    "BEHAVIORAL_PATTERN": [
+      {
+        "text": "Eier observert kranglende med naboer angående hunden",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": "B18 exception: subject kept"
+      },
+      {
+        "text": "Har sett eieren bli sint på hunden ved flere anledninger",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": "B18 exception: subject kept"
+      },
+      {
+        "text": "rope på hunden aggressivt flere ganger",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "kaste tomflasker og stein etter hundene",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "nektet å samarbeide med inspektørene og fremviste aggressiv atferd",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "sparke og slå hundene ved flere anledninger",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "human acting on an animal — kept per the 9.6% owner-conduct carve-out"
+      },
+      {
+        "text": "jeg har sett Frank Olsen oppføre seg uberegnelig noen ganger",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "Dere skal få svi, begge to!",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "quoted outburst attributed to an identifiable person in a context of recurring krangler"
+      },
+      {
+        "text": "resistant to previous guidance and exhibits a pattern of non-compliance",
+        "form": "en",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "English-language source keeps English span, per Global Rule 1"
+      },
+      {
+        "text": "utagerende oppførsel, spesielt etter inntak av alkohol",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": "B22: recurring conduct with no clinical term and no offence is BEHAVIORAL_PATTERN"
+      },
+      {
+        "text": "beruset ved flere anledninger uten at det er meldt noe straffbart forhold",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "B22 split: recurring conduct with no clinical term and no offence"
+      },
+      {
+        "text": "stadig mer radikalisert i sine uttalelser det siste året",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "mistenkes å ha kastet gjenstander etter hundene ved flere tilfeller",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "hedge kept; conduct pattern about the owner, not the animal"
+      },
+      {
+        "text": "aggressiv og lite samarbeidsvillig overfor kontrolletatene",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "nektet å samarbeide med inspektørene og fremviste aggressiv atferd",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "har fleire gonger høyrt eigaren rope og skrike til hundane",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": "B18 exception: subject kept"
+      },
+      {
+        "text": "kasta tomflasker og stein etter hundane",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "utagerande framferd, særleg etter inntak av alkohol",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "mistenkjest å ha kasta gjenstandar etter hundane fleire gonger",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "stadig meir radikalisert i uttalelsane sine det siste året",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "kaste gjenstander etter dyrene i sinne",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "høylytte krangler med familiemedlemmer observert av naboer",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "nekter gjentatte ganger å slippe inn tilsynet på eiendommen",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "har ved fleire høve vist sinneutbrot mot tilsette",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "nektar gjentekne gonger å sleppe inn tilsynet på eigedomen",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      }
+    ],
+    "CRIMINAL": [
+      {
+        "text": "Dømt for vold i 2010",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "domfellelse for bedrageri i 2018",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "mistanke om skatteunndragelse",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "anmeldt for trusler med kniv",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "politianmeldelse mot Olsen for trusler og ulovlig besittelse av et våpen",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "ulovlig våpenbesittelse",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": "bare offense noun, no legal-process verb required"
+      },
+      {
+        "text": "dømt for bedrageri i sak 12345/2018",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "GOV_ID nests inside this span per B20/precedence"
+      },
+      {
+        "text": "fyllekjøring",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": "bare single-word offense, must still be tagged"
+      },
+      {
+        "text": "forfalskning av veterinærattester",
+        "form": "nb",
+        "subject": "org",
+        "difficulty": "medium",
+        "note": "B16: organisation's conduct is the named principal's conduct when a human principal is named"
+      },
+      {
+        "text": "truet Jensen med en kjøkkenkniv",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "per-se offense naming a weapon and named victim"
+      },
+      {
+        "text": "anmeldt for dyremishandling i 2018",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "sak henlagt grunnet bevisets stilling",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": "B3: outcome clause is its own span, not absorbed into the accusation"
+      },
+      {
+        "text": "involvert i en offentlig skandale knyttet til et forhold med en mindreårig",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "B24: minor-involving relationship is CRIMINAL_RECORD, not SEXUAL_ORIENTATION"
+      },
+      {
+        "text": "pågående etterforskning knyttet til seksuelle overgrep mot mindreårige",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "B24"
+      },
+      {
+        "text": "betinget dom",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": "adjacent, distinct fact after a comma, per B3's worked example"
+      },
+      {
+        "text": "mistenker at hundene brukes i ulovlige kampaktiviteter",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "Astrid Bjørgen Sjømat AS har systematisk feilmerket eksportprodukter",
+        "form": "nb",
+        "subject": "org",
+        "difficulty": "hard",
+        "note": "B16 worked-example style; B1 still drops the org subject in the actual tagged span, kept here to show source context"
+      },
+      {
+        "text": "systematisk feilmerket eksportprodukter",
+        "form": "nb",
+        "subject": "org",
+        "difficulty": "hard",
+        "note": "the B1-correct boundary of the B16 example above, subject dropped"
+      },
+      {
+        "text": "vold i nære relasjoner",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": "CRIMINAL_RECORD wins over FAMILY_RELATION per precedence chain"
+      },
+      {
+        "text": "besøksforbud ilagt etter en episode med trusler mot en nabo",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "dømd for vald i 2011",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "mistanke om skatteunndraging",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "ulovleg våpenbesitting",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "melde til politiet for truslar med kniv",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "dømd for bedrageri i sak 12345/2018",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "sonet ein dom for vald mot offentleg tenestemann",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      }
+    ],
+    "POLITICAL": [
+      {
+        "text": "medlem av den høyreekstreme organisasjonen \"Norges Frie Folkeparti\"",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "aktivt medlem av det høyreekstreme politiske partiet \"Norges Renhet\"",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "sterke anti-EU holdninger",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "medlem av Fremskrittspartiet",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "aktiv i Senterpartiet og kjent for sine kontroversielle uttalelser om innvandring",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "deltatt i demonstrasjoner mot innvandring",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "motstand mot regjeringens innvandringspolitikk",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "anti-immigrant holdninger uttrykt ved flere anledninger",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "medlem av Senterpartiet og aktiv i lokalpolitikken",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "tilknytning til den høyreekstreme gruppen \"Nordisk Samhold\"",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "stop exactly at the source's own closing punctuation, per the extraction-not-summarisation rule"
+      },
+      {
+        "text": "antisemittiske synspunkter fremsatt i sosiale medier",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "kandidat for et lokalt parti ved forrige kommunevalg",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "Member of the politically controversial group \"Norges Fremtid\"",
+        "form": "en",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "English-language source keeps English span"
+      },
+      {
+        "text": "donerte betydelige summer til et høyreradikalt parti",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "medlem av det høgreekstreme politiske partiet \"Norges Renleik\"",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "sterke anti-EU-haldningar",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "motstand mot regjeringa sin innvandringspolitikk",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "aktiv i Senterpartiet og kjend for sine kontroversielle utsegner om innvandring",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "deltatt i demonstrasjonar mot innvandring",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "donerte betydelege summar til eit høgreradikalt parti",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "kandidat for eit lokalt parti ved førre kommuneval",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "anti-immigrant-haldningar uttrykt ved fleire høve",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "medlem av Senterpartiet og aktiv i lokalpolitikken",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": "reused surface form in a different document context to test slot-position variation"
+      }
+    ],
+    "SEXUAL_ORIENTATION": [
+      {
+        "text": "homofil",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "åpent homofil",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "biseksuell",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "identifiserer seg som lesbisk",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "homofilt forhold til Lars Olsen",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "PERSON nests inside this clause per the nesting rule"
+      },
+      {
+        "text": "polyamorøst forhold med to partnere",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "lever i et åpent forhold",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "hans homofile legning",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "third-party allegation kept; only the reporting frame ('rykter om') is cut"
+      },
+      {
+        "text": "seksuell legning",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "åpen lesbisk og har vært det i mange år",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "transperson og har vært det siden ungdomsårene",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "gender identity disclosure, covered by this type's own GDPR 'sex life'/gender-identity scope"
+      },
+      {
+        "text": "mistenkes å skjule sin biseksualitet for familien",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "third-party speculation still tagged, per the explicit resolved open question"
+      },
+      {
+        "text": "Openly lesbian",
+        "form": "en",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "English-language source keeps English span"
+      },
+      {
+        "text": "åpent homofil",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "identifiserer seg som lesbisk",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "lever i eit ope forhold",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "polyamorøst forhold med to partnarar",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "hans homofile legning",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "biseksuell",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "transperson og har vore det sidan ungdomsåra",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "seksuell legning",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "mistenkjest å skjule si biseksualitet for familien",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "homofilt forhold til Lars Olsen, som familien kjenner til",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "near-miss test: family-knowledge tail clause is commentary, span still stops at the same boundary as the shorter form"
+      }
+    ],
+    "FINANCIAL": [
+      {
+        "text": "over 500 000 NOK",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "gjeld på over 700 000 NOK, inkludert misligholdte lån til DNB og gjeld til private kreditorer",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "B11 itemisation absorbed into one span"
+      },
+      {
+        "text": "over 1,5 millioner NOK",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "misligholdte lån hos Santander",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "ubetalte fakturaer på 42 000 NOK",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "pant i eiendommen registrert hos Sparebanken Vest",
+        "form": "nb",
+        "subject": "org",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "inkassosaker hos Lindorff",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "kredittkortgjeld på 85 000 NOK",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "utestående gjeld på over 700 000 NOK",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "registrert med betalingsanmerkninger",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "unexplained cash deposits totaling 120,000 NOK",
+        "form": "en",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "English-language source keeps English span"
+      },
+      {
+        "text": "aksjekonto med over 1,5 millioner NOK",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "gjeldspost på over 500 000 NOK tilknyttet DNB",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "ubetalte skatter på 520 000 NOK",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "quantified tax debt, distinct from a crime-framed offense noun"
+      },
+      {
+        "text": "mislighold av leieavtale med et utestående beløp på 34 000 NOK",
+        "form": "nb",
+        "subject": "org",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "over 500 000 NOK",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "gjeld på over 700 000 NOK, medrekna misleghaldne lån til DNB",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "ubetalte fakturaer på 42 000 NOK",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "kredittkortgjeld på 85 000 NOK",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "registrert med betalingsmerknader",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "lån nr. 1234567890 hos DNB inkludert i gjeldsoppstillingen",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "3,5 millioner NOK i antatt uregistrert inntekt",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "the amount portion stands as its own FINANCIAL span even when a nearby offense word would separately be CRIMINAL_RECORD"
+      },
+      {
+        "text": "kredittkortgjeld på 85 000 NOK hos Bank Norwegian",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "innskot på 250 000 NOK i Sparebanken Vest",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "misleghaldne lån hos Santander",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      }
+    ],
+    "ECONOMIC_STATUS": [
+      {
+        "text": "sliter økonomisk og ikke har råd til fôr til sauene",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "dårlig økonomi hos restauranten",
+        "form": "nb",
+        "subject": "org",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "bekymring for økonomisk bærekraft hos senteret",
+        "form": "nb",
+        "subject": "org",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "begrensede økonomiske midler",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "økonomisk ustabil situasjon mistenkes",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "hedge kept within the evaluative clause"
+      },
+      {
+        "text": "har vanskeligheter med å få endene til å møtes",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "tilsynelatende høy inntekt uten synlig kilde",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "pensjonert og har begrenset inntekt",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": "income-status judgement, distinct from a bare occupation answer"
+      },
+      {
+        "text": "mistet jobben og sliter nå økonomisk",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "the hardship clause is ECONOMIC_STATUS; the job-loss clause is a separate EMPLOYMENT fact"
+      },
+      {
+        "text": "pågående økonomisk søksmål",
+        "form": "nb",
+        "subject": "org",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "bekymret for eierens økonomiske situasjon",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "åpenbart velstående til tross for lav registrert inntekt",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "wealth judgement, hedged against a contradicting record"
+      },
+      {
+        "text": "sliter økonomisk og ikkje har råd til fôr til sauene",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "dårleg økonomi hos restauranten",
+        "form": "nn",
+        "subject": "org",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "har vanskar med å få endane til å møtast",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "økonomisk ustabil situasjon vert mistenkt",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "bekymra for eigaren si økonomiske situasjon",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "har hatt vedvarende økonomiske problemer de siste årene",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "økonomisk press etter tap av fast inntekt",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "antatt god økonomi til tross for enkel levestandard",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "har hatt vedvarande økonomiske problem dei siste åra",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "antatt god økonomi trass i enkel levestandard",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      }
+    ],
+    "BIOMETRIC_DATA": [
+      {
+        "text": "avga fingeravtrykk i forbindelse med saken",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "identifisert ved hjelp av ansiktsgjenkjenning på overvåkningsopptak",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "stemmeprøve tatt til bruk i identifikasjon",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "irisskanning benyttet for adgangskontroll",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "DNA-profil registrert i forbindelse med etterforskningen",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "overlaps GENETIC_DATA in content but framed here as an identification method"
+      },
+      {
+        "text": "ganganalyse brukt til å identifisere personen på video",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "fingeravtrykk sammenlignet med tidligere registrerte avtrykk",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "avga fingeravtrykk i samband med saka",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "identifisert ved hjelp av andletsattkjenning på overvakingsopptak",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "stemmeprøve teken til bruk i identifikasjon",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "irisskanning nytta for adgangskontroll",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "ganganalyse brukt til å identifisere personen på video",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "netthinneskanning benyttet ved adgangskontroll på arbeidsplassen",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "fingeravtrykk registrert i politiets biometriske register",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "fingeravtrykk registrert i politiet sitt biometriske register",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      }
+    ],
+    "GENETIC_DATA": [
+      {
+        "text": "DNA-test bekreftet farskap",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "genetisk test viste disposisjon for Huntingtons sykdom",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "gentest bekreftet bærer av en arvelig sykdom",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "DNA-prøve sikret og analysert i saken",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "genetisk testing avdekket økt risiko for brystkreft",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "slektskapstest gjennomført med DNA-analyse i barnefordelingssaken",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "DNA-test stadfesta farskap",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "genetisk test synte disposisjon for Huntingtons sjukdom",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "gentest stadfesta berar av ein arveleg sjukdom",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "genetisk testing avdekte auka risiko for brystkreft",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "farskapstest gjennomført med DNA-analyse av begge parter",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "genetisk screening avdekket bærerstatus for en arvelig sykdom",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "slektskapstest gjennomført med DNA-analyse i barnefordelingssaka",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "DNA-prøve sikra og analysert i saka",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      }
+    ],
+    "IMMIGRATION_STATUS": [
+      {
+        "text": "har midlertidig oppholdstillatelse",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "søker om asyl etter ankomst til Norge",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "er statsløs og venter på avklaring av status",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "fikk avslag på søknad om permanent oppholdstillatelse",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "registrert som papirløs migrant",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "innvilget flyktningstatus i 2021",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "under utvisningssak på grunn av utløpt visum",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "har mellombels opphaldsløyve",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "søkjer om asyl etter ankomst til Noreg",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "fekk avslag på søknad om permanent opphaldsløyve",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "registrert som papirlaus migrant",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "innvilga flyktningstatus i 2022",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "under utvisingssak på grunn av utgått visum",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      }
+    ],
+    "AGE_INFO": [
+      {
+        "text": "mindreårig og derfor særlig sårbar i saken",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "høy alder gjør henne avhengig av daglig tilsyn",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "er under den kriminelle lavalder og kan ikke siktes",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "alderen gjør at han ikke lenger anses samtykkekompetent",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "svært ung alder tillagt vekt i vurderingen av sakens alvor",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "mindreårig og difor særleg sårbar i saka",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "høg alder gjer at ho er avhengig av dagleg tilsyn",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "alderen gjer at han ikkje lenger vert rekna som samtykkekompetent",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "mindreårig på gjerningstidspunktet, noe som er tillagt vekt",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "svært ung alder tillagt vekt i vurderinga av kor alvorleg saka er",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "er under den kriminelle lågalderen og kan ikkje siktast",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "alderen gjer at ho vert rekna som særleg sårbar i saka",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      }
+    ],
+    "CONTEXT_SENSITIVE": [
+      {
+        "text": "en uspesifisert bekymringsmelding uten noen konkret disponibel opplysning",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "deliberately not recommended for generation — see TAXONOMY_NOTES; kept only as an illustration of the residual-fact problem ANNOTATION_SPEC found incoherent"
+      },
+      {
+        "text": "noe uklart forhold nevnt av varsleren uten videre presisering",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "same caveat as above"
+      }
+    ],
+    "ACADEMIC_RECORD": [
+      {
+        "text": "fullført bachelorgrad i sykepleie ved OsloMet, avsluttet 2019",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "strøket til fagprøven i elektrofag to ganger",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "utdannet veterinærassistent fra Norges miljø- og biovitenskapelige universitet",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "tok master i statsvitenskap ved Universitetet i Bergen",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "droppet ut av videregående skole i andre klasse",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "fikk toppkarakter på avsluttende eksamen i medisin",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "tatt opp på doktorgradsprogram ved NTNU",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "mistet studieretten etter gjentatt strykprosent",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "fullført bachelorgrad i sjukepleie ved OsloMet, avslutta 2019",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "tok master i statsvitskap ved Universitetet i Bergen",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "droppa ut av vidaregåande skule i andre klasse",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "mista studieretten etter gjentatt strykprosent",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      }
+    ],
+    "EMPLOYMENT": [
+      {
+        "text": "eier og daglig leder",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "daglig leder og eier av Larsen Sjømat AS",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "veterinærassistent",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "ansatt Bergen Slakt AS",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "sykepleier på Haukeland Universitetssjukehus",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "utdannet veterinærassistent, men jobber for tiden i en dyrebutikk",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "B12: two distinct facts joined by 'men', split into two spans"
+      },
+      {
+        "text": "pensjonert lærer",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "registrert arbeidsledig",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "forretningspartner i det felles firmaet",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "always EMPLOYMENT_INFO, never FAMILY_RELATION, per its own precedence rule"
+      },
+      {
+        "text": "ansvarlig for deler av prosessen før dyrene går til bedøvelse",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "eigar og dagleg leiar",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "sjukepleiar ved Haukeland Universitetssjukehus",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "registrert arbeidslaus",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "utdanna veterinærassistent, men jobbar for tida i ein dyrebutikk",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      }
+    ],
+    "FAMILY_RELATION": [
+      {
+        "text": "gift med Astrid Olsen Åsberg",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "samboerforhold med Per Arne Olsen",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "to barn, Sondre (15) og Maren (12)",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": "ages absorbed as parentheticals per B4"
+      },
+      {
+        "text": "sønn fra et tidligere forhold, Jonas Olsen",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "skilt fra sin tidligere ektefelle",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "ektefellen Astrid Knudsen",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "mor til to barn fra et tidligere forhold med Lars Ove Hansen",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      },
+      {
+        "text": "felles sønn, Elias Olsen",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "svigerinne til Hans Petter Wiik",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "Familien Eriksen",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": "surname-only collective, not additionally tagged PERSON"
+      },
+      {
+        "text": "gift med Astrid Olsen Åsberg",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "sambuarforhold med Per Arne Olsen",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null
+      },
+      {
+        "text": "skild frå sin tidlegare ektefelle",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null
+      },
+      {
+        "text": "mor til to born frå eit tidlegare forhold med Lars Ove Hansen",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null
+      }
+    ]
+  },
+  "negatives": {
+    "RELIGIOUS_BELIEF": [
+      {
+        "text": "nabo til familien i Bedehusveien 4",
+        "form": "nb",
+        "why_not": "a street name containing 'Bedehus' (prayer house) is not itself a belief disclosure — no affiliation verb or belief noun is present"
+      },
+      {
+        "text": "Org.nr.: 987654321 (Stavanger Menighetssenter)",
+        "form": "nb",
+        "why_not": "per B19 an organisation named only in an employer/subject-of-inspection field is EMPLOYMENT_INFO, not a belief disclosure, even when the organisation is a congregation"
+      },
+      {
+        "text": "nektet å oppgi sin religiøse tilhørighet",
+        "form": "nb",
+        "why_not": "a stated refusal to disclose reveals nothing, per B7 — never tagged"
+      },
+      {
+        "text": "deltok på julaften slik de fleste nordmenn gjør",
+        "form": "nb",
+        "why_not": "generic cultural-calendar participation with no stated belief or affiliation"
+      },
+      {
+        "text": "ateist",
+        "form": "nb",
+        "why_not": "per ANNOTATION_SPEC's resolved conflict on 'ateist', this routes to POLITICAL_CASE only when explicit political-atheism-movement framing is present, otherwise left untagged — never RELIGIOUS_BELIEF"
+      },
+      {
+        "text": "Kirkeveien 22",
+        "form": "nb",
+        "why_not": "a street name containing 'Kirke' (church) with no belief content — NO_ADDRESS territory, not a belief disclosure"
+      }
+    ],
+    "TRADE_UNION": [
+      {
+        "text": "Saksnummer 2019/LO-4521",
+        "form": "nb",
+        "why_not": "the letters 'LO' here are a case-reference artifact, not the union — PROJECT_SPEC_V2 found every apparent trade-union hit in the gold set was exactly this kind of false positive"
+      },
+      {
+        "text": "nektet å oppgi om han er fagorganisert",
+        "form": "nb",
+        "why_not": "a stated refusal to disclose reveals nothing, per B7 — never tagged"
+      },
+      {
+        "text": "jobber i et lokale som leies av LO-bygget i sentrum",
+        "form": "nb",
+        "why_not": "'LO-bygget' names a building, not a membership fact — no affiliation verb or person tied to a union"
+      },
+      {
+        "text": "kollega av en kjent fagforeningsleder",
+        "form": "nb",
+        "why_not": "a non-kinship, non-membership social tie; the subject's own union status is never stated"
+      },
+      {
+        "text": "ansatt ved Fellesforbundets hovedkontor som resepsjonist",
+        "form": "nb",
+        "why_not": "employment AT a union's office is EMPLOYMENT_INFO (the union is just the employer), not evidence of the employee's own union membership"
+      }
+    ],
+    "ETHNICITY": [
+      {
+        "text": "norsk statsborger",
+        "form": "nb",
+        "why_not": "citizenship is NATIONALITY, a distinct legal-status fact, not racial/ethnic origin"
+      },
+      {
+        "text": "bosatt i Norge siden barndommen",
+        "form": "nb",
+        "why_not": "residency history alone discloses nothing about ethnic origin"
+      },
+      {
+        "text": "snakker flytende somali og norsk",
+        "form": "nb",
+        "why_not": "a language skill is not, on its own, an ethnicity disclosure — no self-identification or origin statement is made"
+      },
+      {
+        "text": "har utenlandsk klingende navn",
+        "form": "nb",
+        "why_not": "a caseworker's own inference from a name is exactly the kind of stereotyping generalisation this type must never encode as a positive example"
+      },
+      {
+        "text": "kommer opprinnelig fra Storbritannia",
+        "form": "nb",
+        "why_not": "a country-of-origin statement with no ethnic self-identification is NATIONALITY territory, not ETHNICITY"
+      }
+    ],
+    "HEALTH": [
+      {
+        "text": "Hunden bjeffer ofte",
+        "form": "nb",
+        "why_not": "the animal is the grammatical subject of a bare behavioural mention with no welfare-need deprivation named — excluded per B14's cramped-space/structure caveat and the general animal-subject test"
+      },
+      {
+        "text": "Burene er skitne",
+        "form": "nb",
+        "why_not": "a cleanliness/structure finding, not a named welfare-need deprivation — B14 explicitly excludes this"
+      },
+      {
+        "text": "aggressiv atferd",
+        "form": "nb",
+        "why_not": "generic human behavioural description with no clinical term — BEHAVIORAL_PATTERN, not HEALTH_INFO"
+      },
+      {
+        "text": "ingen synlige skader",
+        "form": "nb",
+        "why_not": "a reassuring negative finding records the absence of a problem, not the problem itself — untagged per B15"
+      },
+      {
+        "text": "spilleavhengighet",
+        "form": "nb",
+        "why_not": "a financial/behavioural euphemism, not a diagnosis, unless clinically framed — BEHAVIORAL_PATTERN by default"
+      },
+      {
+        "text": "Innhegningene er små og virker skitne",
+        "form": "nb",
+        "why_not": "structure/size finding with no named welfare need going unmet — untagged per B14"
+      }
+    ],
+    "DISABILITY": [
+      {
+        "text": "tilrettelagt arbeidsplass",
+        "form": "nb",
+        "why_not": "a bare accommodation noun with no named underlying condition is too vague to tag on its own"
+      },
+      {
+        "text": "virker litt tungnem i blant",
+        "form": "nb",
+        "why_not": "an unsubstantiated lay impression with no named diagnosis or condition — not a disability disclosure"
+      },
+      {
+        "text": "arbeidsledig",
+        "form": "nb",
+        "why_not": "unemployment status alone is EMPLOYMENT_INFO territory, not a disability fact"
+      },
+      {
+        "text": "gikk med krykker en periode etter en fotballskade",
+        "form": "nb",
+        "why_not": "a temporary, healed sports injury is not a disability — no lasting functional impairment is stated"
+      }
+    ],
+    "MEDICATION": [
+      {
+        "text": "Metformin for diabetes type 2",
+        "form": "nb",
+        "why_not": "per HEALTH_INFO's own rule (b) this must split into two spans — the medication ('Metformin') and the diagnosis ('diabetes type 2') — never one combined MEDICATION span"
+      },
+      {
+        "text": "kjøpte reseptfrie smertestillende på apoteket",
+        "form": "nb",
+        "why_not": "an over-the-counter purchase with no stated ongoing use tied to a condition is too weak a disclosure"
+      },
+      {
+        "text": "nektet å ta imot medisiner fra hjemmesykepleien",
+        "form": "nb",
+        "why_not": "a stated refusal is not a disclosure of what is used, per the B7 refusal principle applied by analogy"
+      }
+    ],
+    "BEHAVIORAL_PATTERN": [
+      {
+        "text": "Schæferen virker undervektig og har matt pels.",
+        "form": "nb",
+        "why_not": "the grammatical subject of the span is the animal, not the owner — this is HEALTH_INFO's welfare-condition population instead"
+      },
+      {
+        "text": "Jeg går tur forbi eiendommen regelmessig",
+        "form": "nb",
+        "why_not": "the reporting witness's own routine behaviour, not the data subject's — excluded even though the subject is grammatically human"
+      },
+      {
+        "text": "aggressiv",
+        "form": "nb",
+        "why_not": "a bare adjective with no subject and no repetition/pattern marker fails the definition's own test"
+      },
+      {
+        "text": "bjeffer utrøstelig i timevis hver dag",
+        "form": "nb",
+        "why_not": "the animal's own vocalisation offered as a sign of its state routes to HEALTH_INFO, not to this type"
+      },
+      {
+        "text": "går tur med hunden min forbi eiendommen hver dag",
+        "form": "nb",
+        "why_not": "witness's own routine behaviour, explicitly excluded by name in ANNOTATION_SPEC even though it mentions the data subject's dog"
+      }
+    ],
+    "CRIMINAL": [
+      {
+        "text": "eier en registrert rifle",
+        "form": "nb",
+        "why_not": "lawful, registered possession with no illegality asserted"
+      },
+      {
+        "text": "gjeld på over 500 000 NOK",
+        "form": "nb",
+        "why_not": "a financial state with no offense/accusation word — ECONOMIC_STATUS or FINANCIAL_INFO by amount, never CRIMINAL_RECORD"
+      },
+      {
+        "text": "aggressiv atferd overfor dyr og kolleger",
+        "form": "nb",
+        "why_not": "conduct with no legal-process language and no per-se offense — BEHAVIORAL_PATTERN"
+      },
+      {
+        "text": "sak nr. 2018/45678, Oslo Tingrett",
+        "form": "nb",
+        "why_not": "a bare case reference with no surrounding accusation/conviction clause is GOV_ID only"
+      },
+      {
+        "text": "nektet å oppgi informasjon om sin tidligere dom",
+        "form": "nb",
+        "why_not": "a stated refusal to disclose reveals nothing, per B7"
+      }
+    ],
+    "POLITICAL": [
+      {
+        "text": "Norges Renhet",
+        "form": "nb",
+        "why_not": "a bare organisation/party name with no attached affiliation verb is not, by itself, evidence of a person's opinion"
+      },
+      {
+        "text": "medlem av Den Evangelisk Lutherske Frikirke",
+        "form": "nb",
+        "why_not": "religious affiliation with no stated political character — RELIGIOUS_BELIEF territory, not POLITICAL"
+      },
+      {
+        "text": "lokal politiker",
+        "form": "nb",
+        "why_not": "a job title with no ideological content is EMPLOYMENT_INFO unless a party/opinion is also named"
+      },
+      {
+        "text": "aktiv i lokalpolitikken",
+        "form": "nb",
+        "why_not": "too vague on its own; only tag when a party name is present in the full clause"
+      },
+      {
+        "text": "skandale",
+        "form": "nb",
+        "why_not": "excluded on its own; only tag if the clause names the political actor/party involved"
+      }
+    ],
+    "SEXUAL_ORIENTATION": [
+      {
+        "text": "samboer",
+        "form": "nb",
+        "why_not": "a plain relationship-status noun with no orientation word — FAMILY_RELATION instead"
+      },
+      {
+        "text": "nektet å oppgi sin seksuelle orientering",
+        "form": "nb",
+        "why_not": "a stated refusal to disclose reveals nothing, per B7"
+      },
+      {
+        "text": "min seksuelle legning er privat og irrelevant",
+        "form": "nb",
+        "why_not": "a refusal framed as a privacy statement still discloses nothing, per B7/B24's note"
+      },
+      {
+        "text": "mannlig kollega",
+        "form": "nb",
+        "why_not": "a generic workplace descriptor does not by itself disclose orientation"
+      },
+      {
+        "text": "ateist",
+        "form": "nb",
+        "why_not": "a religious/political self-identifier lexically adjacent to this cluster but categorically unrelated"
+      },
+      {
+        "text": "involvert i en offentlig skandale knyttet til et forhold med en mindreårig",
+        "form": "nb",
+        "why_not": "per B24, a relationship with a minor is CRIMINAL_RECORD regardless of the parties' genders — never tagged here even though it describes a relationship"
+      }
+    ],
+    "FINANCIAL": [
+      {
+        "text": "skatteunndragelse",
+        "form": "nb",
+        "why_not": "names a criminal offense — CRIMINAL_RECORD wins by precedence, even without an accusation verb"
+      },
+      {
+        "text": "sliter økonomisk",
+        "form": "nb",
+        "why_not": "no number, no named instrument — ECONOMIC_STATUS"
+      },
+      {
+        "text": "Sørensen Fisk AS",
+        "form": "nb",
+        "why_not": "an employer identity with no debt/loan context is EMPLOYMENT_INFO, not a financial fact"
+      },
+      {
+        "text": "forsøk på skattesvindel",
+        "form": "nb",
+        "why_not": "'svindel' is an offense noun — CRIMINAL_RECORD wins"
+      }
+    ],
+    "ECONOMIC_STATUS": [
+      {
+        "text": "gjeld på over 700 000 NOK",
+        "form": "nb",
+        "why_not": "a quantified figure is FINANCIAL_INFO, not ECONOMIC_STATUS"
+      },
+      {
+        "text": "skattesvik",
+        "form": "nb",
+        "why_not": "names an offense — CRIMINAL_RECORD"
+      },
+      {
+        "text": "mistet jobben",
+        "form": "nb",
+        "why_not": "alone, answering an occupation question, this is EMPLOYMENT, not ECONOMIC_STATUS, unless paired with an explicit hardship-consequence clause"
+      },
+      {
+        "text": "utestående gjeld på 789 000 NOK",
+        "form": "nb",
+        "why_not": "quantified — FINANCIAL_INFO"
+      }
+    ],
+    "BIOMETRIC_DATA": [
+      {
+        "text": "høy og mørkhåret",
+        "form": "nb",
+        "why_not": "a routine physical description with no identification method or purpose named"
+      },
+      {
+        "text": "bilder av personen tatt på stedet",
+        "form": "nb",
+        "why_not": "an image reference with no unique-identification method named is IDENTIFIABLE_IMAGE's own (unmapped) territory, not biometric data"
+      }
+    ],
+    "GENETIC_DATA": [
+      {
+        "text": "diabetes type 2",
+        "form": "nb",
+        "why_not": "a named diagnosis with no genetic-testing method stated is HEALTH_INFO's domain instead"
+      },
+      {
+        "text": "arvelig i familien, ifølge eieren",
+        "form": "nb",
+        "why_not": "a family medical-history mention with no genetic test named is too vague on its own"
+      }
+    ],
+    "IMMIGRATION_STATUS": [
+      {
+        "text": "norsk statsborger",
+        "form": "nb",
+        "why_not": "a bare citizenship/nationality fact with no immigration-process content is NATIONALITY's territory"
+      },
+      {
+        "text": "Visumnummer: UDI-2023-004521",
+        "form": "nb",
+        "why_not": "a visa/permit reference number alone with no status statement is VISA_NUMBER (mapped to GOV_ID) instead"
+      }
+    ],
+    "AGE_INFO": [
+      {
+        "text": "10 år",
+        "form": "nb",
+        "why_not": "a bare age numeral with no vulnerability/capacity framing is AGE, mapped to DATE_TIME"
+      },
+      {
+        "text": "to barn, Sondre (15) og Maren (12)",
+        "form": "nb",
+        "why_not": "ages absorbed as a family-member parenthetical stay inside the FAMILY_RELATION span"
+      }
+    ],
+    "CONTEXT_SENSITIVE": [
+      {
+        "text": "mistenker rusmisbruk",
+        "form": "nb",
+        "why_not": "redistributed to CRIMINAL/HEALTH depending on framing, never this type — see ANNOTATION_SPEC's Removed Types table"
+      },
+      {
+        "text": "muligens ulovlig spillvirksomhet",
+        "form": "nb",
+        "why_not": "redistributed to CRIMINAL, not this type"
+      },
+      {
+        "text": "Fylke: Vestland",
+        "form": "nb",
+        "why_not": "bare administrative metadata, dropped entirely, never tagged under any type"
+      },
+      {
+        "text": "Referanse: 187406",
+        "form": "nb",
+        "why_not": "agency intake routing metadata, left untagged under GOV_ID's own explicit exclusion, and never revived under this type"
+      }
+    ],
+    "ACADEMIC_RECORD": [
+      {
+        "text": "Universitetet i Bergen",
+        "form": "nb",
+        "why_not": "a bare institution name with no credential/enrolment fact attached is not, on its own, an academic record"
+      },
+      {
+        "text": "dyktig og lærevillig",
+        "form": "nb",
+        "why_not": "a generic evaluative characterisation with no named credential, grade, or institution"
+      }
+    ],
+    "EMPLOYMENT": [
+      {
+        "text": "medlem av det lokale hagelaget",
+        "form": "nb",
+        "why_not": "a hobby club is not a job"
+      },
+      {
+        "text": "Dr. Astrid Sæther",
+        "form": "nb",
+        "why_not": "the name itself is PERSON; only an attached role/title text is EMPLOYMENT_INFO"
+      },
+      {
+        "text": "kandidat til kommunestyret",
+        "form": "nb",
+        "why_not": "political candidacy is POLITICAL_CASE's domain"
+      },
+      {
+        "text": "Bergen Tingrett",
+        "form": "nb",
+        "why_not": "a court name incidentally mentioned is not the subject's employer"
+      }
+    ],
+    "FAMILY_RELATION": [
+      {
+        "text": "eieren",
+        "form": "nb",
+        "why_not": "an ownership role, never FAMILY_RELATION"
+      },
+      {
+        "text": "nestlederen",
+        "form": "nb",
+        "why_not": "an organisational role — EMPLOYMENT_INFO"
+      },
+      {
+        "text": "vold i nære relasjoner",
+        "form": "nb",
+        "why_not": "CRIMINAL_RECORD wins over FAMILY_RELATION despite containing the word 'relasjoner'"
+      },
+      {
+        "text": "nabo til Hans Petter Wiik",
+        "form": "nb",
+        "why_not": "a non-kinship social tie falls outside this type's definition and has no other home"
+      }
+    ]
+  }
+}

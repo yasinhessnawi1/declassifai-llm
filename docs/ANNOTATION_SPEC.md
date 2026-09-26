@@ -286,6 +286,16 @@ and the scandal clause separately, and they do not merge.
   `har nektet å oppgi informasjon om sin seksuelle orientering` is not SEXUAL_ORIENTATION,
   and neither is `min seksuelle legning er privat og irrelevant`.
 
+**B26 — The reporter's own occupation is EMPLOYMENT_INFO.** The interview template asks
+`Har du et yrke eller en spesiell rolle som Mattilsynet bør vite om?`, and a substantive
+answer is tagged: `utdannet sykepleier`, `jobber for tiden i en dyrebutikk`, `utdannet
+veterinærassistent`, `pensjonert lærer`. Gold tags 51 such answers against 2. This does not
+conflict with B19's exclusion of an incidental organisation -- that rule is about a company
+name appearing in passing, while this is the person's own stated role, and two annotators
+read the tension the same way before it was written down.
+- A bare `Nei` or `Ingen` answers nothing and is untagged.
+- Tag the role clause, not a standalone organisation name inside it.
+
 **B25 — An address makes the subject of an allegation identifiable; nothing does not.**
 CRIMINAL_RECORD, and the other types that attach to a natural person, need a data subject.
 Under GDPR Art. 4(1) that subject may be identified *indirectly*, so a specific address is
