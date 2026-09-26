@@ -273,6 +273,17 @@ field means *employer*, not *belief*.
 - **Not** a placeholder occupying the field without naming anything: `Privatperson`,
   `Ukjent`, `Not applicable`, `N/A`.
 
+**B24 — A relationship with a minor is CRIMINAL_RECORD, not SEXUAL_ORIENTATION.** The
+disclosed fact is a criminal matter, and the parties' genders are beside the point. Gold
+tags it this way three times (`involvert i en offentlig skandale knyttet til et forhold med
+en mindreårig`, `pågående etterforskning knyttet til seksuelle overgrep mot mindreårige`)
+against one contrary reading, which has been corrected. Where the same document also states
+an orientation, that stays its own SEXUAL_ORIENTATION span -- A015 carries `åpent homofil`
+and the scandal clause separately, and they do not merge.
+- A refusal to disclose orientation discloses nothing and is untagged per B7:
+  `har nektet å oppgi informasjon om sin seksuelle orientering` is not SEXUAL_ORIENTATION,
+  and neither is `min seksuelle legning er privat og irrelevant`.
+
 **B20 — GOV_ID is decided by the issuer, not by the label.** Tag an identifier when a
 **public authority** issued it, whatever the field is called. Leave it untagged when a
 private body issued it, however official the label looks. This replaces reliance on the
