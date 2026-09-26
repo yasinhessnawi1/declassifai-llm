@@ -229,12 +229,17 @@ kept when it is the only thing that does so.
 **B19 — The organisation in an employer field is EMPLOYMENT_INFO.** The value of a
 `Navn på dyreeier eller virksomhet:` field, and the organisation named in an
 `Org.nr.: NNNNNNNNN (Name)` parenthetical, is the entity under inspection and is tagged
-EMPLOYMENT_INFO when the document identifies a **principal** for it — an owner, innehaver,
-daglig leder or other person the business is attributed to. A person merely appearing in
-the document, such as the reporter or a neighbour, is not enough: with no principal the
-business name identifies nobody and is not personal data. All 20 gold batches follow this
-reading; the looser wording it replaces ("whenever the document names a person") never
-matched the practice. This holds regardless of what the
+EMPLOYMENT_INFO **when the organisation is a subject of the document** — the entity being
+inspected or reported on, or the workplace of a named person who is themselves a subject.
+The test is the organisation's role in the document, not whether a human owner happens to
+be named. A company that appears only incidentally — the reporter's own employer, a
+neighbour's workplace — is not tagged, because it is not what the document is about.
+Measured across the gold set, organisations in a subject slot are tagged 37 times and left
+untagged 3. An earlier revision of this rule required a named **principal** (owner,
+innehaver, daglig leder); that was inferred from too small a sample and contradicted by
+`batch_h` H011 and `batch_l` L006, which tag `Slakteri AS` on the strength of the
+`Org.nr.` parenthetical alone with only an `ansatt` named. The principal is sufficient, not
+necessary. This holds regardless of what the
 organisation does: a congregation is treated exactly like a farm or a company, because the
 field means *employer*, not *belief*.
 - `Org.nr.: 987654321 (Stavanger Menighetssenter)` → EMPLOYMENT_INFO
@@ -469,7 +474,7 @@ HEALTH_INFO tags a clause that states or strongly implies a medical condition, d
 *Note on scope: this animal-condition Include bullet is HEALTH_INFO's own pre-existing span population (documented in animal-welfare interview-template documents) — it is not a migration target for the former CONTEXT_SENSITIVE type's separate animal-disease bucket, which is dropped entirely rather than redirected here (see Removed types above).*
 
 #### Exclude
-- Generic behavioural descriptions with no medical content (`aggressiv atferd`, `stereotyp atferd`) — BEHAVIORAL_PATTERN, not HEALTH_INFO, for a human or an animal-owner's conduct, unless a clinical diagnosis word is present.
+- Generic behavioural descriptions of a **human** with no medical content (`aggressiv atferd`, `stereotyp atferd`) — BEHAVIORAL_PATTERN, not HEALTH_INFO, unless a clinical diagnosis word is present. This does **not** extend to an animal: BEHAVIORAL_PATTERN excludes animal subjects outright, so routing animal stereotypy there would drop it from the schema entirely. An animal's stereotypy, pacing or apathy is HEALTH_INFO — a welfare condition, tagged in 37 gold documents and 0 as BEHAVIORAL_PATTERN.
 - Financial/behavioural euphemisms that aren't a diagnosis: `spilleavhengighet` (gambling) is BEHAVIORAL_PATTERN, not HEALTH_INFO, unless the text names a clinical diagnosis (`diagnostisert spillavhengighet` would qualify).
 
 #### Boundary rule (per subcategory)
@@ -509,7 +514,7 @@ HEALTH_INFO tags a clause that states or strongly implies a medical condition, d
 
 #### Negative examples
 1. `spilleavhengighet` — gambling addiction is BEHAVIORAL_PATTERN, not HEALTH_INFO, unless a clinical diagnosis frame is present.
-2. `aggressiv atferd` / `stereotyp atferd` alone, with no diagnostic word — BEHAVIORAL_PATTERN, not HEALTH_INFO, whether describing a human or an owner's animal.
+2. `aggressiv atferd` / `stereotyp atferd` alone, with no diagnostic word, **describing a human** — BEHAVIORAL_PATTERN, not HEALTH_INFO. The same words describing an animal are HEALTH_INFO (see the Exclude note above); BEHAVIORAL_PATTERN cannot take an animal subject.
 
 #### Resolved conflicts
 - `sår på venstre hånd` vs. `synlig sår på venstre hånd` → **longer form**.

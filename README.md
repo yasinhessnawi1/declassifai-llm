@@ -12,7 +12,9 @@ Qwen2.5-3B-Instruct (base, frozen, 4-bit quantized = ~2.5 GB VRAM)
     = Norwegian NER specialist that outputs structured JSON
 ```
 
-**Training data:** 32,439 Norwegian documents labeled by Gemini with 18 entity types.
+**Training data:** 32,439 raw Norwegian documents labeled by Gemini. The Gemini labels
+are being replaced -- see `docs/DATA_QUALITY.md` for the audit and
+`docs/ANNOTATION_SPEC.md` for the 16-type schema that supersedes them.
 
 **Hardware:** RTX 2060 (6GB VRAM) with 4-bit quantization + gradient checkpointing.
 Peak VRAM during training: ~5.6 GB.
@@ -127,9 +129,15 @@ training:
   eval_steps: 50
 ```
 
-## Entity Types (18)
+## Entity Types (16)
 
-The model extracts these entity types from Norwegian text:
+Defined in `docs/ANNOTATION_SPEC.md`, which is the authority: each type has a
+boundary definition and the shared rules B1-B20 govern span edges, overlap and
+precedence. `CONTEXT_SENSITIVE` and `IDENTIFIABLE_IMAGE` were cut from the original
+18 -- neither identifies a natural person under GDPR Art. 4(1).
+
+Counts below are raw Gemini spans in `data/combined_data.jsonl`, before cleanup.
+They are a measure of the input, not of the schema.
 
 | Type | Description | Dataset Count |
 |------|-------------|---------------|
@@ -143,13 +151,11 @@ The model extracts these entity types from Norwegian text:
 | NO_PHONE_NUMBER | Phone numbers | 32,217 |
 | EMAIL_ADDRESS | Email addresses | 30,937 |
 | FAMILY_RELATION | Family relationships | 30,154 |
-| CONTEXT_SENSITIVE | Other sensitive info | 24,277 |
 | FINANCIAL_INFO | Financial data | 24,036 |
 | EMPLOYMENT_INFO | Job titles, workplaces | 22,651 |
 | POLITICAL_CASE | Political opinions | 19,137 |
 | BEHAVIORAL_PATTERN | Behavioral patterns | 16,431 |
 | ECONOMIC_STATUS | Economic references | 15,221 |
-| IDENTIFIABLE_IMAGE | Photo/video references | 15,019 |
 | SEXUAL_ORIENTATION | Sexual orientation | 11,817 |
 
 ## How It Works
