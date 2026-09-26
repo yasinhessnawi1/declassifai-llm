@@ -1,0 +1,232 @@
+{
+  "slug": "qwen2.5-7b-instruct",
+  "n_prompts": 11,
+  "mean_value_rate": 0.9177489177489178,
+  "mean_clause_rate_seeded": 0.5625,
+  "mean_marker_discipline_rate": 0.3333333333333333,
+  "n_with_english_tell": 0,
+  "n_with_placeholder": 0,
+  "n_with_echo": 0,
+  "per_prompt": [
+    {
+      "id": "P01_gp_referral_nb",
+      "chars": 1896,
+      "values_total": 7,
+      "values_hit": 7,
+      "values_missing": [],
+      "value_rate": 1.0,
+      "clauses_total": 2,
+      "clauses_hit": 0,
+      "clauses_missing": [
+        "har diagnosen bipolar lidelse type II",
+        "bruker for tiden lamotrigin 200 mg daglig"
+      ],
+      "clause_rate": 0.0,
+      "markers_expected": 0,
+      "markers_found": 0,
+      "marker_discipline_rate": null,
+      "english_hits": [],
+      "placeholder_hits": [],
+      "echo_hits": []
+    },
+    {
+      "id": "P02_police_report_nb",
+      "chars": 1636,
+      "values_total": 7,
+      "values_hit": 6,
+      "values_missing": [
+        "date"
+      ],
+      "value_rate": 0.8571428571428571,
+      "clauses_total": 2,
+      "clauses_hit": 1,
+      "clauses_missing": [
+        "hadde en promille p\u00e5 1,4 p\u00e5 gjerningstidspunktet"
+      ],
+      "clause_rate": 0.5,
+      "markers_expected": 0,
+      "markers_found": 0,
+      "marker_discipline_rate": null,
+      "english_hits": [],
+      "placeholder_hits": [],
+      "echo_hits": []
+    },
+    {
+      "id": "P03_nav_decision_nb",
+      "chars": 1784,
+      "values_total": 7,
+      "values_hit": 7,
+      "values_missing": [],
+      "value_rate": 1.0,
+      "clauses_total": 2,
+      "clauses_hit": 2,
+      "clauses_missing": [],
+      "clause_rate": 1.0,
+      "markers_expected": 0,
+      "markers_found": 0,
+      "marker_discipline_rate": null,
+      "english_hits": [],
+      "placeholder_hits": [],
+      "echo_hits": []
+    },
+    {
+      "id": "P04_dismissal_hr_nb",
+      "chars": 1170,
+      "values_total": 7,
+      "values_hit": 5,
+      "values_missing": [
+        "org_number",
+        "hr_contact"
+      ],
+      "value_rate": 0.7142857142857143,
+      "clauses_total": 2,
+      "clauses_hit": 1,
+      "clauses_missing": [
+        "er tillitsvalgt i Fagforbundet"
+      ],
+      "clause_rate": 0.5,
+      "markers_expected": 0,
+      "markers_found": 0,
+      "marker_discipline_rate": null,
+      "english_hits": [],
+      "placeholder_hits": [],
+      "echo_hits": []
+    },
+    {
+      "id": "P05_udi_decision_nn",
+      "chars": 1442,
+      "values_total": 7,
+      "values_hit": 6,
+      "values_missing": [
+        "address"
+      ],
+      "value_rate": 0.8571428571428571,
+      "clauses_total": 2,
+      "clauses_hit": 1,
+      "clauses_missing": [
+        "har status som overforingsflyktning fra UNHCR"
+      ],
+      "clause_rate": 0.5,
+      "markers_expected": 0,
+      "markers_found": 0,
+      "marker_discipline_rate": null,
+      "english_hits": [],
+      "placeholder_hits": [],
+      "echo_hits": []
+    },
+    {
+      "id": "P06_barnevern_nn",
+      "chars": 540,
+      "values_total": 7,
+      "values_hit": 7,
+      "values_missing": [],
+      "value_rate": 1.0,
+      "clauses_total": 2,
+      "clauses_hit": 0,
+      "clauses_missing": [
+        "kjem ofte svolten og uvaska til barnehagen",
+        "mor har opplyst om eige rusmisbruk i samtale"
+      ],
+      "clause_rate": 0.0,
+      "markers_expected": 0,
+      "markers_found": 0,
+      "marker_discipline_rate": null,
+      "english_hits": [],
+      "placeholder_hits": [],
+      "echo_hits": []
+    },
+    {
+      "id": "P07_inkasso_nb",
+      "chars": 1591,
+      "values_total": 7,
+      "values_hit": 7,
+      "values_missing": [],
+      "value_rate": 1.0,
+      "clauses_total": 2,
+      "clauses_hit": 2,
+      "clauses_missing": [],
+      "clause_rate": 1.0,
+      "markers_expected": 0,
+      "markers_found": 0,
+      "marker_discipline_rate": null,
+      "english_hits": [],
+      "placeholder_hits": [],
+      "echo_hits": []
+    },
+    {
+      "id": "P08_vet_inspection_nn",
+      "chars": 1849,
+      "values_total": 7,
+      "values_hit": 7,
+      "values_missing": [],
+      "value_rate": 1.0,
+      "clauses_total": 2,
+      "clauses_hit": 2,
+      "clauses_missing": [],
+      "clause_rate": 1.0,
+      "markers_expected": 0,
+      "markers_found": 0,
+      "marker_discipline_rate": null,
+      "english_hits": [],
+      "placeholder_hits": [],
+      "echo_hits": []
+    },
+    {
+      "id": "P09_gp_referral_marked_nb",
+      "chars": 1539,
+      "values_total": 6,
+      "values_hit": 6,
+      "values_missing": [],
+      "value_rate": 1.0,
+      "markers_expected": 2,
+      "markers_found": 0,
+      "marker_type_match": 0,
+      "marker_discipline_rate": 0.0,
+      "stray_marker_char": true,
+      "clauses_total": null,
+      "clauses_hit": null,
+      "english_hits": [],
+      "placeholder_hits": [],
+      "echo_hits": []
+    },
+    {
+      "id": "P10_police_report_marked_nn",
+      "chars": 1887,
+      "values_total": 6,
+      "values_hit": 4,
+      "values_missing": [
+        "fnr",
+        "date"
+      ],
+      "value_rate": 0.6666666666666666,
+      "markers_expected": 2,
+      "markers_found": 1,
+      "marker_type_match": 1,
+      "marker_discipline_rate": 0.5,
+      "stray_marker_char": false,
+      "clauses_total": null,
+      "clauses_hit": null,
+      "english_hits": [],
+      "placeholder_hits": [],
+      "echo_hits": []
+    },
+    {
+      "id": "P11_nav_decision_marked_nb",
+      "chars": 1181,
+      "values_total": 6,
+      "values_hit": 6,
+      "values_missing": [],
+      "value_rate": 1.0,
+      "markers_expected": 2,
+      "markers_found": 1,
+      "marker_type_match": 1,
+      "marker_discipline_rate": 0.5,
+      "stray_marker_char": false,
+      "clauses_total": null,
+      "clauses_hit": null,
+      "english_hits": [],
+      "placeholder_hits": [],
+      "echo_hits": []
+    }
+  ]
+}

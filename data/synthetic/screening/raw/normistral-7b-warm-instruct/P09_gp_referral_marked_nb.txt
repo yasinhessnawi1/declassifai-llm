@@ -1,0 +1,43 @@
+---
+
+### Pasientinformasjon
+
+* Pasientens navn: Hilde Marie Tveit
+* Fødselsnummer: 21036512398
+* Gateadresse: Furuveien 5
+* Postnummer og sted: 1440 Drøbak
+* Telefonnummer: +47 92345671
+* Henvisningsdato: 02.06.2026
+
+### Anamnese
+
+* Angi følgende informasjon:
+  * Identifiser en medisinsk tilstand eller sykdom: Det er viktig å forstå at det kan være en medisinsk tilstand eller sykdom som påvirker pasienten.
+  * Eventuelle tidligere medisinske tilstander eller historie: Det er nyttig å vite om det har vært noen tidligere medisinske tilstander eller historie som kan påvirke denne pasientens nåværende tilstand.
+  * Nåværende medisiner: Det er viktig å vite om pasienten tar noen medisiner, da dette kan påvirke deres behandlingsplan.
+* Angi følgende informasjon:
+  * Identifiser en medisinsk tilstand eller sykdom: Det er viktig å forstå at det kan være en medisinsk tilstand eller sykdom som påvirker pasienten.
+  * Eventuelle tidligere medisinske tilstander eller historie: Det er nyttig å vite om det har vært noen tidligere medisinske tilstander eller historie som kan påvirke denne pasientens nåværende tilstand.
+  * Nåværende medisiner: Det er viktig å vite om pasienten tar noen medisiner, da dette kan påvirke deres behandlingsplan.
+
+---
+
+### Pasientens historie
+
+* Pasienten er en 32 år gammel kvinne som har opplevd tilbakevendende migrene i over et år. Hun har også opplevd svimmelhet og svakhet i høyre arm i det siste. Disse symptomene har gjort det vanskelig for henne å utføre daglige aktiviteter og jobbe.
+* Pasienten har prøvd flere reseptfrie og reseptbelagte medisiner for å lindre symptomene sine, men uten hell. Hun har blitt anbefalt å søke medisinsk hjelp fra en spesialist for videre evaluering og behandlingsalternativer.
+* Pasienten er for tiden arbeidsledig og mottar trygdeytelser. Hun bor sammen med foreldrene sine og har ingen barn.
+
+---
+
+### Diagnostisk hypotese
+
+* Basert på pasientens symptomer og medisinsk historie, mistenker spesialisten at pasienten kan ha en tilstand som påvirker nervesystemet, for eksempel multippel sklerose eller en annen nevrologisk lidelse. Det er viktig å gjennomføre en grundig evaluering for å bekrefte diagnosen og utvikle en passende behandlingsplan.
+* Spesialisten vil sannsynligvis bestille bildestudier, for eksempel en MR eller CT-skanning, for å visualisere pasientens hjerne og vurdere eventuelle potensielle skader eller avvik. I tillegg kan nevrologiske tester, blodprøver og andre diagnostiske prosedyrer anbefales for å gi en omfattende evaluering.
+
+---
+
+### Behandlingsplan
+
+* Hvis spesialisten bekrefter diagnosen multippel sklerose, vil behandlingsplanen sannsynligvis omfatte medisiner for å bremse sykdomsprogresjonen og håndtere symptomer. Pasienten kan bli foreskrevet sykdomsmodifiserende medisiner, som interferoner eller glatirameracetat, for å redusere betennelse og forhindre ytterligere skade på hjernen.
+* I tillegg kan symptomatiske medisiner, som smertestillende midler, antiemetika eller antidepressiva, foreskrives for å adressere

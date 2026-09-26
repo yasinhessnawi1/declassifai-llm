@@ -1,0 +1,19 @@
+Pasient
+
+Fødselsnummer: 03057512345
+Adresse: Fjellveien 12B, 0580 Oslo
+Telefon: +47 91234567
+Dato: 14.03.2026
+Fastlegekontorets organisasjonsnummer: 918234567
+
+Henvisningsgrunn
+
+Pasienten er en 45 år gammel kvinne som har vært til behandling hos meg i flere år. Hun har diagnosen bipolar lidelse type II og bruker for tiden lamotrigin 200 mg daglig.
+
+Anamnese
+
+Kari Andersen Solheim har vært plaget med depresjon i flere år, men har i tillegg hatt perioder med oppstemthet og forhøyet energi. Hun har tidligere vært innlagt på psykiatrisk avdeling, men har siden 2010 vært stabil på lamotrigin. De siste månedene har jeg imidlertid observert en økning i symptomene, og hun rapporterer om økt søvnbehov, nedsatt appetitt og nedsatt energi. Hun har også hatt tanker om selvmord, og jeg har vurdert det som nødvendig å henvise henne til spesialisthelsetjenesten for videre utredning og behandling.
+
+Konklusjon
+
+Jeg henviser Kari Andersen Solheim til distriktspsykiatrisk senter (DPS) for videre utredning og behandling. Jeg ber om at det gjøres en vurdering av hennes tilstand og at det utarbeides en behandlingsplan i samråd med pasienten.

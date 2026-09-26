@@ -1,0 +1,130 @@
+{
+  "model_id": "ltg/normistral-7b-warm-instruct",
+  "slug": "normistral-7b-warm-instruct",
+  "use_4bit": false,
+  "load_time_s": 36.420462131500244,
+  "max_new_tokens": 650,
+  "results": [
+    {
+      "id": "P01_gp_referral_nb",
+      "genre": "GP referral (henvisning)",
+      "lang": "nb",
+      "marked": false,
+      "gen_tokens": 650,
+      "elapsed_s": 23.480840921401978,
+      "tok_per_sec": 27.682143164112464,
+      "peak_vram_gb": 14.693786112,
+      "chars": 2694
+    },
+    {
+      "id": "P02_police_report_nb",
+      "genre": "police report (anmeldelse)",
+      "lang": "nb",
+      "marked": false,
+      "gen_tokens": 258,
+      "elapsed_s": 8.478482246398926,
+      "tok_per_sec": 30.429974670240135,
+      "peak_vram_gb": 14.598367232,
+      "chars": 1043
+    },
+    {
+      "id": "P03_nav_decision_nb",
+      "genre": "NAV benefit decision (vedtak)",
+      "lang": "nb",
+      "marked": false,
+      "gen_tokens": 546,
+      "elapsed_s": 17.909351348876953,
+      "tok_per_sec": 30.48686629481074,
+      "peak_vram_gb": 14.683903488,
+      "chars": 2059
+    },
+    {
+      "id": "P04_dismissal_hr_nb",
+      "genre": "dismissal letter / HR grievance",
+      "lang": "nb",
+      "marked": false,
+      "gen_tokens": 240,
+      "elapsed_s": 7.869790554046631,
+      "tok_per_sec": 30.49636433800547,
+      "peak_vram_gb": 14.590067712,
+      "chars": 983
+    },
+    {
+      "id": "P05_udi_decision_nn",
+      "genre": "UDI residence-permit decision",
+      "lang": "nn",
+      "marked": false,
+      "gen_tokens": 568,
+      "elapsed_s": 18.558876514434814,
+      "tok_per_sec": 30.605300895138676,
+      "peak_vram_gb": 14.688389632,
+      "chars": 2025
+    },
+    {
+      "id": "P06_barnevern_nn",
+      "genre": "barnevern concern report (bekymringsmelding)",
+      "lang": "nn",
+      "marked": false,
+      "gen_tokens": 297,
+      "elapsed_s": 9.701447486877441,
+      "tok_per_sec": 30.613988314809088,
+      "peak_vram_gb": 14.643881472,
+      "chars": 1021
+    },
+    {
+      "id": "P07_inkasso_nb",
+      "genre": "tax / inkasso letter",
+      "lang": "nb",
+      "marked": false,
+      "gen_tokens": 254,
+      "elapsed_s": 8.395291328430176,
+      "tok_per_sec": 30.255054894860343,
+      "peak_vram_gb": 14.599265792,
+      "chars": 1009
+    },
+    {
+      "id": "P08_vet_inspection_nn",
+      "genre": "veterinary inspection order",
+      "lang": "nn",
+      "marked": false,
+      "gen_tokens": 650,
+      "elapsed_s": 21.169724225997925,
+      "tok_per_sec": 30.70422614205592,
+      "peak_vram_gb": 14.69155328,
+      "chars": 2067
+    },
+    {
+      "id": "P09_gp_referral_marked_nb",
+      "genre": "GP referral (marked generation)",
+      "lang": "nb",
+      "marked": true,
+      "gen_tokens": 650,
+      "elapsed_s": 21.145907878875732,
+      "tok_per_sec": 30.738807892440256,
+      "peak_vram_gb": 14.69201664,
+      "chars": 3029
+    },
+    {
+      "id": "P10_police_report_marked_nn",
+      "genre": "police report (marked generation)",
+      "lang": "nn",
+      "marked": true,
+      "gen_tokens": 282,
+      "elapsed_s": 9.162345170974731,
+      "tok_per_sec": 30.77814628653633,
+      "peak_vram_gb": 14.642889728,
+      "chars": 814
+    },
+    {
+      "id": "P11_nav_decision_marked_nb",
+      "genre": "NAV benefit decision (marked generation)",
+      "lang": "nb",
+      "marked": true,
+      "gen_tokens": 363,
+      "elapsed_s": 11.989474058151245,
+      "tok_per_sec": 30.276557440249714,
+      "peak_vram_gb": 14.646667264,
+      "chars": 1606
+    }
+  ]
+}

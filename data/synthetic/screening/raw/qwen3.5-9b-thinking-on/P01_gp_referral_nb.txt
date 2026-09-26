@@ -1,0 +1,28 @@
+Thinking Process:
+
+1.  **Analyze the Request:**
+    *   **Role:** General Practitioner (Fastlege).
+    *   **Task:** Write a referral letter (henvisning) to a District Psychiatric Centre (DPS) in Bokmål.
+    *   **Format:** Structured referral form with specific field headers (Pasient, Fødselsnummer, Adresse, Telefon, Dato, Fastlegens org.nr, Henvisningsgrunn, Anamnese, Konklusjon).
+    *   **Constraints:**
+        *   Use EXACT values provided (no changes to spelling or format).
+        *   Specific sentences in the Anamnese section must be verbatim (exact wording).
+        *   Word count: Approximately 250-400 words.
+        *   Language: Norwegian Bokmål (No English).
+        *   No placeholders (e.g., [navn]).
+        *   All fields must be filled with the provided values.
+
+2.  **Verify Provided Values:**
+    *   Pasient: Kari Andersen Solheim
+    *   Fødselsnummer: 03057512345
+    *   Adresse: Fjellveien 12B
+    *   Postnummer og sted: 0580 Oslo
+    *   Telefon: +47 91234567
+    *   Dato: 14.03.2026
+    *   Fastlegens org.nr: 918234567
+    *   Sentence 1: "har diagnosen bipolar lidelse type II"
+    *   Sentence 2: "bruker for tiden lamotrigin 200 mg daglig"
+
+3.  **Drafting the Content:**
+
+    *   *

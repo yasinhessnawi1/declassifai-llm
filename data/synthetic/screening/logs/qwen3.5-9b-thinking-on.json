@@ -1,0 +1,20 @@
+{
+  "model_id": "Qwen/Qwen3.5-9B",
+  "slug": "qwen3.5-9b-thinking-on",
+  "use_4bit": false,
+  "load_time_s": 17.234583139419556,
+  "max_new_tokens": 400,
+  "results": [
+    {
+      "id": "P01_gp_referral_nb",
+      "genre": "GP referral (henvisning)",
+      "lang": "nb",
+      "marked": false,
+      "gen_tokens": 400,
+      "elapsed_s": 27.027733325958252,
+      "tok_per_sec": 14.799613240812462,
+      "peak_vram_gb": 18.069689344,
+      "chars": 1222
+    }
+  ]
+}

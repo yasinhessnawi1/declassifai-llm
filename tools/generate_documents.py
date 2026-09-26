@@ -284,21 +284,19 @@ _VALUE_KIND_TYPES = {
 # record's own sampled people. Left as-is, the same name would recur
 # identically across every document that draws that clause entry, and the name
 # would not be registered as its own PERSON span even though it names someone.
-# `_localize_clause_names` finds a preposition + capitalised name pattern,
-# swaps in a freshly sampled name, and reports it so the caller can add it as
-# its own PlannedValue(type="PERSON", ...) -- both fixes the recurring-name
-# staleness and gives the name proper span coverage for G7.
-_CLAUSE_NAME_RE = re.compile(
-    r"\b(mot|til|av|fra|hos)\s+([A-ZÆØÅ][a-zæøå]+)(?:\s+([A-ZÆØÅ][a-zæøå]+))?"
-)
-_ALL_FIRST_NAMES = set(data.FIRST_NAMES_MALE) | set(data.FIRST_NAMES_FEMALE)
-_ALL_SURNAMES = set(data.SURNAMES)
+# The clause bank writes embedded names as placeholders rather than literal
+# names, so each document gets a fresh, gender-consistent name and the caller
+# knows exactly which characters to register as a nested PERSON span.
+# `{SURNAME_FAM}` (Familien X) and `{SURNAME_ORG}` (X Sjømat AS) are filled
+# with a surname but never tagged PERSON, per the FAMILY_RELATION overlap
+# policy in docs/ANNOTATION_SPEC.md.
+_CLAUSE_PLACEHOLDER_RE = re.compile(r"\{(PERSON|PERSON_M|PERSON_F|SURNAME_FAM|SURNAME_ORG)\}")
 
 
 def localize_clause_names(
     rng: random.Random, text: str, public_figures: Set[str],
 ) -> Tuple[str, List[str]]:
-    """Replace fixed personal names embedded in a seeded clause with fresh ones.
+    """Fill the name placeholders of a clause-bank entry with fresh names.
 
     Args:
         rng: Seeded RNG.
@@ -306,28 +304,29 @@ def localize_clause_names(
         public_figures: Embedded public-figure set, to avoid an unlucky collision.
 
     Returns:
-        Tuple of (possibly-rewritten text, list of the names substituted in,
-        so the caller can register them as their own PERSON spans).
+        Tuple of (filled text, list of the full names substituted in, so the
+        caller can register them as their own PERSON spans).
     """
     introduced: List[str] = []
 
-    def _sub(m: "re.Match") -> str:
-        prep, w1, w2 = m.group(1), m.group(2), m.group(3)
-        if w2 and w1 in _ALL_FIRST_NAMES:
-            for _ in range(20):
-                first = rng.choice(data.FIRST_NAMES_MALE if rng.random() < 0.5 else data.FIRST_NAMES_FEMALE)
-                last = rng.choice(data.SURNAMES)
-                full = f"{first} {last}"
-                if full not in public_figures:
-                    introduced.append(full)
-                    return f"{prep} {full}"
-        if not w2 and w1 in _ALL_SURNAMES:
-            new_surname = rng.choice(data.SURNAMES)
-            introduced.append(new_surname)
-            return f"{prep} {new_surname}"
-        return m.group(0)
+    def _fresh_full(kind: str) -> str:
+        male = kind == "PERSON_M" or (kind == "PERSON" and rng.random() < 0.5)
+        for _ in range(20):
+            first = rng.choice(data.FIRST_NAMES_MALE if male else data.FIRST_NAMES_FEMALE)
+            full = f"{first} {rng.choice(data.SURNAMES)}"
+            if full not in public_figures:
+                break
+        return full
 
-    return _CLAUSE_NAME_RE.sub(_sub, text), introduced
+    def _sub(m: "re.Match") -> str:
+        kind = m.group(1)
+        if kind.startswith("SURNAME"):
+            return rng.choice(data.SURNAMES)
+        full = _fresh_full(kind)
+        introduced.append(full)
+        return full
+
+    return _CLAUSE_PLACEHOLDER_RE.sub(_sub, text), introduced
 
 
 def sample_record(
@@ -379,6 +378,11 @@ def sample_record(
         field_label = genres_mod.FIELD_LABELS.get(etype, etype)
         value_kind = entry.get("value_kind", "value")
 
+        if etype == "PERSON":
+            target = rng.choice([person] + other_people) if other_people else person
+            planned.append(PlannedValue(etype, entry["tier"], "value", target.full_name, None, field_label))
+            continue
+
         if value_kind == "value" or etype in _VALUE_KIND_TYPES:
             try:
                 value, checksum_valid = _generate_value_kind(etype, rng, person, invalid_rate=0.0)
@@ -399,22 +403,21 @@ def sample_record(
             planned.append(PlannedValue(etype, entry["tier"], "value", value, None, field_label, checksum_valid))
             continue
 
-        if etype == "PERSON":
-            target = rng.choice([person] + other_people) if other_people else person
-            planned.append(PlannedValue(etype, entry["tier"], "value", target.full_name, None, field_label))
-            continue
-
         candidates = clause_bank.get(etype, [])
         matching = [c for c in candidates if c.get("form") == form] or candidates
         if not matching:
-            text = f"har forhold knyttet til {etype.replace('_', ' ').lower()} beskrevet i saken"
-            difficulty = "stub"
+            continue
         else:
             chosen = rng.choice(matching)
             text = chosen["text"]
             difficulty = chosen.get("difficulty")
 
         chosen_strategy = strategy
+        if chosen_strategy == "seeded":
+            text, introduced_names = localize_clause_names(rng, text, public_figures)
+            for name in introduced_names:
+                planned.append(PlannedValue("PERSON", "B", "value", name, None, genres_mod.FIELD_LABELS.get("PERSON", "Navn")))
+
         planned.append(
             PlannedValue(
                 etype, entry["tier"], "clause",
@@ -566,6 +569,12 @@ def build_output(record: Record, clean_text: str, marked_spans: Dict[str, List[s
         for span in spans:
             if span in clean_text and span not in output[etype]:
                 output[etype].append(span)
+    # ANNOTATION_SPEC nesting rule: a postal code written inside an address value
+    # is tagged POSTAL_CODE as well as being part of the ADDRESS span.
+    for address in output.get("ADDRESS", []):
+        for code in re.findall(r"(?<!\d)\d{4}(?!\d)", address):
+            if code not in output["POSTAL_CODE"]:
+                output["POSTAL_CODE"].append(code)
     return {k: v for k, v in output.items() if v}
 
 

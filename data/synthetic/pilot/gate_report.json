@@ -1,0 +1,129 @@
+{
+  "requested": 50,
+  "accepted": 50,
+  "discarded": 0,
+  "backend": "mock",
+  "strategy": "seeded",
+  "used_fallback_taxonomy": false,
+  "used_fallback_clause_bank": false,
+  "types_config_used": "data/synthetic/types_config.yaml",
+  "G1_validate_labels": {
+    "passed": true,
+    "output": "records                  : 50\nmalformed JSON lines     : 0\nlabeled spans            : 657\ndistinct documents       : 50\ndocs w/ conflicting dupes: 0\nallowed entity types     : 59\n\nviolations: 0\n"
+  },
+  "G5_distribution": {
+    "genre_counts": {
+      "gp_referral": 10,
+      "police_report": 10,
+      "nav_decision": 10,
+      "dismissal_letter": 10,
+      "udi_decision": 10
+    },
+    "requested_genres": [
+      "gp_referral",
+      "police_report",
+      "nav_decision",
+      "dismissal_letter",
+      "udi_decision"
+    ],
+    "missing_genres": [],
+    "form_counts": {
+      "nb": 36,
+      "nn": 14
+    },
+    "nn_share": 0.28,
+    "length_min": 501,
+    "length_max": 950,
+    "length_mean": 696.64
+  },
+  "G6_diversity": {
+    "documents": 50,
+    "distinct_skeletons": 50,
+    "distinct_ratio": 1.0
+  },
+  "G7_unplanned_pii_on_accepted": {
+    "policy": "reject",
+    "residual_findings": 0
+  },
+  "G7_false_positive_measurement_on_gold": {
+    "docs_checked": 8,
+    "total_findings": 5,
+    "detail": [
+      {
+        "id": "A001",
+        "clean": false,
+        "findings": [
+          {
+            "pattern": "name_bigram",
+            "match": "Jehovas Vitner",
+            "start": 1206,
+            "end": 1220
+          }
+        ]
+      },
+      {
+        "id": "B001",
+        "clean": true,
+        "findings": []
+      },
+      {
+        "id": "C001",
+        "clean": true,
+        "findings": []
+      },
+      {
+        "id": "D001",
+        "clean": false,
+        "findings": [
+          {
+            "pattern": "name_bigram",
+            "match": "Jehovas Vitner",
+            "start": 2881,
+            "end": 2895
+          }
+        ]
+      },
+      {
+        "id": "E001",
+        "clean": false,
+        "findings": [
+          {
+            "pattern": "postal_like",
+            "match": "5017 Bergen",
+            "start": 228,
+            "end": 239
+          }
+        ]
+      },
+      {
+        "id": "F001",
+        "clean": true,
+        "findings": []
+      },
+      {
+        "id": "G001",
+        "clean": false,
+        "findings": [
+          {
+            "pattern": "postal_like",
+            "match": "1350 Lommedalen",
+            "start": 215,
+            "end": 230
+          }
+        ]
+      },
+      {
+        "id": "H001",
+        "clean": false,
+        "findings": [
+          {
+            "pattern": "postal_like",
+            "match": "3045 Drammen",
+            "start": 223,
+            "end": 235
+          }
+        ]
+      }
+    ]
+  }
+}

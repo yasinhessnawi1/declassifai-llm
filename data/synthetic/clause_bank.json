@@ -1093,7 +1093,7 @@
         "note": "human acting on an animal — kept per the 9.6% owner-conduct carve-out"
       },
       {
-        "text": "jeg har sett Frank Olsen oppføre seg uberegnelig noen ganger",
+        "text": "jeg har sett {PERSON_M} oppføre seg uberegnelig noen ganger",
         "form": "nb",
         "subject": "person",
         "difficulty": "medium",
@@ -1256,7 +1256,7 @@
         "note": null
       },
       {
-        "text": "politianmeldelse mot Olsen for trusler og ulovlig besittelse av et våpen",
+        "text": "politianmeldelse mot {PERSON} for trusler og ulovlig besittelse av et våpen",
         "form": "nb",
         "subject": "person",
         "difficulty": "hard",
@@ -1340,7 +1340,7 @@
         "note": null
       },
       {
-        "text": "Astrid Bjørgen Sjømat AS har systematisk feilmerket eksportprodukter",
+        "text": "{SURNAME_ORG} Sjømat AS har systematisk feilmerket eksportprodukter",
         "form": "nb",
         "subject": "org",
         "difficulty": "hard",
@@ -1603,7 +1603,7 @@
         "note": null
       },
       {
-        "text": "homofilt forhold til Lars Olsen",
+        "text": "homofilt forhold til {PERSON_M}",
         "form": "nb",
         "subject": "person",
         "difficulty": "hard",
@@ -1729,7 +1729,7 @@
         "note": null
       },
       {
-        "text": "homofilt forhold til Lars Olsen, som familien kjenner til",
+        "text": "homofilt forhold til {PERSON_M}, som familien kjenner til",
         "form": "nb",
         "subject": "person",
         "difficulty": "hard",
@@ -2566,7 +2566,7 @@
         "note": null
       },
       {
-        "text": "daglig leder og eier av Larsen Sjømat AS",
+        "text": "daglig leder og eier av {SURNAME_ORG} Sjømat AS",
         "form": "nb",
         "subject": "person",
         "difficulty": "easy",
@@ -2659,14 +2659,14 @@
     ],
     "FAMILY_RELATION": [
       {
-        "text": "gift med Astrid Olsen Åsberg",
+        "text": "gift med {PERSON_F}",
         "form": "nb",
         "subject": "person",
         "difficulty": "easy",
         "note": null
       },
       {
-        "text": "samboerforhold med Per Arne Olsen",
+        "text": "samboerforhold med {PERSON_M}",
         "form": "nb",
         "subject": "person",
         "difficulty": "easy",
@@ -2680,7 +2680,7 @@
         "note": "ages absorbed as parentheticals per B4"
       },
       {
-        "text": "sønn fra et tidligere forhold, Jonas Olsen",
+        "text": "sønn fra et tidligere forhold, {PERSON_M}",
         "form": "nb",
         "subject": "person",
         "difficulty": "medium",
@@ -2694,49 +2694,49 @@
         "note": null
       },
       {
-        "text": "ektefellen Astrid Knudsen",
+        "text": "ektefellen {PERSON_F}",
         "form": "nb",
         "subject": "person",
         "difficulty": "easy",
         "note": null
       },
       {
-        "text": "mor til to barn fra et tidligere forhold med Lars Ove Hansen",
+        "text": "mor til to barn fra et tidligere forhold med {PERSON_M}",
         "form": "nb",
         "subject": "person",
         "difficulty": "hard",
         "note": null
       },
       {
-        "text": "felles sønn, Elias Olsen",
+        "text": "felles sønn, {PERSON_M}",
         "form": "nb",
         "subject": "person",
         "difficulty": "medium",
         "note": null
       },
       {
-        "text": "svigerinne til Hans Petter Wiik",
+        "text": "svigerinne til {PERSON_M}",
         "form": "nb",
         "subject": "person",
         "difficulty": "medium",
         "note": null
       },
       {
-        "text": "Familien Eriksen",
+        "text": "Familien {SURNAME_FAM}",
         "form": "nb",
         "subject": "person",
         "difficulty": "medium",
         "note": "surname-only collective, not additionally tagged PERSON"
       },
       {
-        "text": "gift med Astrid Olsen Åsberg",
+        "text": "gift med {PERSON_F}",
         "form": "nn",
         "subject": "person",
         "difficulty": "easy",
         "note": null
       },
       {
-        "text": "sambuarforhold med Per Arne Olsen",
+        "text": "sambuarforhold med {PERSON_M}",
         "form": "nn",
         "subject": "person",
         "difficulty": "easy",
@@ -2750,7 +2750,7 @@
         "note": null
       },
       {
-        "text": "mor til to born frå eit tidlegare forhold med Lars Ove Hansen",
+        "text": "mor til to born frå eit tidlegare forhold med {PERSON_M}",
         "form": "nn",
         "subject": "person",
         "difficulty": "hard",
@@ -3041,7 +3041,7 @@
         "why_not": "no number, no named instrument — ECONOMIC_STATUS"
       },
       {
-        "text": "Sørensen Fisk AS",
+        "text": "{SURNAME_ORG} Fisk AS",
         "form": "nb",
         "why_not": "an employer identity with no debt/loan context is EMPLOYMENT_INFO, not a financial fact"
       },
@@ -3162,7 +3162,7 @@
         "why_not": "a hobby club is not a job"
       },
       {
-        "text": "Dr. Astrid Sæther",
+        "text": "Dr. {PERSON_F}",
         "form": "nb",
         "why_not": "the name itself is PERSON; only an attached role/title text is EMPLOYMENT_INFO"
       },
@@ -3194,7 +3194,7 @@
         "why_not": "CRIMINAL_RECORD wins over FAMILY_RELATION despite containing the word 'relasjoner'"
       },
       {
-        "text": "nabo til Hans Petter Wiik",
+        "text": "nabo til {PERSON_M}",
         "form": "nb",
         "why_not": "a non-kinship social tie falls outside this type's definition and has no other home"
       }

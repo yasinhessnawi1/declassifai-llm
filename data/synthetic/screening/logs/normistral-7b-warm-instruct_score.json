@@ -1,0 +1,275 @@
+{
+  "slug": "normistral-7b-warm-instruct",
+  "n_prompts": 11,
+  "mean_value_rate": 0.6103896103896104,
+  "mean_clause_rate_seeded": 0.125,
+  "mean_marker_discipline_rate": 0.0,
+  "n_with_english_tell": 0,
+  "n_with_placeholder": 3,
+  "n_with_echo": 0,
+  "per_prompt": [
+    {
+      "id": "P01_gp_referral_nb",
+      "chars": 2694,
+      "values_total": 7,
+      "values_hit": 7,
+      "values_missing": [],
+      "value_rate": 1.0,
+      "clauses_total": 2,
+      "clauses_hit": 0,
+      "clauses_missing": [
+        "har diagnosen bipolar lidelse type II",
+        "bruker for tiden lamotrigin 200 mg daglig"
+      ],
+      "clause_rate": 0.0,
+      "markers_expected": 0,
+      "markers_found": 0,
+      "marker_discipline_rate": null,
+      "english_hits": [],
+      "placeholder_hits": [],
+      "echo_hits": []
+    },
+    {
+      "id": "P02_police_report_nb",
+      "chars": 1043,
+      "values_total": 7,
+      "values_hit": 4,
+      "values_missing": [
+        "case_number",
+        "date",
+        "officer"
+      ],
+      "value_rate": 0.5714285714285714,
+      "clauses_total": 2,
+      "clauses_hit": 1,
+      "clauses_missing": [
+        "ble domfelt for grov kroppskrenkelse i 2019"
+      ],
+      "clause_rate": 0.5,
+      "markers_expected": 0,
+      "markers_found": 0,
+      "marker_discipline_rate": null,
+      "english_hits": [],
+      "placeholder_hits": [],
+      "echo_hits": []
+    },
+    {
+      "id": "P03_nav_decision_nb",
+      "chars": 2059,
+      "values_total": 7,
+      "values_hit": 6,
+      "values_missing": [
+        "caseworker"
+      ],
+      "value_rate": 0.8571428571428571,
+      "clauses_total": 2,
+      "clauses_hit": 1,
+      "clauses_missing": [
+        "mottar for tiden supplerende sosialhjelp fra kommunen"
+      ],
+      "clause_rate": 0.5,
+      "markers_expected": 0,
+      "markers_found": 0,
+      "marker_discipline_rate": null,
+      "english_hits": [],
+      "placeholder_hits": [],
+      "echo_hits": []
+    },
+    {
+      "id": "P04_dismissal_hr_nb",
+      "chars": 983,
+      "values_total": 7,
+      "values_hit": 2,
+      "values_missing": [
+        "org_number",
+        "employer",
+        "address",
+        "postal",
+        "date"
+      ],
+      "value_rate": 0.2857142857142857,
+      "clauses_total": 2,
+      "clauses_hit": 0,
+      "clauses_missing": [
+        "er tillitsvalgt i Fagforbundet",
+        "har v\u00e6rt sykmeldt sammenhengende i 14 uker"
+      ],
+      "clause_rate": 0.0,
+      "markers_expected": 0,
+      "markers_found": 0,
+      "marker_discipline_rate": null,
+      "english_hits": [],
+      "placeholder_hits": [
+        "\\[[A-Za-z\u00e6\u00f8\u00e5\u00c6\u00d8\u00c5_ ]{2,30}\\]"
+      ],
+      "echo_hits": []
+    },
+    {
+      "id": "P05_udi_decision_nn",
+      "chars": 2025,
+      "values_total": 7,
+      "values_hit": 7,
+      "values_missing": [],
+      "value_rate": 1.0,
+      "clauses_total": 2,
+      "clauses_hit": 0,
+      "clauses_missing": [
+        "har status som overforingsflyktning fra UNHCR",
+        "er registrert med aktiv arbeidskontrakt hos Nord-Norsk Fiskeindustri AS"
+      ],
+      "clause_rate": 0.0,
+      "markers_expected": 0,
+      "markers_found": 0,
+      "marker_discipline_rate": null,
+      "english_hits": [],
+      "placeholder_hits": [],
+      "echo_hits": []
+    },
+    {
+      "id": "P06_barnevern_nn",
+      "chars": 1021,
+      "values_total": 7,
+      "values_hit": 5,
+      "values_missing": [
+        "address",
+        "reporter"
+      ],
+      "value_rate": 0.7142857142857143,
+      "clauses_total": 2,
+      "clauses_hit": 0,
+      "clauses_missing": [
+        "kjem ofte svolten og uvaska til barnehagen",
+        "mor har opplyst om eige rusmisbruk i samtale"
+      ],
+      "clause_rate": 0.0,
+      "markers_expected": 0,
+      "markers_found": 0,
+      "marker_discipline_rate": null,
+      "english_hits": [],
+      "placeholder_hits": [],
+      "echo_hits": []
+    },
+    {
+      "id": "P07_inkasso_nb",
+      "chars": 1009,
+      "values_total": 7,
+      "values_hit": 2,
+      "values_missing": [
+        "fnr",
+        "address",
+        "postal",
+        "case_number",
+        "date"
+      ],
+      "value_rate": 0.2857142857142857,
+      "clauses_total": 2,
+      "clauses_hit": 0,
+      "clauses_missing": [
+        "har inngatt en nedbetalingsavtale som misligholdes for andre gang",
+        "er registrert med betalingsanmerkning hos tre andre kreditorer"
+      ],
+      "clause_rate": 0.0,
+      "markers_expected": 0,
+      "markers_found": 0,
+      "marker_discipline_rate": null,
+      "english_hits": [],
+      "placeholder_hits": [
+        "\\[[A-Za-z\u00e6\u00f8\u00e5\u00c6\u00d8\u00c5_ ]{2,30}\\]"
+      ],
+      "echo_hits": []
+    },
+    {
+      "id": "P08_vet_inspection_nn",
+      "chars": 2067,
+      "values_total": 7,
+      "values_hit": 0,
+      "values_missing": [
+        "owner_name",
+        "farm_org_number",
+        "address",
+        "postal",
+        "case_number",
+        "date",
+        "inspector"
+      ],
+      "value_rate": 0.0,
+      "clauses_total": 2,
+      "clauses_hit": 0,
+      "clauses_missing": [
+        "har gjentekne avvik p\u00e5 forsvarleg husdyrhald sidan 2023",
+        "fekk p\u00e5legg om utbetring innan fire veker etter forrige tilsyn"
+      ],
+      "clause_rate": 0.0,
+      "markers_expected": 0,
+      "markers_found": 0,
+      "marker_discipline_rate": null,
+      "english_hits": [],
+      "placeholder_hits": [
+        "\\[[A-Za-z\u00e6\u00f8\u00e5\u00c6\u00d8\u00c5_ ]{2,30}\\]"
+      ],
+      "echo_hits": []
+    },
+    {
+      "id": "P09_gp_referral_marked_nb",
+      "chars": 3029,
+      "values_total": 6,
+      "values_hit": 6,
+      "values_missing": [],
+      "value_rate": 1.0,
+      "markers_expected": 2,
+      "markers_found": 0,
+      "marker_type_match": 0,
+      "marker_discipline_rate": 0.0,
+      "stray_marker_char": false,
+      "clauses_total": null,
+      "clauses_hit": null,
+      "english_hits": [],
+      "placeholder_hits": [],
+      "echo_hits": []
+    },
+    {
+      "id": "P10_police_report_marked_nn",
+      "chars": 814,
+      "values_total": 6,
+      "values_hit": 1,
+      "values_missing": [
+        "fnr",
+        "address",
+        "postal",
+        "case_number",
+        "date"
+      ],
+      "value_rate": 0.16666666666666666,
+      "markers_expected": 2,
+      "markers_found": 0,
+      "marker_type_match": 0,
+      "marker_discipline_rate": 0.0,
+      "stray_marker_char": false,
+      "clauses_total": null,
+      "clauses_hit": null,
+      "english_hits": [],
+      "placeholder_hits": [],
+      "echo_hits": []
+    },
+    {
+      "id": "P11_nav_decision_marked_nb",
+      "chars": 1606,
+      "values_total": 6,
+      "values_hit": 5,
+      "values_missing": [
+        "date"
+      ],
+      "value_rate": 0.8333333333333334,
+      "markers_expected": 2,
+      "markers_found": 0,
+      "marker_type_match": 0,
+      "marker_discipline_rate": 0.0,
+      "stray_marker_char": false,
+      "clauses_total": null,
+      "clauses_hit": null,
+      "english_hits": [],
+      "placeholder_hits": [],
+      "echo_hits": []
+    }
+  ]
+}

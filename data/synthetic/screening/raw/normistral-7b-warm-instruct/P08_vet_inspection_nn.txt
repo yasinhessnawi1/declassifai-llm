@@ -1,0 +1,80 @@
+Tilsynsrapport frå Mattilsynet
+
+---
+
+[Eigar]
+[Organisasjonsnummer]
+[Adresse]
+[Postnummer og stad]
+[Saksnummer]
+[Dato]
+[Tilsynsperson]
+
+---
+
+Mattilsynet viser til [namn] sitt dyrehald, som vart inspisert [dato]. Inspeksjonen vart utført som del av eit risikobasert tilsynsopplegg.
+
+Under inspeksjonen vart det observert følgjande avvik frå krav i lov og forskrift:
+
+1. [Manglande samsvar med lov eller forskrift]:
+   a. [Spesifikasjon av avviket]
+   b. [Ytterlegare forklaring eller grunngjeving]
+
+2. [Manglande samsvar med lov eller forskrift]:
+   a. [Spesifikasjon av avviket]
+   b. [Ytterlegare forklaring eller grunngjeving]
+
+3. [Manglande samsvar med lov eller forskrift]:
+   a. [Spesifikasjon av avviket]
+   b. [Ytterlegare forklaring eller grunngjeving]
+
+Mattilsynet har tidlegare gjeve pålegg om utbetring av dei ovannemnde avvika innan [dato]. Vi gjer merksam på at vidare avvik vil kunne føre til ytterlegare tiltak, inkludert avvikling av dyrehaldet.
+
+Med helsing,
+[Namn]
+[Tittel]
+---
+
+[Eigar]
+[Organisasjonsnummer]
+[Adresse]
+[Postnummer og stad]
+[Saksnummer]
+[Dato]
+[Tilsynsperson]
+
+---
+
+Mattilsynet viser til vårt tilsyn [dato] på [namn] sitt dyrehald, og vil med dette informere deg om at vi har observert følgjande avvik frå krav i lov og forskrift:
+
+1. [Manglande samsvar med lov eller forskrift]:
+   a. [Spesifikasjon av avviket]
+   b. [Ytterlegare forklaring eller grunngjeving]
+
+2. [Manglande samsvar med lov eller forskrift]:
+   a. [Spesifikasjon av avviket]
+   b. [Ytterlegare forklaring eller grunngjeving]
+
+3. [Manglande samsvar med lov eller forskrift]:
+   a. [Spesifikasjon av avviket]
+   b. [Ytterlegare forklaring eller grunngjeving]
+
+Desse avvika har tidlegare vorte påpeika og det vart gjeve pålegg om utbetring innan [dato]. Vi gjer merksam på at vidare avvik vil kunne føre til ytterlegare tiltak, inkludert avvikling av dyrehaldet.
+
+Med helsing,
+[Namn]
+[Tittel]
+
+---
+
+[Eigar]
+[Organisasjonsnummer]
+[Adresse]
+[Postnummer og stad]
+[Saksnummer]
+[Dato]
+[Tilsynsperson]
+
+---
+
+Mattilsynet viser til vårt tilsyn [dato] på [namn] sitt dyrehald,

@@ -92,6 +92,28 @@ _STOPWORD_FIRST = {
 }
 
 _NAME_BIGRAM_RE = re.compile(r"\b([A-ZÆØÅ][a-zæøå'\-]+)\s+([A-ZÆØÅ][a-zæøå'\-]+)\b")
+_CAP_RUN_RE = re.compile(r"\b[A-ZÆØÅ][a-zæøå'\-]+(?:\s+[A-ZÆØÅ][a-zæøå'\-]+)+\b")
+
+# Field-header vocabulary that regularly sits adjacent to a real labeled span
+# (e.g. "... Hansen Adresse: ..." or "Postnummer: 5020 Deres ref: ...") and
+# would otherwise register as a false-positive name or postal-code hit purely
+# because a bigram or digit-run regex spills one word past the labeled span's
+# boundary. Measured on gold documents during development: these words
+# accounted for roughly half of all G7 findings on real Norwegian text.
+_FIELD_LABEL_WORDS = {
+    "Deres", "Vår", "Org", "Ref", "Referanse", "Adresse", "Address",
+    "Personalia", "Postnummer", "Poststed", "Fylke", "Kommune", "Telefon",
+    "Dato", "Saksnummer", "Sendt", "Nei", "Ja", "Kl", "Sak", "Vedlegg",
+    "Att", "Gjelder", "Navn", "Fødselsnummer", "Kontonummer",
+}
+
+# Institution-name suffixes: "X Sykehus", "X Kommune" etc. are organisations
+# or places, not person names, even though both words are capitalised.
+_INSTITUTION_SUFFIXES = {
+    "Sykehus", "Kommune", "Fylke", "Fylkeskommune", "Politidistrikt",
+    "Tingrett", "Skole", "Skule", "Barnehage", "Legekontor", "Legevakt",
+    "Universitet", "Høgskole", "Høgskule", "Sykehjem", "Fengsel", "Rådhus",
+}
 
 
 def gate_name_collision(
@@ -116,10 +138,20 @@ def gate_name_collision(
         Tuple of (no collision found, list of colliding names).
     """
     hits = [name for name in person_full_names if name in public_figures]
-    for m in _NAME_BIGRAM_RE.finditer(text):
-        candidate = f"{m.group(1)} {m.group(2)}"
-        if candidate in public_figures:
-            hits.append(candidate)
+    # Many public figures have three-word names (`Jonas Gahr Støre`, `Kjell
+    # Ingolf Ropstad`), so a plain bigram scan misses roughly a third of the
+    # embedded list -- it only ever sees the first two words of a longer run.
+    # Scan maximal runs of consecutive capitalised words instead, and check
+    # every contiguous sub-sequence of length >= 2 against the public-figure
+    # set, so a two- or three-word collision is caught regardless of where in
+    # the run it falls.
+    for run_match in _CAP_RUN_RE.finditer(text):
+        words = run_match.group(0).split()
+        for i in range(len(words)):
+            for j in range(i + 2, len(words) + 1):
+                candidate = " ".join(words[i:j])
+                if candidate in public_figures:
+                    hits.append(candidate)
     return not hits, sorted(set(hits))
 
 
@@ -179,7 +211,7 @@ TIER_A_PATTERNS: Dict[str, re.Pattern] = {
         r"\b\d{1,2}\.\s?\d{1,2}\.\s?\d{2,4}\b"
         r"|\b\d{1,2}\.\s?[a-zA-ZæøåÆØÅ]+\s?\d{4}\b"
     ),
-    "postal_like": re.compile(r"\b\d{4}\s+[A-ZÆØÅ][a-zæøå]+\b"),
+    "postal_like": re.compile(r"\b(\d{4})\s+([A-ZÆØÅ][a-zæøå]+)\b"),
     "plate_like": re.compile(r"\b[A-Z]{2}\s?\d{5}\b"),
     "iban_like": re.compile(r"\bNO\d{2}\s?(?:\d{4}\s?){2}\d{3}\b"),
     "url_like": re.compile(r"https?://\S+|\bwww\.\S+"),
@@ -204,11 +236,26 @@ def _is_covered(start: int, end: int, intervals: List[Tuple[int, int]]) -> bool:
     return any(lo <= start and end <= hi for lo, hi in intervals)
 
 
+def _is_sentence_initial(text: str, pos: int) -> bool:
+    """Return whether position `pos` starts a sentence (or the document).
+
+    Any word is capitalised at a sentence's start, so a bigram whose first
+    word sits there (`"Personen Ola ..."` at the very start of a document, or
+    right after a full stop) is capitalisation noise, not a name signal --
+    this is one of the two false-positive sources the project's own spec
+    calls out by name for the G7 name pass, alongside agency/place names.
+    """
+    before = text[:pos].rstrip()
+    return not before or before[-1] in ".!?\n"
+
+
 def sweep_tier_a(text: str, covered: List[Tuple[int, int]]) -> List[dict]:
     """Find Tier A-shaped substrings not covered by any known labeled span."""
     findings = []
     for name, pattern in TIER_A_PATTERNS.items():
         for m in pattern.finditer(text):
+            if name == "postal_like" and m.group(2) in _FIELD_LABEL_WORDS:
+                continue
             if not _is_covered(m.start(), m.end(), covered):
                 findings.append({"pattern": name, "match": m.group(0), "start": m.start(), "end": m.end()})
     return findings
@@ -237,7 +284,13 @@ def sweep_names(
     for m in _NAME_BIGRAM_RE.finditer(text):
         first, second = m.group(1), m.group(2)
         candidate = f"{first} {second}"
+        if _is_sentence_initial(text, m.start()):
+            continue
         if first in _STOPWORD_FIRST:
+            continue
+        if first in _FIELD_LABEL_WORDS or second in _FIELD_LABEL_WORDS:
+            continue
+        if second in _INSTITUTION_SUFFIXES:
             continue
         if candidate in agency_names or first in agency_names or second in agency_names:
             continue
