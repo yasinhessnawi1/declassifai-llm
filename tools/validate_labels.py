@@ -233,7 +233,7 @@ def scan(path: str, types: List[str]) -> dict:
     examples: Dict[str, List[Tuple[str, str]]] = collections.defaultdict(list)
     variants: Dict[str, set] = collections.defaultdict(set)
 
-    total = spans = malformed = 0
+    total = spans = malformed = empty = 0
     for line in open(path, encoding="utf-8"):
         line = line.strip()
         if not line:
@@ -248,6 +248,9 @@ def scan(path: str, types: List[str]) -> dict:
         text = record.get("text_input", "")
         output = record.get("output") or {}
         spans += sum(len(v) for v in output.values() if isinstance(v, list))
+
+        if not any(v for v in output.values() if isinstance(v, list)):
+            empty += 1
 
         digest = hashlib.md5(text.encode()).hexdigest()
         variants[digest].add(
@@ -279,6 +282,7 @@ def scan(path: str, types: List[str]) -> dict:
         "examples": examples,
         "distinct_texts": len(variants),
         "texts_with_conflicting_labels": duplicated,
+        "empty_records": empty,
     }
 
 
@@ -292,6 +296,12 @@ def _print_report(report: dict, types: List[str]) -> None:
         f"docs w/ conflicting dupes: {report['texts_with_conflicting_labels']:,}"
     )
     print(f"allowed entity types     : {len(types)}")
+    if report["empty_records"]:
+        print(f"\n*** {report['empty_records']} RECORD(S) HAVE NO SPANS AT ALL ***")
+        print("    A record with an empty output is legal JSON and produces no")
+        print("    violation, so an unfinished annotation run looks identical to a")
+        print("    clean one. Confirm these documents genuinely contain nothing")
+        print("    taggable before accepting the file.")
 
     total = sum(report["codes"].values())
     print(f"\nviolations: {total:,}")
@@ -360,7 +370,7 @@ def main() -> int:
     unrepairable = sum(
         count for code, count in report["codes"].items() if code not in REPAIRABLE
     )
-    return 1 if unrepairable else 0
+    return 1 if unrepairable or report["empty_records"] else 0
 
 
 if __name__ == "__main__":
