@@ -181,6 +181,7 @@ class HFBackend(GenerationBackend):
 
         torch_dtype = getattr(torch, dtype)
         self.tokenizer = AutoTokenizer.from_pretrained(model_repo_id)
+        self.tokenizer.padding_side = "left"
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
         self.model = AutoModelForCausalLM.from_pretrained(
@@ -221,7 +222,7 @@ class HFBackend(GenerationBackend):
         with torch.no_grad():
             output_ids = self.model.generate(
                 **encoded, max_new_tokens=max_new_tokens, do_sample=True,
-                temperature=temperature, pad_token_id=self.tokenizer.pad_token_id,
+                temperature=temperature, top_p=0.9, pad_token_id=self.tokenizer.pad_token_id,
             )
         generated = output_ids[:, encoded["input_ids"].shape[1]:]
         return self.tokenizer.batch_decode(generated, skip_special_tokens=True)

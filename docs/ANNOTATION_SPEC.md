@@ -275,6 +275,15 @@ field means *employer*, not *belief*.
 - **Not** a placeholder occupying the field without naming anything: `Privatperson`,
   `Ukjent`, `Not applicable`, `N/A`.
 
+**B28 — Concealment of income is CRIMINAL_RECORD without an enumerated offence noun.**
+`forsøk på å skjule inntekter for skattemyndighetene`, `skjule inntekter fra beskatning`,
+`manipulert regnskapet for å redusere skattebelastningen` all assert intent to evade, which
+is the offence, and gold tags this shape 13 times against 1. Do not require one of the
+listed nouns (`skatteunndragelse`, `forfalskning`, `bedrageri`) to appear.
+- The line is asserted intent, not irregularity. `uriktige opplysninger i skattemeldinger`
+  and `uoverensstemmelser i regnskapet` state a discrepancy that may be error, and stay
+  FINANCIAL_INFO or untagged.
+
 **B27 — `X's økonomiske situasjon` keeps its noun phrase.** B1 drops a subject, but here
 the subject *is* the disclosed fact, which is the B17 case: tag
 `Lothbroks økonomiske situasjon er svært anstrengt`, not the bare adjective

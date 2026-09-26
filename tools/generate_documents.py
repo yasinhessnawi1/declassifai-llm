@@ -616,7 +616,8 @@ class GenerationConfig:
     retries: int
     near_dup_threshold: float
     g7_policy: str  # "reject" or "report"
-    max_new_tokens: int = 900
+    max_new_tokens: int = 700
+    temperature: float = 0.75
 
 
 def generate_one_document(
@@ -651,7 +652,10 @@ def generate_one_document(
                         pv.value, _ = _generate_value_kind(pv.type, random.Random(doc_seed + 1), record.person, invalid_rate=1.0)
 
         prompt = build_prompt(record)
-        raw_text = backend.generate([prompt], max_new_tokens=config.max_new_tokens)[0]
+        # Norwegian runs ~2.6 characters per token under the Qwen tokenizer;
+        # leave headroom so long-band documents are not truncated mid-sentence.
+        budget = max(config.max_new_tokens, int(record.length_band[1] / 2.6) + 250)
+        raw_text = backend.generate([prompt], max_new_tokens=budget, temperature=config.temperature)[0]
 
         known_types = set(taxonomy_index)
         clean_text, marked_spans, marker_ok, marker_err = strip_markers(raw_text, known_types)
