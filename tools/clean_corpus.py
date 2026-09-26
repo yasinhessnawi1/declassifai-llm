@@ -46,6 +46,7 @@ SCHEMA_TYPES = {
     "DATE_TIME", "HEALTH_INFO", "EMPLOYMENT_INFO", "CRIMINAL_RECORD",
     "FINANCIAL_INFO", "ECONOMIC_STATUS", "GOV_ID", "FAMILY_RELATION",
     "POLITICAL_CASE", "SEXUAL_ORIENTATION", "BEHAVIORAL_PATTERN",
+    "RELIGIOUS_BELIEF",
 }
 
 # Types where the corpus scores >=0.91 relaxed F1 against the gold set. The other

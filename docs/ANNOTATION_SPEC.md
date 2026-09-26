@@ -1274,6 +1274,48 @@ Tag the full coordinated title, including conjunctions ("eier og", "styreleder o
 
 ---
 
+### RELIGIOUS_BELIEF
+
+#### Definition
+RELIGIOUS_BELIEF is a verbatim clause stating that an identified or identifiable natural
+person **holds, professes, has converted to, or is affiliated with a religious or
+philosophical belief or a religious community**, including the affiliation verb and the
+name of the belief or body. GDPR Art. 9 names "religious or philosophical beliefs" as a
+special category, and non-belief is a philosophical position: `ateist` and `agnostiker` are
+in scope exactly as `katolikk` is.
+
+This type is a late addition. Before it existed, religion fell through the taxonomy
+entirely and was left untagged — a documented gap that appeared in 148 of the 400 gold
+documents while the project's own framing is built on Article 9.
+
+#### Include
+- Membership and affiliation with the verb: `medlem av Den norske kirke`,
+  `medlem av Jehovas Vitner`, `medlem av pinsemenigheten`, `aktiv i menigheten`.
+- Professed belief or its absence, with or without a verb: `er ateist`,
+  `oppgir å være ateist`, `praktiserende katolikk`, `identifiserer seg som kristen`,
+  `agnostiker`. A bare belief noun **is** the disclosure and is tagged; this differs from
+  POLITICAL_CASE, where a bare party name discloses nothing about the person.
+- Conversion and its direction: `konvertitt til Islam`, `konvertert fra islam til
+  kristendommen`.
+- Observance presented as the person's practice: `bærer hijab av religiøse grunner`,
+  `deltar i gudstjeneste hver uke`.
+- The value of a `Religiøs tilhørighet:` field, on the field-label authority that governs
+  `Politisk tilhørighet:` (gold tags that 11 times against 3).
+
+#### Exclude
+- **A religious body named as an employer or inspected entity.** That is EMPLOYMENT_INFO
+  under B19 and does not become RELIGIOUS_BELIEF: `Org.nr.: 987654321 (Stavanger
+  Menighetssenter)`. B19's congregation carve-out is unchanged. Where a document both
+  employs someone at a congregation and states their membership, those are two spans of
+  two types.
+- **A religious word inside a political party's name.** `Kristent Folkeparti` is
+  POLITICAL_CASE; the `Kristen` in it says nothing about anyone's belief. Nine such
+  mentions exist in the corpus and none is a belief disclosure.
+- Generic religious adjectives with no believer attached: `religiøse aktiviteter`,
+  `religiøst motivert vandalisme` — describing an event, not a person's faith.
+- A bare organisation name with no person attached, exactly as POLITICAL_CASE excludes one:
+  `Den norske kirke` standing alone in a list of local institutions.
+
 ### POLITICAL_CASE
 
 #### Definition

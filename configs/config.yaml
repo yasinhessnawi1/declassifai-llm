@@ -59,6 +59,7 @@ entity_types:
   POLITICAL_CASE: "Political opinions, party membership"
   SEXUAL_ORIENTATION: "Sexual orientation or gender identity"
   BEHAVIORAL_PATTERN: "Conduct of an identifiable person (not animal-subject behaviour)"
+  RELIGIOUS_BELIEF: "Religious or philosophical belief, incl. atheism (GDPR Art. 9)"
 
 # -- Training -----------------------------------------------------------------
 training:
