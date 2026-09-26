@@ -181,9 +181,11 @@ grammatical subject is the animal or the enclosure.
   trangt` are untagged. Gold leaves this bare form untagged 28 times and tags it 3.
   A dimension becomes HEALTH_INFO only when the span also names the need going unmet
   (`altfor små til at kaninene kan bevege seg ordentlig`, `små bur uten mulighet for
-  naturlig bevegelse`, `overfylte, skitne bur med lite tilgang til mat og vann`) or the
-  animal's resulting state (`indikerer overbefolkning og stress`, `går i sirkel i sine
-  trange bur`). An earlier revision of this rule said cramped space was itself
+  naturlig bevegelse`, `overfylte, skitne bur med lite tilgang til mat og vann`,
+  `for lite, trangt og lite stimulerende`) or the animal's resulting state
+  (`indikerer overbefolkning og stress`, `går i sirkel i sine trange bur`, `sår og
+  skader på kroppen ... på grunn av overbefolkning`). Enrichment counts as a named
+  need here: `stimulerende`, `berikelse`, `leker`, `klatremuligheter` all keep the span. An earlier revision of this rule said cramped space was itself
   deprivation of the exercise need; that was read off a keyword probe that counted
   documents rather than spans, and it contradicted this section's own untagged example.
   36 spans added under it have been removed.
