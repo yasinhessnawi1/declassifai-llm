@@ -169,6 +169,17 @@ grammatical subject is the animal or the enclosure.
   `isolert fra andre dyr av samme art`.
 - Untagged: `Manglende renhold i dyrenes oppholdsområde`, `Dårlig hygiene i fjøset`,
   `Innhegningene er små og virker skitne`, `Manglende isolering av syke dyr`.
+- **Enclosure size and stocking density on their own are structure, not deprivation.**
+  `Burene er for små`, `overfylte bur`, `Overbefolkning i primatavdelingen`, `lite og
+  trangt` are untagged. Gold leaves this bare form untagged 28 times and tags it 3.
+  A dimension becomes HEALTH_INFO only when the span also names the need going unmet
+  (`altfor små til at kaninene kan bevege seg ordentlig`, `små bur uten mulighet for
+  naturlig bevegelse`, `overfylte, skitne bur med lite tilgang til mat og vann`) or the
+  animal's resulting state (`indikerer overbefolkning og stress`, `går i sirkel i sine
+  trange bur`). An earlier revision of this rule said cramped space was itself
+  deprivation of the exercise need; that was read off a keyword probe that counted
+  documents rather than spans, and it contradicted this section's own untagged example.
+  36 spans added under it have been removed.
 - The rule is domain-neutral in the same way B6 is: it turns on whether the finding
   describes a living subject's deprivation, not on whether the premises house animals or
   serve food. A commercial hygiene finding (`Muggsopp på flere bakevarer`,
