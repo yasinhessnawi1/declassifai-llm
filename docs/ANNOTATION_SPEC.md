@@ -275,6 +275,16 @@ field means *employer*, not *belief*.
 - **Not** a placeholder occupying the field without naming anything: `Privatperson`,
   `Ukjent`, `Not applicable`, `N/A`.
 
+**B27 — `X's økonomiske situasjon` keeps its noun phrase.** B1 drops a subject, but here
+the subject *is* the disclosed fact, which is the B17 case: tag
+`Lothbroks økonomiske situasjon er svært anstrengt`, not the bare adjective
+`svært anstrengt`. Measured across gold and the slice, the noun phrase is kept 38 times and
+dropped 8. Keep a possessive or genitive name where it is adjacent, as gold does in
+`hans økonomiske situasjon er svært anstrengt`.
+- This does not extend ECONOMIC_STATUS to every subject-initial sentence. Hardship stated
+  without that noun phrase still follows B1: `sliter økonomisk`, `økonomiske problemer de
+  siste årene`.
+
 **B24 — A relationship with a minor is CRIMINAL_RECORD, not SEXUAL_ORIENTATION.** The
 disclosed fact is a criminal matter, and the parties' genders are beside the point. Gold
 tags it this way three times (`involvert i en offentlig skandale knyttet til et forhold med
