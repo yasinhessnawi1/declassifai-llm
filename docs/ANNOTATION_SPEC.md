@@ -354,6 +354,13 @@ enough even when the owner field is a placeholder: a report naming
 `mistenker organisert virksomhet`. A report with a placeholder owner *and* a placeholder
 address (`Adresse: Ukjent, mistenkes a vaere et lagerlokale i et industriomrade`) identifies
 nobody, and its allegations stay untagged.
+- **The address need not be in the `Adresse:` field.** A placeholder owner *and* a
+  placeholder address field can still be accompanied by a specific address used as a
+  landmark — `observert aktivitet i skogen bak Granåsveien 12`. That is a location
+  identifier under Art. 4(1) and the allegations are tagged. The Extraction-not-
+  summarisation section's `Mistenker organisert kamphundaktivitet` example is about
+  where a span starts and stops, not about whether a data subject exists; do not read
+  it as licensing a tag that this rule would otherwise exclude.
 - The reporter and the receiving officer being named does not help. They are not the
   accused, and their presence cannot make an unnamed third party identifiable.
 - **This rule is about identifying a natural person, and does not override B16.** Where the
