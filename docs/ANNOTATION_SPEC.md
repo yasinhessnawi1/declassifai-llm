@@ -273,6 +273,17 @@ field means *employer*, not *belief*.
 - **Not** a placeholder occupying the field without naming anything: `Privatperson`,
   `Ukjent`, `Not applicable`, `N/A`.
 
+**B24 — A relationship with a minor is CRIMINAL_RECORD, not SEXUAL_ORIENTATION.** The
+disclosed fact is a criminal matter, and the parties' genders are beside the point. Gold
+tags it this way three times (`involvert i en offentlig skandale knyttet til et forhold med
+en mindreårig`, `pågående etterforskning knyttet til seksuelle overgrep mot mindreårige`)
+against one contrary reading, which has been corrected. Where the same document also states
+an orientation, that stays its own SEXUAL_ORIENTATION span -- A015 carries `åpent homofil`
+and the scandal clause separately, and they do not merge.
+- A refusal to disclose orientation discloses nothing and is untagged per B7:
+  `har nektet å oppgi informasjon om sin seksuelle orientering` is not SEXUAL_ORIENTATION,
+  and neither is `min seksuelle legning er privat og irrelevant`.
+
 **B25 — An address makes the subject of an allegation identifiable; nothing does not.**
 CRIMINAL_RECORD, and the other types that attach to a natural person, need a data subject.
 Under GDPR Art. 4(1) that subject may be identified *indirectly*, so a specific address is
@@ -288,17 +299,6 @@ nobody, and its allegations stay untagged.
 - Two annotators reached opposite verdicts on these two documents and both were right; the
   fact patterns differ. This rule records the distinction so the next one does not have to
   rediscover it.
-
-**B24 — A relationship with a minor is CRIMINAL_RECORD, not SEXUAL_ORIENTATION.** The
-disclosed fact is a criminal matter, and the parties' genders are beside the point. Gold
-tags it this way three times (`involvert i en offentlig skandale knyttet til et forhold med
-en mindreårig`, `pågående etterforskning knyttet til seksuelle overgrep mot mindreårige`)
-against one contrary reading, which has been corrected. Where the same document also states
-an orientation, that stays its own SEXUAL_ORIENTATION span -- A015 carries `åpent homofil`
-and the scandal clause separately, and they do not merge.
-- A refusal to disclose orientation discloses nothing and is untagged per B7:
-  `har nektet å oppgi informasjon om sin seksuelle orientering` is not SEXUAL_ORIENTATION,
-  and neither is `min seksuelle legning er privat og irrelevant`.
 
 **B20 — GOV_ID is decided by the issuer, not by the label.** Tag an identifier when a
 **public authority** issued it, whatever the field is called. Leave it untagged when a
