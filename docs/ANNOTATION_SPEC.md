@@ -169,6 +169,13 @@ grammatical subject is the animal or the enclosure.
   `isolert fra andre dyr av samme art`.
 - Untagged: `Manglende renhold i dyrenes oppholdsområde`, `Dårlig hygiene i fjøset`,
   `Innhegningene er små og virker skitne`, `Manglende isolering av syke dyr`.
+- **Inability to afford a welfare need is HEALTH_INFO, not ECONOMIC_STATUS.**
+  `ikke har råd til dyrlege`, `ikke har råd til nødvendig veterinærbehandling` state that
+  veterinary care is going unmet, which is this rule's test; the financial cause does not
+  change what is disclosed. ECONOMIC_STATUS still takes hardship with no welfare need named
+  (`sliter økonomisk`, `økonomiske problemer de siste årene`). The phrasing appears in 57
+  corpus documents, so it is worth fixing rather than deciding case by case. Gold has one
+  precedent (R003) and it reads this way.
 - **Enclosure size and stocking density on their own are structure, not deprivation.**
   `Burene er for små`, `overfylte bur`, `Overbefolkning i primatavdelingen`, `lite og
   trangt` are untagged. Gold leaves this bare form untagged 28 times and tags it 3.
