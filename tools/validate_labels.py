@@ -22,7 +22,7 @@ import hashlib
 import json
 import re
 import sys
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Set
 
 # The 16 types defined in docs/ANNOTATION_SPEC.md, which is the authority.
 # The raw corpus additionally carries CONTEXT_SENSITIVE and IDENTIFIABLE_IMAGE
@@ -44,6 +44,7 @@ CASE_MISMATCH = "case_mismatch"
 WHITESPACE_MISMATCH = "whitespace_mismatch"
 PADDED_SPAN = "padded_span"
 DUPLICATE_SPAN = "duplicate_span"
+REDUNDANT_NESTED = "redundant_nested_span"
 EMPTY_SPAN = "empty_span"
 BAD_SHAPE = "bad_shape"
 
@@ -165,6 +166,59 @@ def validate_record(record: dict, types: List[str]) -> List[dict]:
                 problems.append(
                     {"code": code, "type": etype, "span": span, "fix": fixed}
                 )
+
+        problems.extend(_redundant_nested(text, etype, seen))
+    return problems
+
+
+def _occurrences(text: str, span: str) -> List[Tuple[int, int]]:
+    """Return every (start, end) offset at which `span` occurs in `text`."""
+    spots, i = [], text.find(span)
+    while i >= 0:
+        spots.append((i, i + len(span)))
+        i = text.find(span, i + 1)
+    return spots
+
+
+def _redundant_nested(text: str, etype: str, spans: Set[str]) -> List[dict]:
+    """Flag a span of one type that never occurs outside a longer span of that type.
+
+    Two spans of the same type may legitimately nest when the document states the
+    fact twice -- B6 mandates tagging restatements, so `uten ly` alongside `ingen
+    form for ly eller beskyttelse mot vær og vind` is correct when they sit in
+    different sentences. What is not correct is the same mention tagged twice at
+    two boundaries, which is what an un-applied B1 hedge-strip looks like:
+    `hjemløs` and `ser ut til å være hjemløs` covering one occurrence.
+
+    The test is positional, not textual: report the shorter span only when every
+    one of its occurrences falls inside an occurrence of the longer one.
+
+    Args:
+        text: The document text.
+        etype: Entity type the spans belong to.
+        spans: Distinct span strings tagged for this type.
+
+    Returns:
+        A problem dict per redundant span.
+    """
+    problems = []
+    for short in spans:
+        inside = [s for s in spans if s != short and short in s]
+        if not inside:
+            continue
+        spots = _occurrences(text, short)
+        if not spots:
+            continue
+        for longer in inside:
+            wide = _occurrences(text, longer)
+            if wide and all(
+                any(a >= lo and b <= hi for lo, hi in wide) for a, b in spots
+            ):
+                problems.append(
+                    {"code": REDUNDANT_NESTED, "type": etype,
+                     "span": short, "fix": None}
+                )
+                break
     return problems
 
 
