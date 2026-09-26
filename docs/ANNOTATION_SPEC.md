@@ -280,6 +280,17 @@ field means *employer*, not *belief*.
 - **Not** a placeholder occupying the field without naming anything: `Privatperson`,
   `Ukjent`, `Not applicable`, `N/A`.
 
+**B32 — A named child's birth-year parenthetical is split out, unless the relation clause
+already encloses it.** Where `Markus (f. 2005)` stands apart from the relation word, the
+FAMILY_RELATION span stops before the name: tag the name PERSON and the year DATE_TIME.
+Gold and the slice split 35 such cases against 9. But where the clause enumerates the
+children as part of the relation itself — `deler omsorgen for deres to barn, Magnus
+(f. 2015) og Live (f. 2018)` — it stays one span, because splitting would fragment `to
+barn, X og Y` and B4 cannot be applied without non-contiguous surgery.
+- What is never right is a FAMILY_RELATION span with no relation word in it. `Martin (født
+  2010)` alone is a PERSON and a DATE_TIME; the relation is `to barn sammen`, and a span
+  that omits it states no relationship at all. One such pair has been corrected.
+
 **B31 — A same-sex relationship is SEXUAL_ORIENTATION with or without an orientation
 word.** GDPR Art. 9 covers "sex life *or* sexual orientation", so the fact is disclosed by
 the pairing itself: a male subject's `tidligere forhold til en mann ved navn Lars
