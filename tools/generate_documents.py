@@ -255,6 +255,15 @@ def _generate_value_kind(
     if etype == "DATE_TIME":
         offset = rng.randint(-900, 30)
         return _format_date(rng, date(2026, 9, 26) + timedelta(days=offset)), None
+    if etype == "ANIMAL_INFO":
+        animal = rng.choice(["hund", "katt", "hest", "sau", "gris", "høne"])
+        count = rng.randint(1, 6)
+        return f"{count} {animal}(er) holdt på eiendommen", None
+    if etype == "IDENTIFIABLE_IMAGE":
+        return rng.choice([
+            "bilde av vedkommende fra overvåkningskamera",
+            "fotografi tatt på stedet som viser vedkommendes ansikt",
+        ]), None
     raise KeyError(etype)
 
 
@@ -266,7 +275,59 @@ _VALUE_KIND_TYPES = {
     "INSURANCE_NUMBER", "TAX_ID", "STUDENT_ID", "DEVICE_ID", "CRYPTO",
     "PASSWORD", "LICENSE_PLATE", "POSTAL_CODE", "ADDRESS", "AGE", "GENDER",
     "MARITAL_STATUS", "NATIONALITY", "LOCATION", "ORGANIZATION", "DATE_TIME",
+    "ANIMAL_INFO", "IDENTIFIABLE_IMAGE",
 }
+
+# Clause-bank entries occasionally embed a bare personal name (e.g. CRIMINAL's
+# "politianmeldelse mot Olsen for trusler ..." or SEXUAL_ORIENTATION's
+# "homofilt forhold til Lars Olsen") that is fixed text, unrelated to the
+# record's own sampled people. Left as-is, the same name would recur
+# identically across every document that draws that clause entry, and the name
+# would not be registered as its own PERSON span even though it names someone.
+# `_localize_clause_names` finds a preposition + capitalised name pattern,
+# swaps in a freshly sampled name, and reports it so the caller can add it as
+# its own PlannedValue(type="PERSON", ...) -- both fixes the recurring-name
+# staleness and gives the name proper span coverage for G7.
+_CLAUSE_NAME_RE = re.compile(
+    r"\b(mot|til|av|fra|hos)\s+([A-ZÆØÅ][a-zæøå]+)(?:\s+([A-ZÆØÅ][a-zæøå]+))?"
+)
+_ALL_FIRST_NAMES = set(data.FIRST_NAMES_MALE) | set(data.FIRST_NAMES_FEMALE)
+_ALL_SURNAMES = set(data.SURNAMES)
+
+
+def localize_clause_names(
+    rng: random.Random, text: str, public_figures: Set[str],
+) -> Tuple[str, List[str]]:
+    """Replace fixed personal names embedded in a seeded clause with fresh ones.
+
+    Args:
+        rng: Seeded RNG.
+        text: The clause text as drawn from the clause bank.
+        public_figures: Embedded public-figure set, to avoid an unlucky collision.
+
+    Returns:
+        Tuple of (possibly-rewritten text, list of the names substituted in,
+        so the caller can register them as their own PERSON spans).
+    """
+    introduced: List[str] = []
+
+    def _sub(m: "re.Match") -> str:
+        prep, w1, w2 = m.group(1), m.group(2), m.group(3)
+        if w2 and w1 in _ALL_FIRST_NAMES:
+            for _ in range(20):
+                first = rng.choice(data.FIRST_NAMES_MALE if rng.random() < 0.5 else data.FIRST_NAMES_FEMALE)
+                last = rng.choice(data.SURNAMES)
+                full = f"{first} {last}"
+                if full not in public_figures:
+                    introduced.append(full)
+                    return f"{prep} {full}"
+        if not w2 and w1 in _ALL_SURNAMES:
+            new_surname = rng.choice(data.SURNAMES)
+            introduced.append(new_surname)
+            return f"{prep} {new_surname}"
+        return m.group(0)
+
+    return _CLAUSE_NAME_RE.sub(_sub, text), introduced
 
 
 def sample_record(
@@ -322,7 +383,19 @@ def sample_record(
             try:
                 value, checksum_valid = _generate_value_kind(etype, rng, person, invalid_rate=0.0)
             except KeyError:
-                continue
+                # The taxonomy called this type "value" kind but it is not one of
+                # the identifier/attribute generators above (e.g. ANIMAL_INFO,
+                # IDENTIFIABLE_IMAGE, or a type added to the real taxonomy after
+                # this dispatch table was written). Fall back to the clause bank
+                # for a short literal phrase rather than silently dropping the
+                # type -- coverage over exactness, since it is still a real,
+                # locatable string either way.
+                bank_candidates = clause_bank.get(etype, [])
+                if bank_candidates:
+                    value = rng.choice(bank_candidates)["text"]
+                else:
+                    value = f"forhold knyttet til {etype.replace('_', ' ').lower()}"
+                checksum_valid = None
             planned.append(PlannedValue(etype, entry["tier"], "value", value, None, field_label, checksum_valid))
             continue
 

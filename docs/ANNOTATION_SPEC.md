@@ -337,7 +337,9 @@ documents (3.6%) carry an identifier label that list does not name.
   of these untagged from before this rule existed; they are tagged now.
 - Shape alone does not decide it. `AB12345` is a rifle serial and `HG12345` a firearms
   card number; both share the two-letters-five-digits form and go opposite ways. Read the
-  label.
+  label. A third variant settles the same way: a rifle's `registreringsnummer: AB1234` is
+  its entry in the state firearms register and is GOV_ID, while the identically-shaped
+  `serienummer: AB12345` is the manufacturer's mark and is not.
 - The test is who issued the number, not whether it identifies a person. A hospital record
   number does identify someone, but it is not a government identifier and no other type
   covers it, so it is left untagged — as with religious affiliation.

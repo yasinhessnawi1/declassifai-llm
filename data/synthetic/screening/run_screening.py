@@ -78,11 +78,15 @@ def main():
     results = []
     for p in prompts:
         messages = [{"role": "user", "content": p["instruction"]}]
-        template_kwargs = dict(add_generation_prompt=True, return_tensors="pt")
+        template_kwargs = dict(add_generation_prompt=True, return_tensors="pt", return_dict=False)
         if args.disable_thinking:
             template_kwargs["enable_thinking"] = False
         try:
-            input_ids = tok.apply_chat_template(messages, **template_kwargs).to("cuda")
+            templated = tok.apply_chat_template(messages, **template_kwargs)
+            if hasattr(templated, "shape"):
+                input_ids = templated.to("cuda")
+            else:
+                input_ids = templated["input_ids"].to("cuda")
         except Exception as e:
             print(f"[{slug}] {p['id']}: chat template failed ({e}), falling back to raw prompt", flush=True)
             input_ids = tok(p["instruction"], return_tensors="pt").input_ids.to("cuda")

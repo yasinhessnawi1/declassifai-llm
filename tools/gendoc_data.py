@@ -264,18 +264,21 @@ _TIER_A = [
 ]
 
 _TIER_B_VALUE = [
-    "ADDRESS", "AGE", "DATE_TIME", "GENDER", "LOCATION", "MARITAL_STATUS",
-    "NATIONALITY", "ORGANIZATION", "PERSON",
+    "ADDRESS", "AGE", "ANIMAL_INFO", "DATE_TIME", "GENDER", "LOCATION",
+    "MARITAL_STATUS", "NATIONALITY", "ORGANIZATION", "PERSON",
 ]
-_TIER_B_CLAUSE = ["ACADEMIC_RECORD", "ANIMAL_INFO", "EMPLOYMENT", "FAMILY_RELATION"]
+_TIER_B_CLAUSE = ["ACADEMIC_RECORD", "EMPLOYMENT", "FAMILY_RELATION"]
 
+# Matches the real data/synthetic/taxonomy.json: 20 clause-kind types, of which
+# IDENTIFIABLE_IMAGE is the one Tier C type that turned out to be "value" kind
+# rather than "clause" -- a short descriptive phrase, not a judgement clause.
 _TIER_C_CLAUSE = [
     "AGE_INFO", "BEHAVIORAL_PATTERN", "BIOMETRIC_DATA", "CONTEXT_SENSITIVE",
     "CRIMINAL", "DISABILITY", "ECONOMIC_STATUS", "ETHNICITY", "FINANCIAL",
-    "GENETIC_DATA", "HEALTH", "IDENTIFIABLE_IMAGE", "IMMIGRATION_STATUS",
-    "MEDICATION", "POLITICAL", "RELIGIOUS_BELIEF", "SEXUAL_ORIENTATION",
-    "TRADE_UNION",
+    "GENETIC_DATA", "HEALTH", "IMMIGRATION_STATUS", "MEDICATION",
+    "POLITICAL", "RELIGIOUS_BELIEF", "SEXUAL_ORIENTATION", "TRADE_UNION",
 ]
+_TIER_C_VALUE = ["IDENTIFIABLE_IMAGE"]
 
 _GDPR_ART9 = {
     "BIOMETRIC_DATA": "Art. 9 -- biometric data",
@@ -329,6 +332,12 @@ def _default_taxonomy() -> dict:
             "name": name, "tier": "C", "gdpr": _GDPR_ART9.get(name),
             "legacy_type": _LEGACY_MAP.get(name), "value_kind": "clause",
             "definition": f"Tier C judgement clause: {name.replace('_', ' ').lower()}.",
+        })
+    for name in _TIER_C_VALUE:
+        types.append({
+            "name": name, "tier": "C", "gdpr": _GDPR_ART9.get(name),
+            "legacy_type": _LEGACY_MAP.get(name), "value_kind": "value",
+            "definition": f"Tier C descriptive value: {name.replace('_', ' ').lower()}.",
         })
     return {"types": types, "legacy_map": _LEGACY_MAP}
 
@@ -459,6 +468,14 @@ _DEFAULT_CLAUSE_BANK = {
 def load_clause_bank(path: Optional[str]) -> dict:
     """Load the clause bank, falling back to a small embedded default.
 
+    The real `data/synthetic/clause_bank.json` nests its per-type entries under
+    a `clause_bank` key (`{"version": 2, "clause_bank": {TYPE: [...]}, "negatives":
+    {...}}`) rather than putting `{TYPE: [...]}` at the top level the way the
+    embedded default and this module's earlier draft contract did. This
+    normalises either shape to the flat `{TYPE: [...], "negatives": {...}}`
+    form every caller in this package expects, so callers never need to know
+    which shape was on disk.
+
     Args:
         path: Path to `clause_bank.json`, or None/missing to use the fallback.
 
@@ -467,7 +484,12 @@ def load_clause_bank(path: Optional[str]) -> dict:
     """
     if path and os.path.exists(path):
         with open(path, encoding="utf-8") as handle:
-            return json.load(handle)
+            raw = json.load(handle)
+        if "clause_bank" in raw:
+            flat = dict(raw["clause_bank"])
+            flat["negatives"] = raw.get("negatives", {})
+            return flat
+        return raw
     return _DEFAULT_CLAUSE_BANK
 
 

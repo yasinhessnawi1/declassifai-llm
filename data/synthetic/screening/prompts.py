@@ -36,18 +36,18 @@ PROMPTS = [
         ],
         "instruction": (
             "Du er fastlege og skal skrive en henvisning til distriktspsykiatrisk senter (DPS) "
-            "pa bokmal. Bruk et strukturert henvisningsskjema med feltoverskrifter "
-            "(Pasient, Fodselsnummer, Adresse, Telefon, Dato, Fastlegens org.nr, Henvisningsgrunn, "
+            "på bokmål. Bruk et strukturert henvisningsskjema med feltoverskrifter "
+            "(Pasient, Fødselsnummer, Adresse, Telefon, Dato, Fastlegens org.nr, Henvisningsgrunn, "
             "Anamnese, Konklusjon).\n\n"
-            "Bruk NOYAKTIG disse verdiene, ordrett, uten a endre stavemate eller format:\n"
+            "Bruk NØYAKTIG disse verdiene, ordrett, uten a endre stavemåte eller format:\n"
             "- Pasientens fulle navn: Kari Andersen Solheim\n"
-            "- Fodselsnummer: 03057512345\n"
+            "- Fødselsnummer: 03057512345\n"
             "- Adresse: Fjellveien 12B\n"
             "- Postnummer og sted: 0580 Oslo\n"
             "- Telefon: +47 91234567\n"
             "- Dato: 14.03.2026\n"
             "- Fastlegekontorets organisasjonsnummer: 918234567\n\n"
-            "I lopetekst/anamnese skal folgende to setninger sta verbatim, ordrett, uten omskrivning:\n"
+            "I løpetekst/anamnese skal folgende to setninger sta verbatim, ordrett, uten omskrivning:\n"
             "1. \"har diagnosen bipolar lidelse type II\"\n"
             "2. \"bruker for tiden lamotrigin 200 mg daglig\"\n\n"
             "Skriv ca. 250-400 ord. Ikke bruk engelsk. Ikke bruk plassholdere som [navn] eller "
@@ -70,24 +70,24 @@ PROMPTS = [
         },
         "clauses": [
             "ble domfelt for grov kroppskrenkelse i 2019",
-            "hadde en promille pa 1,4 pa gjerningstidspunktet",
+            "hadde en promille på 1,4 på gjerningstidspunktet",
         ],
         "instruction": (
-            "Du er politibetjent og skal skrive en anmeldelsesrapport (politirapport) pa bokmal, "
-            "som lopende prosatekst med tydelige avsnitt (Innledning, Hendelsesforlop, Tidligere "
+            "Du er politibetjent og skal skrive en anmeldelsesrapport (politirapport) på bokmål, "
+            "som løpende prosatekst med tydelige avsnitt (Innledning, Hendelsesforløp, Tidligere "
             "forhold, Konklusjon).\n\n"
-            "Bruk NOYAKTIG disse verdiene, ordrett:\n"
+            "Bruk NØYAKTIG disse verdiene, ordrett:\n"
             "- Mistenktes fulle navn: Jonas Brekke Haugland\n"
-            "- Fodselsnummer: 16086234891\n"
+            "- Fødselsnummer: 16086234891\n"
             "- Adresse: Kirkegata 45\n"
             "- Postnummer og sted: 5003 Bergen\n"
             "- Saksnummer: 2026/00312-4\n"
             "- Dato: 22.01.2026\n"
-            "- Rapportforende tjenestemann: politibetjent Nina Fjeldstad\n\n"
+            "- Rapportførende tjenestemann: politibetjent Nina Fjeldstad\n\n"
             "I teksten om tidligere forhold skal folgende to setninger sta verbatim, ordrett:\n"
             "1. \"ble domfelt for grov kroppskrenkelse i 2019\"\n"
-            "2. \"hadde en promille pa 1,4 pa gjerningstidspunktet\"\n\n"
-            "Skriv ca. 300-450 ord, formelt politispraak. Ingen engelsk, ingen plassholdere."
+            "2. \"hadde en promille på 1,4 på gjerningstidspunktet\"\n\n"
+            "Skriv ca. 300-450 ord, formelt politispråk. Ingen engelsk, ingen plassholdere."
         ),
     },
     {
@@ -105,25 +105,25 @@ PROMPTS = [
             "caseworker": "saksbehandler Per Ove Lien",
         },
         "clauses": [
-            "har en samlet gjeld pa over 480 000 kroner",
+            "har en samlet gjeld på over 480 000 kroner",
             "mottar for tiden supplerende sosialhjelp fra kommunen",
         ],
         "instruction": (
-            "Du skriver et NAV-vedtaksbrev pa bokmal om avslag pa arbeidsavklaringspenger. Bruk "
-            "brevformat med feltoverskrifter (Til, Fodselsnummer, Adresse, Saksnummer, Dato, "
-            "Saksbehandler) etterfulgt av lopende vedtakstekst med begrunnelse og klageadgang.\n\n"
-            "Bruk NOYAKTIG disse verdiene, ordrett:\n"
+            "Du skriver et NAV-vedtaksbrev på bokmål om avslag på arbeidsavklaringspenger. Bruk "
+            "brevformat med feltoverskrifter (Til, Fødselsnummer, Adresse, Saksnummer, Dato, "
+            "Saksbehandler) etterfulgt av løpende vedtakstekst med begrunnelse og klageadgang.\n\n"
+            "Bruk NØYAKTIG disse verdiene, ordrett:\n"
             "- Navn: Trude Eline Berg\n"
-            "- Fodselsnummer: 27049045678\n"
+            "- Fødselsnummer: 27049045678\n"
             "- Adresse: Storgata 8\n"
             "- Postnummer og sted: 7013 Trondheim\n"
             "- Saksnummer: NAV-2026-88213\n"
             "- Dato: 05.02.2026\n"
             "- Saksbehandler: saksbehandler Per Ove Lien\n\n"
             "I begrunnelsen skal folgende to setninger sta verbatim, ordrett:\n"
-            "1. \"har en samlet gjeld pa over 480 000 kroner\"\n"
+            "1. \"har en samlet gjeld på over 480 000 kroner\"\n"
             "2. \"mottar for tiden supplerende sosialhjelp fra kommunen\"\n\n"
-            "Skriv ca. 300-400 ord, formelt forvaltningssprak. Ingen engelsk, ingen plassholdere."
+            "Skriv ca. 300-400 ord, formelt forvaltningsspråk. Ingen engelsk, ingen plassholdere."
         ),
     },
     {
@@ -138,28 +138,28 @@ PROMPTS = [
             "address": "Havnegata 3",
             "postal": "4014 Stavanger",
             "date": "10.04.2026",
-            "hr_contact": "HR-radgiver Mona Skeie",
+            "hr_contact": "HR-rådgiver Mona Skeie",
         },
         "clauses": [
             "er tillitsvalgt i Fagforbundet",
-            "har vart sykmeldt sammenhengende i 14 uker",
+            "har vært sykmeldt sammenhengende i 14 uker",
         ],
         "instruction": (
-            "Du skriver et oppsigelsesbrev fra arbeidsgiver til ansatt pa bokmal, inkludert en "
+            "Du skriver et oppsigelsesbrev fra arbeidsgiver til ansatt på bokmål, inkludert en "
             "kort begrunnelse og informasjon om drofting med tillitsvalgt. Bruk brevformat med "
             "avsender, mottaker, dato og overskrift.\n\n"
-            "Bruk NOYAKTIG disse verdiene, ordrett:\n"
+            "Bruk NØYAKTIG disse verdiene, ordrett:\n"
             "- Ansattes navn: Anders Kvamme Lie\n"
             "- Arbeidsgivers organisasjonsnummer: 987654321\n"
             "- Arbeidsgiver: Nordsjo Logistikk AS\n"
             "- Adresse: Havnegata 3\n"
             "- Postnummer og sted: 4014 Stavanger\n"
             "- Dato: 10.04.2026\n"
-            "- HR-kontakt: HR-radgiver Mona Skeie\n\n"
+            "- HR-kontakt: HR-rådgiver Mona Skeie\n\n"
             "I brodteksten skal folgende to setninger sta verbatim, ordrett:\n"
             "1. \"er tillitsvalgt i Fagforbundet\"\n"
-            "2. \"har vart sykmeldt sammenhengende i 14 uker\"\n\n"
-            "Skriv ca. 250-350 ord, formelt brevsprak. Ingen engelsk, ingen plassholdere."
+            "2. \"har vært sykmeldt sammenhengende i 14 uker\"\n\n"
+            "Skriv ca. 250-350 ord, formelt brevspråk. Ingen engelsk, ingen plassholdere."
         ),
     },
     {
@@ -172,7 +172,7 @@ PROMPTS = [
             "case_number": "UDI-2026-55214",
             "birth_date": "12.11.1994",
             "address": "Bjorkeveien 2",
-            "postal": "9008 Tromso",
+            "postal": "9008 Tromsø",
             "date": "18.02.2026",
             "caseworker": "sakshandsamar Ingrid Moe",
         },
@@ -181,22 +181,22 @@ PROMPTS = [
             "er registrert med aktiv arbeidskontrakt hos Nord-Norsk Fiskeindustri AS",
         ],
         "instruction": (
-            "Du skriv eit vedtaksbrev fra UDI om opphaldsloyve, pa NYNORSK. Bruk brevformat med "
-            "feltoverskrifter (Til, Saksnummer, Fodselsdato, Adresse, Dato, Sakshandsamar) og "
+            "Du skriv eit vedtaksbrev fra UDI om opphaldsløyve, på NYNORSK. Bruk brevformat med "
+            "feltoverskrifter (Til, Saksnummer, Fødselsdato, Adresse, Dato, Sakshandsamar) og "
             "deretter ei grunngjeving strukturert som nummererte punkt.\n\n"
-            "Bruk NOYAKTIG desse verdiane, ordrett:\n"
+            "Bruk NØYAKTIG desse verdiane, ordrett:\n"
             "- Namn: Amina Yusuf Ali\n"
             "- Saksnummer: UDI-2026-55214\n"
-            "- Fodselsdato: 12.11.1994\n"
+            "- Fødselsdato: 12.11.1994\n"
             "- Adresse: Bjorkeveien 2\n"
-            "- Postnummer og stad: 9008 Tromso\n"
+            "- Postnummer og stad: 9008 Tromsø\n"
             "- Dato: 18.02.2026\n"
             "- Sakshandsamar: sakshandsamar Ingrid Moe\n\n"
-            "I grunngjevinga skal desse to setningane sta verbatim, ordrett, IKKJE omsette til bokmal:\n"
+            "I grunngjevinga skal desse to setningane sta verbatim, ordrett, IKKJE omsette til bokmål:\n"
             "1. \"har status som overforingsflyktning fra UNHCR\"\n"
             "2. \"er registrert med aktiv arbeidskontrakt hos Nord-Norsk Fiskeindustri AS\"\n\n"
-            "Skriv heile brevet pa nynorsk, ca. 300-400 ord. Ingen engelsk, ingen plasshaldarar, "
-            "og bland ikkje inn bokmalsformer."
+            "Skriv heile brevet på nynorsk, ca. 300-400 ord. Ingen engelsk, ingen plasshaldarar, "
+            "og bland ikkje inn bokmålsformer."
         ),
     },
     {
@@ -209,30 +209,30 @@ PROMPTS = [
             "child_birth": "04.09.2018",
             "parent_name": "Silje Fossheim",
             "address": "Skuleveien 9",
-            "postal": "6812 Forde",
+            "postal": "6812 Førde",
             "date": "01.03.2026",
-            "reporter": "barnehagelaerar Ola Vik",
+            "reporter": "barnehagelærar Ola Vik",
         },
         "clauses": [
             "kjem ofte svolten og uvaska til barnehagen",
             "mor har opplyst om eige rusmisbruk i samtale",
         ],
         "instruction": (
-            "Du skriv ei bekymringsmelding til barnevernstenesta fra ein barnehage, pa NYNORSK. "
-            "Bruk skjemaformat med feltoverskrifter (Barn, Fodselsdato, Foresatt, Adresse, Dato, "
+            "Du skriv ei bekymringsmelding til barnevernstenesta fra ein barnehage, på NYNORSK. "
+            "Bruk skjemaformat med feltoverskrifter (Barn, Fødselsdato, Foresatt, Adresse, Dato, "
             "Meldar) og deretter ei kort narrativ skildring av bekymringa.\n\n"
-            "Bruk NOYAKTIG desse verdiane, ordrett:\n"
+            "Bruk NØYAKTIG desse verdiane, ordrett:\n"
             "- Barnets namn: Emma Fossheim\n"
-            "- Fodselsdato: 04.09.2018\n"
+            "- Fødselsdato: 04.09.2018\n"
             "- Foresatt: Silje Fossheim\n"
             "- Adresse: Skuleveien 9\n"
-            "- Postnummer og stad: 6812 Forde\n"
+            "- Postnummer og stad: 6812 Førde\n"
             "- Dato: 01.03.2026\n"
-            "- Meldar: barnehagelaerar Ola Vik\n\n"
-            "I skildringa skal desse to setningane sta verbatim, ordrett, IKKJE omsette til bokmal:\n"
+            "- Meldar: barnehagelærar Ola Vik\n\n"
+            "I skildringa skal desse to setningane sta verbatim, ordrett, IKKJE omsette til bokmål:\n"
             "1. \"kjem ofte svolten og uvaska til barnehagen\"\n"
             "2. \"mor har opplyst om eige rusmisbruk i samtale\"\n\n"
-            "Skriv heile meldinga pa nynorsk, ca. 250-350 ord. Ingen engelsk, ingen plasshaldarar."
+            "Skriv heile meldinga på nynorsk, ca. 250-350 ord. Ingen engelsk, ingen plasshaldarar."
         ),
     },
     {
@@ -244,7 +244,7 @@ PROMPTS = [
             "debtor_name": "Rune Fagerheim Dahl",
             "fnr": "09027834521",
             "address": "Lundveien 21",
-            "postal": "3050 Mjondalen",
+            "postal": "3050 Mjøndalen",
             "case_number": "INK-2026-771402",
             "amount": "62 450 kroner",
             "date": "27.03.2026",
@@ -254,21 +254,21 @@ PROMPTS = [
             "er registrert med betalingsanmerkning hos tre andre kreditorer",
         ],
         "instruction": (
-            "Du skriver et inkassovarsel pa bokmal fra et inkassobyra til en skyldner, jf. "
-            "inkassoloven. Bruk brevformat med feltoverskrifter (Til, Fodselsnummer, Adresse, "
-            "Saksnummer, Belop, Dato) og deretter en kort begrunnende tekst.\n\n"
-            "Bruk NOYAKTIG disse verdiene, ordrett:\n"
+            "Du skriver et inkassovarsel på bokmål fra et inkassobyra til en skyldner, jf. "
+            "inkassoloven. Bruk brevformat med feltoverskrifter (Til, Fødselsnummer, Adresse, "
+            "Saksnummer, Beløp, Dato) og deretter en kort begrunnende tekst.\n\n"
+            "Bruk NØYAKTIG disse verdiene, ordrett:\n"
             "- Navn: Rune Fagerheim Dahl\n"
-            "- Fodselsnummer: 09027834521\n"
+            "- Fødselsnummer: 09027834521\n"
             "- Adresse: Lundveien 21\n"
-            "- Postnummer og sted: 3050 Mjondalen\n"
+            "- Postnummer og sted: 3050 Mjøndalen\n"
             "- Saksnummer: INK-2026-771402\n"
-            "- Belop: 62 450 kroner\n"
+            "- Beløp: 62 450 kroner\n"
             "- Dato: 27.03.2026\n\n"
             "I teksten skal folgende to setninger sta verbatim, ordrett:\n"
             "1. \"har inngatt en nedbetalingsavtale som misligholdes for andre gang\"\n"
             "2. \"er registrert med betalingsanmerkning hos tre andre kreditorer\"\n\n"
-            "Skriv ca. 250-350 ord, formelt inkassosprak. Ingen engelsk, ingen plassholdere."
+            "Skriv ca. 250-350 ord, formelt inkassospråk. Ingen engelsk, ingen plassholdere."
         ),
     },
     {
@@ -283,28 +283,28 @@ PROMPTS = [
             "postal": "2900 Fagernes",
             "case_number": "MT-2026-4471",
             "date": "09.05.2026",
-            "inspector": "veterinaer Kristin Sando",
+            "inspector": "veterinær Kristin Sando",
         },
         "clauses": [
-            "har gjentekne avvik pa forsvarleg husdyrhald sidan 2023",
-            "fekk paalegg om utbetring innan fire veker etter forrige tilsyn",
+            "har gjentekne avvik på forsvarleg husdyrhald sidan 2023",
+            "fekk pålegg om utbetring innan fire veker etter forrige tilsyn",
         ],
         "instruction": (
-            "Du skriv eit tilsynsvedtak/paalegg fra Mattilsynet til ein dyreeigar, pa NYNORSK. "
+            "Du skriv eit tilsynsvedtak/pålegg fra Mattilsynet til ein dyreeigar, på NYNORSK. "
             "Bruk skjemaformat med feltoverskrifter (Eigar, Org.nr, Adresse, Saksnummer, Dato, "
-            "Tilsynsperson) og deretter nummererte paalegg.\n\n"
-            "Bruk NOYAKTIG desse verdiane, ordrett:\n"
+            "Tilsynsperson) og deretter nummererte pålegg.\n\n"
+            "Bruk NØYAKTIG desse verdiane, ordrett:\n"
             "- Eigar: Bjorn Tallak Oyen\n"
             "- Organisasjonsnummer: 912345678\n"
             "- Adresse: Setervegen 14\n"
             "- Postnummer og stad: 2900 Fagernes\n"
             "- Saksnummer: MT-2026-4471\n"
             "- Dato: 09.05.2026\n"
-            "- Tilsynsperson: veterinaer Kristin Sando\n\n"
-            "I grunngjevinga skal desse to setningane sta verbatim, ordrett, IKKJE omsette til bokmal:\n"
-            "1. \"har gjentekne avvik pa forsvarleg husdyrhald sidan 2023\"\n"
-            "2. \"fekk paalegg om utbetring innan fire veker etter forrige tilsyn\"\n\n"
-            "Skriv heile vedtaket pa nynorsk, ca. 300-400 ord. Ingen engelsk, ingen plasshaldarar."
+            "- Tilsynsperson: veterinær Kristin Sando\n\n"
+            "I grunngjevinga skal desse to setningane sta verbatim, ordrett, IKKJE omsette til bokmål:\n"
+            "1. \"har gjentekne avvik på forsvarleg husdyrhald sidan 2023\"\n"
+            "2. \"fekk pålegg om utbetring innan fire veker etter forrige tilsyn\"\n\n"
+            "Skriv heile vedtaket på nynorsk, ca. 300-400 ord. Ingen engelsk, ingen plasshaldarar."
         ),
     },
     {
@@ -316,27 +316,27 @@ PROMPTS = [
             "patient_name": "Hilde Marie Tveit",
             "fnr": "21036512398",
             "address": "Furuveien 5",
-            "postal": "1440 Drobak",
+            "postal": "1440 Drøbak",
             "phone": "+47 92345671",
             "date": "02.06.2026",
         },
         "marker_types": ["HEALTH", "HEALTH"],
         "instruction": (
-            "Du er fastlege og skal skrive en henvisning til spesialisthelsetjenesten pa bokmal. "
-            "Bruk skjemaformat med feltoverskrifter (Pasient, Fodselsnummer, Adresse, Telefon, "
+            "Du er fastlege og skal skrive en henvisning til spesialisthelsetjenesten på bokmål. "
+            "Bruk skjemaformat med feltoverskrifter (Pasient, Fødselsnummer, Adresse, Telefon, "
             "Dato) og deretter en anamnesetekst du selv formulerer.\n\n"
-            "Bruk NOYAKTIG disse verdiene, ordrett:\n"
+            "Bruk NØYAKTIG disse verdiene, ordrett:\n"
             "- Pasient: Hilde Marie Tveit\n"
-            "- Fodselsnummer: 21036512398\n"
+            "- Fødselsnummer: 21036512398\n"
             "- Adresse: Furuveien 5\n"
-            "- Postnummer og sted: 1440 Drobak\n"
+            "- Postnummer og sted: 1440 Drøbak\n"
             "- Telefon: +47 92345671\n"
             "- Dato: 02.06.2026\n\n"
             "I anamnesen skal du SELV formulere to setninger om pasientens helsetilstand "
-            "(diagnose og medisinbruk er opp til deg a finne pa). Hver av disse to setningene "
-            "skal du pakke inn i markorer pa formen ⟦HEALTH: setningen her⟦, slik at "
+            "(diagnose og medisinbruk er opp til deg a finne på). Hver av disse to setningene "
+            "skal du pakke inn i markorer på formen ⟦HEALTH: setningen her⟦, slik at "
             "hele den sensitive setningen star mellom ⟦HEALTH: og ⟦. Bruk denne "
-            "markoren nokyaktig to ganger, en gang per setning. Ikke bruk markoren til noe annet "
+            "markoren nøyaktig to ganger, en gang per setning. Ikke bruk markoren til noe annet "
             "i teksten.\n\n"
             "Skriv ca. 250-350 ord. Ingen engelsk, ingen plassholdere."
         ),
@@ -350,25 +350,25 @@ PROMPTS = [
             "suspect_name": "Vetle Skogen Aas",
             "fnr": "30117045612",
             "address": "Elvegata 6",
-            "postal": "6900 Florro",
+            "postal": "6900 Florø",
             "case_number": "2026/00987-2",
             "date": "11.07.2026",
         },
         "marker_types": ["CRIMINAL", "CRIMINAL"],
         "instruction": (
-            "Du er politibetjent og skal skrive ein anmeldingsrapport pa NYNORSK, som lopande "
+            "Du er politibetjent og skal skrive ein anmeldingsrapport på NYNORSK, som løpande "
             "prosatekst.\n\n"
-            "Bruk NOYAKTIG desse verdiane, ordrett:\n"
+            "Bruk NØYAKTIG desse verdiane, ordrett:\n"
             "- Mistenkt: Vetle Skogen Aas\n"
-            "- Fodselsnummer: 30117045612\n"
+            "- Fødselsnummer: 30117045612\n"
             "- Adresse: Elvegata 6\n"
-            "- Postnummer og stad: 6900 Florro\n"
+            "- Postnummer og stad: 6900 Florø\n"
             "- Saksnummer: 2026/00987-2\n"
             "- Dato: 11.07.2026\n\n"
-            "I teksten om tidlegare forhold skal du SJOLV formulere to setningar om mistenktes "
-            "kriminelle historikk (finn sjolv pa eit realistisk lovbrot og arstal). Kvar av desse "
-            "to setningane skal pakkast inn i markorar pa forma ⟦CRIMINAL: setninga her⟦. "
-            "Bruk denne markoren nokyaktig to gonger. Skriv heile rapporten pa nynorsk, IKKJE bokmal.\n\n"
+            "I teksten om tidlegare forhold skal du SJØLV formulere to setningar om mistenktes "
+            "kriminelle historikk (finn sjølv på eit realistisk lovbrot og årstal). Kvar av desse "
+            "to setningane skal pakkast inn i markorar på forma ⟦CRIMINAL: setninga her⟦. "
+            "Bruk denne markoren nøyaktig to gonger. Skriv heile rapporten på nynorsk, IKKJE bokmål.\n\n"
             "Skriv ca. 300-400 ord. Ingen engelsk, ingen plasshaldarar."
         ),
     },
@@ -387,22 +387,22 @@ PROMPTS = [
         },
         "marker_types": ["ECONOMIC_STATUS", "EMPLOYMENT"],
         "instruction": (
-            "Du skriver et NAV-vedtaksbrev pa bokmal. Bruk brevformat med feltoverskrifter (Til, "
-            "Fodselsnummer, Adresse, Saksnummer, Dato) og deretter en begrunnelse du selv "
+            "Du skriver et NAV-vedtaksbrev på bokmål. Bruk brevformat med feltoverskrifter (Til, "
+            "Fødselsnummer, Adresse, Saksnummer, Dato) og deretter en begrunnelse du selv "
             "formulerer.\n\n"
-            "Bruk NOYAKTIG disse verdiene, ordrett:\n"
+            "Bruk NØYAKTIG disse verdiene, ordrett:\n"
             "- Navn: Ole Kristian Stromme\n"
-            "- Fodselsnummer: 14098034127\n"
+            "- Fødselsnummer: 14098034127\n"
             "- Adresse: Bekkeveien 17\n"
             "- Postnummer og sted: 1601 Fredrikstad\n"
             "- Saksnummer: NAV-2026-91470\n"
             "- Dato: 19.08.2026\n\n"
             "I begrunnelsen skal du SELV formulere:\n"
-            "1. en setning om personens okonomiske situasjon, pakket i ⟦ECONOMIC_STATUS: "
+            "1. en setning om personens økonomiske situasjon, pakket i ⟦ECONOMIC_STATUS: "
             "setningen her⟦\n"
             "2. en setning om personens arbeidsforhold, pakket i ⟦EMPLOYMENT: setningen "
             "her⟦\n"
-            "Bruk hver markortype nokyaktig en gang.\n\n"
+            "Bruk hver markortype nøyaktig en gang.\n\n"
             "Skriv ca. 250-350 ord. Ingen engelsk, ingen plassholdere."
         ),
     },
