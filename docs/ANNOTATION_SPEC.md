@@ -1155,7 +1155,7 @@ Tag the complete quantified financial clause: the amount together with its quali
 - GOV_ID nests inside a FINANCIAL_INFO full-clause span on the same basis as it nests inside CRIMINAL_RECORD (see Cross-type precedence and overlap).
 
 #### Positive examples
-- `over 500 000 NOK` (context: "...har en betydelig gjeld (over 500.000 NOK)...") — quantified debt amount.
+- `betydelig gjeld (over 500.000 NOK)` — quantified debt. Keep the financial noun; the amount qualifies it rather than standing alone. Measured across gold and the slice, an amount span carries its noun 631 times against 56 bare. **This example previously read `over 500 000 NOK` and contradicted the Resolved-conflicts entry for the same phrase;** the longer form is correct and the bare-amount reading is withdrawn.
 - `gjeld på over 700 000 NOK, inkludert misligholdte lån til DNB og gjeld til private kreditorer` — full clause: amount + itemized creditor list.
 - `over 1,5 millioner NOK` (context: "en aksjekonto med over 1,5 millioner NOK") — named account + amount.
 - `DNB` (context: "lån nr. 1234567890... inkludert DNB") — named creditor institution.
@@ -1474,7 +1474,7 @@ SEXUAL_ORIENTATION tags a clause that states, discloses, or credibly alleges a n
 - Third-party allegation/rumour about orientation — tag the substantive clause, drop the reporting frame: from "rykter om hans homofile legning", tag `hans homofile legning`.
 
 #### Exclude
-- Plain relationship-status nouns with no orientation word: `samboer`, `partner`, `ektefelle`, `gift`, `skilt`, `registrert partnerskap`, `ektemann`, `husband` — FAMILY_RELATION, even though 1,168/1,421/276/40 of them carry a single stray SEXUAL_ORIENTATION mislabel in the corpus. A civil partnership or cohabitation is available to opposite-sex and same-sex couples alike and reveals nothing about orientation by itself.
+- Plain relationship-status nouns with no orientation word: `samboer`, `partner`, `ektefelle`, `gift`, `skilt`, `registrert partnerskap`, `ektemann`, `husband` — FAMILY_RELATION, even though 1,168/1,421/276/40 of them carry a single stray SEXUAL_ORIENTATION mislabel in the corpus. A civil partnership or cohabitation is available to opposite-sex and same-sex couples alike and reveals nothing about orientation by itself. **"By itself" is the whole of it:** where the clause also names a partner whose gender matches the subject's, B31 governs and the span is SEXUAL_ORIENTATION — `lever i et partnerskap med Lise Hansen`, said of a woman, discloses orientation even though `partnerskap` alone would not.
 - Extramarital-affair language with no orientation content: `affære`, `utroskap`, `utenomekteskapelig forhold`, `kortvarig affære` — FAMILY_RELATION, not orientation, unless the affair partner's gender combined with the subject's stated orientation is the disclosed fact.
 - Generic workplace/social descriptors caught by keyword collision: `mannlig kollega` alone.
 - Religious/political self-identifiers that are lexically adjacent in these dossiers but categorically unrelated: `ateist` — **RELIGIOUS_BELIEF**, never SEXUAL_ORIENTATION, despite 14 stray co-occurrences. (This line previously routed it to POLITICAL_CASE or untagged; that predates the RELIGIOUS_BELIEF type.)
