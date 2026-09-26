@@ -280,6 +280,22 @@ those 16 have been normalised. A genitive occurrence is tagged in its bare form 
 treatment of possessives, which is unanimous at 31-0 across the gold set.
 
 
+**B22 — Intoxication is typed by what the document asserts.** A named clinical condition
+(`alkoholmisbruk`, `rusproblem`, `alkoholpåvirket tilstand`) is HEALTH_INFO; an offence
+(`fyllekjøring`, `promillekjøring`) is CRIMINAL_RECORD; recurring conduct with no clinical
+term and no offence (`beruset ved flere anledninger`) is BEHAVIORAL_PATTERN. Gold splits
+18 / 17 / 4 across those three readings, and the split follows this test rather than any
+single keyword. HEALTH_INFO's own positive example `alkoholpåvirket tilstand` and the
+HEALTH_INFO x BEHAVIORAL_PATTERN exclusivity note previously disagreed about this.
+
+**B23 — A case number takes its authority with it, preposition or not.** `2018-12345 Oslo
+Tingrett`, `2019/12345 ved Bergen Politistasjon`, `18/00345 ved Ålesund Tingrett` and
+`12-2017/0035, Nordland Tingrett` are all one GOV_ID span. The rule's examples were all
+juxtaposed, which two annotators read as limiting it to that shape and so emitted the bare
+number wherever `ved`, `hos` or `i` intervened. Gold includes the authority in 46 spans and
+uses the bare number in 0, so the connecting word makes no difference: extend the span to
+the end of the authority name.
+
 ---
 
 ## Taxonomy
@@ -1206,7 +1222,8 @@ For any of the 1,565 ambiguous spans not otherwise resolved by the witness-exclu
 - Non-cooperation/evasiveness with authorities, stated as a pattern: `resistant to previous guidance and exhibits a pattern of non-compliance` (its short-form `pattern of non-compliance` is the wrong boundary — see Boundary rule).
 
 #### Exclude
-- Any span whose full subject, once pulled in by the boundary rule, is an animal and not the person: `Schæferen virker undervektig og har matt pels.`, `Apene virker stressede, beveger seg raskt og urolig rundt i buret, og plukker mye i pelsen sin.`, `bjeffer utrøstelig i timevis hver dag` — these describe the animal's condition/behaviour, not the owner's conduct. Not tagged at all.
+- Any span whose full subject, once pulled in by the boundary rule, is an animal and not the person: `Schæferen virker undervektig og har matt pels.`, `Apene virker stressede, beveger seg raskt og urolig rundt i buret, og plukker mye i pelsen sin.`, `bjeffer utrøstelig i timevis hver dag` — these describe the animal's condition or behaviour, not the owner's conduct. **Not BEHAVIORAL_PATTERN.** They are not therefore untagged: an animal's distress is a welfare condition and belongs to HEALTH_INFO, which is where the gold set puts all three of these examples. The earlier wording, "Not tagged at all", was written from this type's point of view and wrongly read as a global exclusion.
+- The line for an animal vocalising is what the document uses it to show. Barking offered as a sign of the animal's state — alongside `stresset`, `rastløs`, `alene i lange perioder`, `klynke` — is HEALTH_INFO (13 gold spans). Barking offered only as a nuisance to neighbours (`bjeffingen forstyrrer naboene`), as aggression towards people (`bjeffer og knurrer aggressivt mot forbipasserende`), or as circumstantial evidence of an activity, is untagged (20 gold mentions). Where the tagged fact is the owner striking the animal and the barking is only the trigger clause (`sparke og slå hundene når de bjeffer`), the span is BEHAVIORAL_PATTERN about the owner.
 - The **reporter's/witness's own** routine behaviour, even though grammatically human-subject: `Jeg går tur forbi eiendommen regelmessig`, `Jeg går ofte tur i nabolaget`, `går tur med hunden min forbi eiendommen hver dag` — personal data about a third party (the whistleblower), not a conduct pattern of the data subject under investigation.
 - Financial/political/criminal acts that already have a positive home and a stronger, more specific type available: `skattesvindel`, `utroskap` alone with no conduct-pattern verb, `antisemittiske synspunkter` (→ POLITICAL_CASE).
 - Bare adjectives with no subject and no repetition/pattern marker: `aggressiv` alone (contrast with the correct boundary `aggressiv og kontrollerende`).

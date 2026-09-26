@@ -52,5 +52,5 @@ data/gold/*_calibration.jsonl
 data/gold/*_reference.jsonl
 data/gold/candidates.jsonl
 
-# slice annotation intermediates
-data/slice/*_annotator*.jsonl
+# The slice's annotator file is the product, not an intermediate: it is a single
+# adjudicated pass and there is no separate _gold file for it. Keep it tracked.
