@@ -280,6 +280,18 @@ field means *employer*, not *belief*.
 - **Not** a placeholder occupying the field without naming anything: `Privatperson`,
   `Ukjent`, `Not applicable`, `N/A`.
 
+**B31 — A same-sex relationship is SEXUAL_ORIENTATION with or without an orientation
+word.** GDPR Art. 9 covers "sex life *or* sexual orientation", so the fact is disclosed by
+the pairing itself: a male subject's `tidligere forhold til en mann ved navn Lars
+Johannessen` is SEXUAL_ORIENTATION even though no label appears. Gold reads it this way 3
+times with no contrary case.
+- **The test is the partner's gender against the subject's, not the words `en mann`.**
+  `Hun ... er i et forhold med en mann` is opposite-sex and stays FAMILY_RELATION. Read who
+  the subject is before typing the span; a keyword match on the partner's gender alone gets
+  this backwards.
+- Where both types would reach the clause, SEXUAL_ORIENTATION takes it per the precedence
+  table, with any partner name nested as PERSON.
+
 **B30 — A shortened name is its own PERSON span.** Once `Lars Magnus Olsen` is tagged, a
 later `Lars Olsen` is tagged too. It is not the sub-token case B10 excludes, because it is
 not a substring of the full name — it is a different surface string, exactly as with the
@@ -417,7 +429,8 @@ Tingrett`, `2019/12345 ved Bergen Politistasjon`, `18/00345 ved Ålesund Tingret
 juxtaposed, which two annotators read as limiting it to that shape and so emitted the bare
 number wherever `ved`, `hos` or `i` intervened. Gold includes the authority in 46 spans and
 uses the bare number in 0, so the connecting word makes no difference: extend the span to
-the end of the authority name.
+the end of the authority name. **A comma counts as a connector too** — `2010-12345, Oslo Tingrett`, `saksnummer 2018-23456` following `dom i Stavanger Tingrett,`. Two annotators split on the comma form specifically; gold includes the authority in 15 such spans against 7 bare, and those 7 predate this rule and are fixed.
+- **The rule extends forward only.** Where the authority *precedes* the number — `dom i Stavanger Tingrett, saksnummer 2018-23456` — tag the bare number. Gold does this 12 times against 2, and the asymmetry has a reason: `2018-12345 Oslo Tingrett` is one noun phrase, while a preceding authority belongs to the earlier verb (`dom i ...`) and pulling it in would swallow a separate fact. The 2 contrary spans are trimmed.
 
 ---
 
