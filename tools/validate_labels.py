@@ -430,7 +430,11 @@ def main() -> int:
     unrepairable = sum(
         count for code, count in report["codes"].items() if code not in REPAIRABLE
     )
-    return 1 if unrepairable or report["empty_records"] else 0
+    # duplicate_span is mechanically repairable, but a file carrying one has not been
+    # through its own assembly step and must not be accepted. One batch reported success
+    # on 55 duplicates because this exit code treated them as benign.
+    duplicates = report["codes"].get(DUPLICATE_SPAN, 0)
+    return 1 if unrepairable or report["empty_records"] or duplicates else 0
 
 
 if __name__ == "__main__":
