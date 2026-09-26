@@ -34,16 +34,50 @@ def slugify(model_id: str) -> str:
     return model_id.replace("/", "__")
 
 
-def load_model(model_id: str, use_4bit: bool):
+def _patch_remote_tied_keys(model_id: str) -> None:
+    """Adapt custom-code models written for transformers 4.x to 5.x.
+
+    transformers 5 expects `_tied_weights_keys` to be a {target: source} dict;
+    older remote code (e.g. XHToken/Spark-X2.5-4B) still declares a list, which
+    crashes in post_init before any weights load.
+    """
+    from transformers import AutoConfig
+    cfg = AutoConfig.from_pretrained(model_id, trust_remote_code=True)
+    ref = (getattr(cfg, "auto_map", None) or {}).get("AutoModelForCausalLM")
+    if not ref:
+        return
+    from transformers.dynamic_module_utils import get_class_from_dynamic_module
+    cls = get_class_from_dynamic_module(ref, model_id)
+    if isinstance(getattr(cls, "_tied_weights_keys", None), list):
+        tied = getattr(cfg, "tie_word_embeddings", False)
+        source = "model.embedding.weight" if "self.embedding = nn.Embedding" in open(
+            __import__("inspect").getsourcefile(cls)).read() else "model.embed_tokens.weight"
+        cls._tied_weights_keys = {"lm_head.weight": source} if tied else {}
+
+
+def load_model(model_id: str, use_4bit: bool, attn: str = "sdpa"):
     tok = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
-    kwargs = dict(torch_dtype=torch.float16, attn_implementation="sdpa", trust_remote_code=True)
+    kwargs = dict(torch_dtype=torch.float16, attn_implementation=attn, trust_remote_code=True)
     if use_4bit:
         from transformers import BitsAndBytesConfig
         kwargs["quantization_config"] = BitsAndBytesConfig(
             load_in_4bit=True, bnb_4bit_quant_type="nf4", bnb_4bit_compute_dtype=torch.float16,
         )
         kwargs["device_map"] = "auto"
+    _patch_remote_tied_keys(model_id)
     model = AutoModelForCausalLM.from_pretrained(model_id, **kwargs)
+    head = model.get_output_embeddings()
+    if head is not None and head.weight.is_meta:
+        # Tied checkpoint with no lm_head tensor, which transformers 5 declined
+        # to tie for this remote-code class; tie it by hand.
+        head.weight = model.get_input_embeddings().weight
+    gen = model.generation_config
+    if gen.top_k is not None and gen.top_k <= 0:
+        # vLLM/SGLang use top_k=-1 for "disabled"; transformers wants None.
+        gen.top_k = None
+    if hasattr(model.config, "get_rope_theta"):
+        print(f"rope_theta per layer type: "
+              f"{ {lt: model.config.get_rope_theta(lt) for lt in set(model.config.layer_types)} }")
     if not use_4bit:
         model = model.to("cuda")
     model.eval()
@@ -57,6 +91,7 @@ def main():
     ap.add_argument("--4bit", dest="use_4bit", action="store_true")
     ap.add_argument("--max-new-tokens", type=int, default=650)
     ap.add_argument("--disable-thinking", action="store_true", help="pass enable_thinking=False to chat template (Qwen3/3.5)")
+    ap.add_argument("--attn", default="sdpa", help="attention backend; custom-code models without SDPA support need eager")
     ap.add_argument("--only", default=None, help="comma-separated prompt ids to run (debug)")
     args = ap.parse_args()
 
@@ -66,7 +101,7 @@ def main():
 
     print(f"[{slug}] loading tokenizer+model ...", flush=True)
     t_load0 = time.time()
-    tok, model = load_model(args.model_id, args.use_4bit)
+    tok, model = load_model(args.model_id, args.use_4bit, args.attn)
     t_load1 = time.time()
     print(f"[{slug}] loaded in {t_load1 - t_load0:.1f}s", flush=True)
 

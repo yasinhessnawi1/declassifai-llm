@@ -22,9 +22,17 @@ this generator's own tests can rely on, and implements it twice:
 Both backends implement the same method:
 
     generate(self, prompts: List[str], *, max_new_tokens: int = 900,
-             temperature: float = 0.9) -> List[str]
+             temperature: float = 0.9, seed: Optional[int] = None) -> List[str]
 
-one output string per input prompt, in order.
+one output string per input prompt, in order, and set `last_finished` to one
+bool per prompt saying whether generation ended on end-of-sequence rather than
+on the token budget (a budget stop is a truncated document).
+
+Prompts carry a machine-readable manifest after `MANIFEST_SENTINEL`. The mock
+backend reads only the manifest; `HFBackend` cuts it off before the chat
+template is applied. In the first pilot the manifest was part of what the
+model read, and its `CLAUSE_SEEDED|HEALTH|...` lines taught the model to label
+clauses with their category.
 """
 
 from __future__ import annotations
@@ -35,13 +43,25 @@ import re
 from typing import List, Optional
 
 
+MANIFEST_SENTINEL = "<<<MANIFEST>>>"
+DRAFT_OPEN = "<<<UTKAST>>>"
+DRAFT_CLOSE = "<<<SLUTT PÅ UTKAST>>>"
+
+
+def model_visible(prompt: str) -> str:
+    """Return the part of a prompt the model sees (everything before the manifest)."""
+    return prompt.split("\n" + MANIFEST_SENTINEL, 1)[0]
+
+
 class GenerationBackend(abc.ABC):
     """Contract every generation backend implements."""
+
+    last_finished: List[bool] = []
 
     @abc.abstractmethod
     def generate(
         self, prompts: List[str], *, max_new_tokens: int = 900,
-        temperature: float = 0.9,
+        temperature: float = 0.9, seed: Optional[int] = None,
     ) -> List[str]:
         """Generate one document per prompt.
 
@@ -49,6 +69,7 @@ class GenerationBackend(abc.ABC):
             prompts: Fully-built prompts, one per document to generate.
             max_new_tokens: Generation length cap.
             temperature: Sampling temperature.
+            seed: Seed for this call's sampling, for reproducibility.
 
         Returns:
             List of generated document strings, same length and order as `prompts`.
@@ -56,7 +77,7 @@ class GenerationBackend(abc.ABC):
         raise NotImplementedError
 
 
-_MANIFEST_LINE_RE = re.compile(r"^(VALUE|CLAUSE_SEEDED|CLAUSE_MARKED|SEED|META)\|(.*)$")
+_MANIFEST_LINE_RE = re.compile(r"^(VALUE|CLAUSE_SEEDED|CLAUSE_MARKED|SEED|META|REPAIR|MISSING)\|(.*)$")
 
 _BOILERPLATE_NB = [
     "Saken er behandlet i samsvar med gjeldende regelverk.",
@@ -93,13 +114,22 @@ class MockBackend(GenerationBackend):
 
     def generate(
         self, prompts: List[str], *, max_new_tokens: int = 900,
-        temperature: float = 0.9,
+        temperature: float = 0.9, seed: Optional[int] = None,
     ) -> List[str]:
-        return [self._fill(prompt) for prompt in prompts]
+        self.last_finished = [True] * len(prompts)
+        return [self._repair(p) if "\nREPAIR|" in p else self._fill(p) for p in prompts]
+
+    def _repair(self, prompt: str) -> str:
+        """Mock a minimal-edit repair: append each missing value in a sentence."""
+        draft = prompt.split(DRAFT_OPEN + "\n", 1)[1].split("\n" + DRAFT_CLOSE, 1)[0]
+        manifest = prompt.split(MANIFEST_SENTINEL, 1)[1]
+        missing = [line.split("|", 1)[1] for line in manifest.splitlines() if line.startswith("MISSING|")]
+        return draft + "".join(f" Det er også registrert at dette gjelder {m}." for m in missing)
 
     def _parse_manifest(self, prompt: str):
         values, seeded_clauses, marked_types, seed, form = [], [], [], 0, "nb"
-        for line in prompt.splitlines():
+        manifest = prompt.split(MANIFEST_SENTINEL, 1)[1] if MANIFEST_SENTINEL in prompt else prompt
+        for line in manifest.splitlines():
             m = _MANIFEST_LINE_RE.match(line.strip())
             if not m:
                 continue
@@ -203,12 +233,14 @@ class HFBackend(GenerationBackend):
 
     def generate(
         self, prompts: List[str], *, max_new_tokens: int = 900,
-        temperature: float = 0.9,
+        temperature: float = 0.9, seed: Optional[int] = None,
     ) -> List[str]:
         import torch
 
+        if seed is not None:
+            torch.manual_seed(seed)
         chat_texts = []
-        for prompt in prompts:
+        for prompt in map(model_visible, prompts):
             kwargs = {"enable_thinking": False} if self._supports_enable_thinking else {}
             chat_texts.append(
                 self.tokenizer.apply_chat_template(
@@ -225,6 +257,12 @@ class HFBackend(GenerationBackend):
                 temperature=temperature, top_p=0.9, pad_token_id=self.tokenizer.pad_token_id,
             )
         generated = output_ids[:, encoded["input_ids"].shape[1]:]
+        eos = self.model.generation_config.eos_token_id
+        eos = eos if isinstance(eos, list) else [eos]
+        stop_ids = {i for i in [*eos, self.tokenizer.eos_token_id, self.tokenizer.pad_token_id] if i is not None}
+        # A row that ended on end-of-sequence is padded after it; a row that ran
+        # out of budget has a non-stop token in its last position.
+        self.last_finished = [int(row[-1]) in stop_ids for row in generated]
         return self.tokenizer.batch_decode(generated, skip_special_tokens=True)
 
 

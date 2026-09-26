@@ -318,3 +318,54 @@ No quantization was used or needed for any candidate (all ≤12B fp16 fit well u
 per `SYNTHETIC_DATA_SPEC.md` §2's "quantize only at ~13B+" guidance). GPU was released
 (`nvidia-smi` confirmed 0 MiB used) after each run; this session was the only GPU user
 throughout.
+
+## Addendum — `XHToken/Spark-X2.5-4B` (screened after the choice, rejected)
+
+Screened on request after the choice above, with the same 11 prompts, sampling (temperature
+0.75, top_p 0.9) and scorer, thinking disabled via `enable_thinking=False`.
+
+**Licence:** Apache-2.0, no output-use restriction. **Architecture:** custom `spark2_5`
+hybrid (sliding-window + full attention, per-layer-type RoPE), `trust_remote_code`,
+published in bf16.
+
+**It does not load on this stack as shipped.** Three incompatibilities with transformers
+5.3.0, each patched in `data/synthetic/screening/run_screening.py` rather than in the cached
+remote code:
+
+1. No SDPA support declared — must load with `attn_implementation="eager"` (`--attn eager`).
+2. The remote class declares `_tied_weights_keys` as a list; transformers 5 expects a
+   `{target: source}` dict and crashes in `post_init`. After that is patched, transformers
+   still declines to tie and leaves `lm_head.weight` on the meta device, so the head is
+   tied to `model.embedding.weight` by hand.
+3. `generation_config.top_k = -1` (the vLLM/SGLang "disabled" convention) is rejected by
+   transformers' sampler; reset to `None`.
+
+The loader warns that `rope_parameters` has unrecognised keys; checked at runtime that the
+model's own code still reads them (`rope_theta` 10,000 sliding / 5,000,000 full), so this
+warning is cosmetic. fp16 produced no NaNs, unlike Borealis.
+
+| Model | value-verbatim | clause-verbatim (seeded) | marker discipline | tok/s | peak VRAM |
+|---|--:|--:|--:|--:|--:|
+| `Qwen/Qwen3.5-9B` (chosen) | 93% | 94% | 33% | 20.5 | 18.1 GB |
+| `XHToken/Spark-X2.5-4B` | 100% | 69% | 100% | 25.0 | 8.3 GB |
+
+The automatic numbers flatter it; reading the output rejects it. The Norwegian is not
+usable, in both forms:
+
+- Bokmål police report: `rapporten er utarbeilt` (misspelled), `Politiet ble oppsagt i
+  saken` (meaningless — "the police were dismissed in the case"), `under gjering`,
+  `hans adressen`.
+- Nynorsk UDI decision: `ophaldsløyve`, `grundlegjande` (Danish/German spellings),
+  `du er tilstrekkelege for å få opphaldsløyve`, and a sign-off reading
+  `Vår krevjande sakshandsamar` ("our demanding caseworker").
+- Its 100% marker discipline wraps word salad. Nynorsk police report, the model's own
+  CRIMINAL clauses: `⟦CRIMINAL: Ved tidlegare avhandlingar vart mistenkte nedlagt for å
+  stella vørde ved eit vakselskift i 2014⟦` and `mistenkte har delteke i ei
+  bruksforseinking i 2019`. These are exactly the Tier C spans the project needs to be
+  best, and they are not Norwegian.
+- Same document opens with the placeholder `Politibetjent: [Din Namn]`.
+
+The speed gain is also small: 25.0 vs 20.5 tok/s, because the custom architecture runs on
+eager attention. Its benchmark lead in the model card (IFBench 75.0 vs 64.5) is measured in
+English with thinking on and does not carry over to Norwegian with thinking off. Rejected
+on Norwegian fluency, the first-ranked criterion; the choice stands.

@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 # ---------------------------------------------------------------------------
 # Names. A few hundred first names and surnames drawn from general knowledge of
@@ -493,3 +493,190 @@ def load_clause_bank(path: Optional[str]) -> dict:
     return _DEFAULT_CLAUSE_BANK
 
 
+
+
+# ---------------------------------------------------------------------------
+# Record-coherence and G7 reference lists, added after the first real pilot
+# (data/synthetic/pilot_v1). That pilot showed two things these lists fix:
+# records that contradicted themselves (a Norwegian-named subject holding a
+# Somali residence permit, an employer called after the dismissed employee's
+# own surname), and a G7 name sweep whose false positives were almost all
+# organisations and "title + ordinary noun" pairs rather than people.
+# ---------------------------------------------------------------------------
+
+# A subject in a UDI decision is by construction not Norwegian, and a name
+# drawn from Norwegian frequency lists next to `eritreisk` statsborgerskap is
+# the kind of incoherence a reader notices at once. Small per-nationality
+# pools, keyed by the nationality adjective the record carries.
+FOREIGN_NAMES: Dict[str, Tuple[List[str], List[str], List[str]]] = {
+    "somalisk": (["Abdi", "Mohamed", "Ahmed", "Hassan", "Yusuf", "Abdirahman"],
+                 ["Fadumo", "Hodan", "Asha", "Amina", "Sahra", "Ifrah"],
+                 ["Warsame", "Farah", "Abdullahi", "Hussein", "Omar", "Jama"]),
+    "syrisk": (["Omar", "Khaled", "Mahmoud", "Rami", "Yazan", "Bashar"],
+               ["Rasha", "Lina", "Nour", "Hiba", "Dima", "Rana"],
+               ["Haddad", "Al-Hamwi", "Khalil", "Nasser", "Darwish", "Suleiman"]),
+    "polsk": (["Piotr", "Tomasz", "Krzysztof", "Marek", "Paweł", "Łukasz"],
+              ["Agnieszka", "Katarzyna", "Magdalena", "Joanna", "Ewa", "Monika"],
+              ["Kowalski", "Nowak", "Wiśniewski", "Wójcik", "Kamiński", "Zieliński"]),
+    "litauisk": (["Tomas", "Mindaugas", "Darius", "Andrius", "Vytautas"],
+                 ["Rasa", "Jurgita", "Aistė", "Ieva", "Laura"],
+                 ["Kazlauskas", "Petrauskas", "Jankauskas", "Stankevičius", "Vasiliauskas"]),
+    "eritreisk": (["Yonas", "Tesfay", "Mehari", "Samuel", "Filmon", "Dawit"],
+                  ["Helen", "Senait", "Ruta", "Saba", "Yordanos", "Mebrat"],
+                  ["Tesfamariam", "Gebremedhin", "Haile", "Berhane", "Kidane", "Tekle"]),
+    "afghansk": (["Ahmad", "Mohammad", "Ali", "Reza", "Farid", "Jawad"],
+                 ["Zahra", "Fatima", "Maryam", "Shabnam", "Parisa", "Nilofar"],
+                 ["Rahimi", "Ahmadi", "Hakimi", "Karimi", "Noori", "Sadiqi"]),
+    "irakisk": (["Haider", "Mustafa", "Ali", "Karim", "Saif", "Hussein"],
+                ["Zainab", "Noor", "Shaima", "Huda", "Sara", "Rusul"],
+                ["Al-Jabouri", "Al-Saadi", "Kareem", "Hamid", "Abbas", "Jawad"]),
+    "ukrainsk": (["Oleksandr", "Andrii", "Dmytro", "Serhii", "Mykola", "Taras"],
+                 ["Olena", "Iryna", "Oksana", "Nataliia", "Kateryna", "Yuliia"],
+                 ["Shevchenko", "Kovalenko", "Bondarenko", "Tkachenko", "Kravchenko", "Melnyk"]),
+    "iransk": (["Reza", "Hossein", "Mehdi", "Amir", "Babak", "Kaveh"],
+               ["Maryam", "Leila", "Shirin", "Nasrin", "Parisa", "Azadeh"],
+               ["Hosseini", "Mohammadi", "Rezaei", "Moradi", "Karimi", "Jafari"]),
+    "svensk": (["Johan", "Mikael", "Anders", "Niklas", "Olof"],
+               ["Anna", "Karin", "Maria", "Sara", "Emelie"],
+               ["Andersson", "Johansson", "Karlsson", "Nilsson", "Lindqvist"]),
+}
+
+FOREIGN_NATIONALITIES: List[str] = [n for n in FOREIGN_NAMES if n != "svensk"]
+
+# Given names the G7 sweep should recognise even though the sampler never
+# draws them: models invent names from their own priors, and a detector that
+# only knows the sampler's lists would wave `Bjørnar Halvorsen` through.
+EXTRA_FIRST_NAMES: List[str] = [
+    "Bjørnar", "Eirik", "Even", "Håvard", "Jørgen", "Kjetil", "Morten", "Petter",
+    "Rolf", "Stig", "Tore", "Truls", "Øystein", "Arild", "Audun", "Eilif",
+    "Anette", "Guro", "Siri", "Mona", "Grete", "Linda", "Stine", "Kjersti",
+    "Gro", "Karin", "Lise", "Mari", "Marthe", "Ane", "Eli", "Hilde", "Kaja",
+    "Line", "Maria", "Marie", "Mathilde", "Oda", "Ragnhild", "Silje", "Siv",
+    "Solvor", "Tonje", "Torill", "Unni", "Anna", "Helene", "Helle", "Jenny",
+    "Lisa", "Martine", "Marita", "Ann", "Else", "Ingvild", "Toril", "Sissel",
+]
+
+# Surname endings that make an unknown capitalised word a plausible surname.
+SURNAME_SUFFIXES: Tuple[str, ...] = (
+    "sen", "son", "ssen", "stad", "rud", "land", "dal", "dahl", "heim", "vik",
+    "berg", "haug", "haugen", "bakken", "bakke", "nes", "moen", "strand",
+    "holm", "lund", "vold", "gård", "gaard", "seth", "set", "li", "lie", "by",
+    "sæter", "seter", "eng", "myr", "tveit", "voll", "hagen", "stuen", "aas",
+)
+
+# Honorifics that B21 in docs/ANNOTATION_SPEC.md folds into the PERSON span.
+HONORIFICS: List[str] = ["Fru", "Herr", "Frk.", "Frøken", "Dr.", "Mr.", "Mrs.", "Ms."]
+
+# Role titles a model prefixes to a name. They are not honorifics, so they are
+# never part of the PERSON span; a role title followed only by a surname
+# (`Saksbehandler Larsen`) refers to an unplanned person whose span the
+# annotation spec does not settle, so the sweep rejects rather than labels it.
+ROLE_TITLES: List[str] = [
+    "saksbehandler", "sakshandsamar", "politisjef", "politimester", "politibetjent",
+    "politiførstebetjent", "politioverbetjent", "etterforsker", "etterforskar",
+    "operasjonsleder", "operasjonsleiar", "politiadvokat", "advokat", "lege",
+    "overlege", "fastlege", "sykepleier", "sjukepleiar", "psykolog", "rektor",
+    "konsulent", "rådgiver", "rådgjevar", "seniorrådgiver", "seniorrådgjevar",
+    "leder", "leiar", "sjef", "direktør", "dommer", "dommar", "aktor",
+    "forsvarer", "forsvarar", "inspektør", "tolk", "vitne", "betjent",
+    "avdelingsleder", "avdelingsleiar", "personalsjef", "hr-sjef", "hr-leder",
+    "hr-leiar", "daglig", "dagleg", "fagleder", "fagleiar", "veileder",
+    "rettleiar", "helsepersonell", "tillitsvalgt", "tillitsvald", "verneombud",
+    "kontaktperson", "fullmektig", "lensmann", "kommuneoverlege", "spesialist",
+    "kollega", "nabo", "pasient", "klient", "søker", "søkjar", "arbeidstaker",
+    "arbeidstakar", "arbeidsgiver", "arbeidsgjevar", "vedkommende", "vedkommande",
+]
+
+# Organisations a document can name without it being PII of the subject:
+# unions, banks, collection agencies, parties, faith communities, hospitals,
+# courts. Multi-word names matter most, since the bigram sweep otherwise
+# reads `Bank Norwegian` or `Norsk Sykepleierforbund` as a first name and a
+# surname.
+KNOWN_ORGANISATIONS: List[str] = [
+    "Fellesforbundet", "Fagforbundet", "Utdanningsforbundet", "Norsk Sykepleierforbund",
+    "Norsk Arbeidsmandsforbund", "Norsk Transportarbeiderforbund",
+    "Norsk Transportarbeidarforbund", "Handel og Kontor", "Industri Energi", "Parat",
+    "Delta", "Unio", "Akademikerne", "Landsorganisasjonen", "LO", "YS", "NHO", "Virke",
+    "Den norske legeforening", "Legeforeningen", "Politiets Fellesforbund",
+    "DNB", "Nordea", "Santander", "Bank Norwegian", "Sparebanken Vest",
+    "SpareBank 1", "Sparebank 1", "Handelsbanken", "Danske Bank", "Storebrand",
+    "Lindorff", "Intrum", "Kredinor", "Lowell", "Gjensidige", "If Skadeforsikring",
+    "Fremskrittspartiet", "Senterpartiet", "Arbeiderpartiet", "Høyre", "Venstre",
+    "Kristelig Folkeparti", "Sosialistisk Venstreparti", "Rødt", "Miljøpartiet De Grønne",
+    "Den norske kirke", "Den norske kyrkja", "Jehovas Vitner", "Human-Etisk Forbund",
+    "Den Evangelisk Lutherske Frikirke", "Den Evangelisk Lutherske Frikyrkja",
+    "Scientologikirken", "Pinsebevegelsen",
+    "Haukeland", "Haukeland Universitetssjukehus", "Haukeland universitetssjukehus",
+    "Oslo universitetssykehus", "Ullevål", "Rikshospitalet", "Radiumhospitalet",
+    "Akershus universitetssykehus", "Ahus", "St. Olavs hospital", "Bærum sykehus",
+    "Diakonhjemmet", "Lovisenberg", "Sørlandet sykehus", "Stavanger universitetssjukehus",
+    "Universitetssykehuset Nord-Norge", "Distriktspsykiatrisk senter", "DPS", "BUP",
+    "Oslo tingrett", "Bergen tingrett", "Borgarting lagmannsrett", "Gulating lagmannsrett",
+    "Frostating lagmannsrett", "Hålogaland lagmannsrett", "Agder lagmannsrett",
+    "Eidsivating lagmannsrett", "Trygderetten", "Arbeidsretten",
+    "NAV Arbeid og ytelser", "NAV Kontroll", "NAV Klageinstans", "NAV Hjelpemiddelsentral",
+    "Arbeids- og velferdsetaten", "Politiets utlendingsenhet", "Oslo politidistrikt",
+    "Vest politidistrikt", "Øst politidistrikt", "Sør-Vest politidistrikt",
+    "Trøndelag politidistrikt", "Nordland politidistrikt", "Troms politidistrikt",
+    "Innlandet politidistrikt", "Agder politidistrikt", "Møre og Romsdal politidistrikt",
+    "Spesialisthelsetjenesten", "Spesialisthelsetenesta", "Helse Bergen", "Helse Vest",
+    "Helse Sør-Øst", "Helse Nord", "Helse Midt-Norge", "Pasientreiser",
+    "OsloMet", "NTNU", "Universitetet i Bergen", "Universitetet i Oslo",
+    "Norges miljø- og biovitenskapelige universitet", "Lånekassen", "Statens lånekasse",
+    "Norsk Folkehjelp", "Røde Kors", "Kirkens Bymisjon", "Frelsesarmeen",
+    "Mattilsynet", "Arbeidstilsynet", "Skatteetaten", "Utlendingsdirektoratet",
+    "Utlendingsnemnda", "UNE", "Husbanken", "Barnevernet", "Barnevernstjenesten",
+    "Statsforvalteren", "Kripos", "Økokrim", "Namsfogden", "Konfliktrådet",
+    "Kriminalomsorgen", "Folkeregisteret", "Brønnøysundregistrene", "Enhetsregisteret",
+]
+
+# Last-word markers of an organisation name: `Vold Service Holding AS`,
+# `Norsk Sykepleierforbund`, `Oslo tingrett`. Matched against the lowercase
+# final token of a capitalised run (exact for the short legal-form codes,
+# as a suffix for the rest).
+ORG_FORM_CODES: Set[str] = {"AS", "ASA", "SA", "DA", "ANS", "BA", "KF", "IKS", "HF", "NUF", "SUS"}
+ORG_SUFFIX_WORDS: Tuple[str, ...] = (
+    "forbund", "forbundet", "forening", "foreningen", "foreining", "foreininga", "lag", "laget",
+    "bank", "banken", "sparebank", "kommune", "kommunen", "fylkeskommune",
+    "sykehus", "sykehuset", "sjukehus", "sjukehuset", "universitetssykehus",
+    "universitetssjukehus", "hospital", "klinikk", "klinikken", "legesenter",
+    "legekontor", "legevakt", "tingrett", "lagmannsrett", "politidistrikt",
+    "direktorat", "direktoratet", "etaten", "etat", "tilsynet", "tilsyn",
+    "skole", "skolen", "skule", "skulen", "universitet", "universitetet",
+    "høgskole", "høgskule", "barnehage", "barnehagen", "kirke", "kirken",
+    "kyrkje", "kyrkja", "menighet", "menigheten", "kyrkjelyd", "parti",
+    "partiet", "stiftelse", "stiftelsen", "senter", "senteret", "sykehjem",
+    "sjukeheim", "holding", "gruppen", "gruppa", "forsikring", "kontor",
+    "kontoret", "avdeling", "avdelinga", "avdelingen", "seksjon", "enhet",
+    "eining", "fengsel", "rådhus", "helseforetak", "nemnd", "nemnda",
+    "departement", "departementet", "registeret", "sjømat", "transport",
+    "bygg", "entreprenør", "consulting", "handel", "service", "logistikk",
+    "regnskap", "renhold", "catering", "omsorg", "industri", "eiendom",
+)
+
+# Employer sectors for coherent ORGANIZATION + EMPLOYMENT pairs: a dismissed
+# `lagermedarbeider` works for a logistics company, not for an entity named
+# after their own surname. Roles are (bokmål, nynorsk).
+ROLE_SECTORS: List[Tuple[List[str], List[Tuple[str, str]]]] = [
+    (["Transport", "Logistikk"], [("lagermedarbeider", "lagermedarbeidar"), ("sjåfør", "sjåfør"),
+                                  ("truckfører", "truckførar"), ("transportplanlegger", "transportplanleggjar")]),
+    (["Bygg", "Entreprenør"], [("tømrer", "tømrar"), ("elektriker", "elektrikar"),
+                               ("prosjektleder", "prosjektleiar"), ("maskinfører", "maskinførar")]),
+    (["Handel", "Dagligvare"], [("butikkmedarbeider", "butikkmedarbeidar"), ("salgskonsulent", "salskonsulent"),
+                                ("butikksjef", "butikksjef"), ("kundebehandler", "kundebehandlar")]),
+    (["Omsorg", "Helsetjenester"], [("helsefagarbeider", "helsefagarbeidar"), ("sykepleier", "sjukepleiar"),
+                                    ("miljøarbeider", "miljøarbeidar"), ("assistent", "assistent")]),
+    (["Regnskap", "Consulting"], [("regnskapsmedarbeider", "rekneskapsmedarbeidar"), ("rådgiver", "rådgjevar"),
+                                  ("IT-konsulent", "IT-konsulent"), ("lønnsansvarlig", "lønnsansvarleg")]),
+    (["Restaurant", "Catering"], [("kokk", "kokk"), ("servitør", "servitør"), ("kjøkkensjef", "kjøkkensjef")]),
+    (["Renhold", "Service"], [("renholder", "reinhaldar"), ("vaktmester", "vaktmeister"),
+                              ("driftsoperatør", "driftsoperatør")]),
+    (["Sjømat", "Fiskeindustri"], [("produksjonsmedarbeider", "produksjonsmedarbeidar"),
+                                   ("maskinoperatør", "maskinoperatør"), ("skiftleder", "skiftleiar")]),
+]
+
+ORG_NAME_PREFIXES: List[str] = [
+    "Nordlys", "Fjellheim", "Havbris", "Solsiden", "Granlund", "Bølgen", "Fjordgløtt",
+    "Vestkyst", "Midtnorsk", "Østlandske", "Nordkapp", "Bjørketun", "Lyngheim",
+    "Sjøkanten", "Skogly", "Brattli", "Kystlinje", "Elvebakken", "Toppen", "Fossheim",
+]
