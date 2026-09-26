@@ -275,6 +275,12 @@ field means *employer*, not *belief*.
 - **Not** a placeholder occupying the field without naming anything: `Privatperson`,
   `Ukjent`, `Not applicable`, `N/A`.
 
+**B29 — The reporter's own address is NO_ADDRESS.** `Jeg bor i nabohuset (Granveien 14)`,
+`Jeg bor i nabobygget (Furulundveien 29)`. NO_ADDRESS is not scoped to the document's
+primary subject: the reporter is an identifiable person and this is their address. Gold and
+the slice tag it 6 times against 1, and the exception was a miss. This is the same
+reasoning as B26, where the reporter's own occupation is EMPLOYMENT_INFO.
+
 **B28 — Concealment of income is CRIMINAL_RECORD without an enumerated offence noun.**
 `forsøk på å skjule inntekter for skattemyndighetene`, `skjule inntekter fra beskatning`,
 `manipulert regnskapet for å redusere skattebelastningen` all assert intent to evade, which
