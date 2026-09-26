@@ -229,7 +229,12 @@ kept when it is the only thing that does so.
 **B19 — The organisation in an employer field is EMPLOYMENT_INFO.** The value of a
 `Navn på dyreeier eller virksomhet:` field, and the organisation named in an
 `Org.nr.: NNNNNNNNN (Name)` parenthetical, is the entity under inspection and is tagged
-EMPLOYMENT_INFO whenever the document names a person. This holds regardless of what the
+EMPLOYMENT_INFO when the document identifies a **principal** for it — an owner, innehaver,
+daglig leder or other person the business is attributed to. A person merely appearing in
+the document, such as the reporter or a neighbour, is not enough: with no principal the
+business name identifies nobody and is not personal data. All 20 gold batches follow this
+reading; the looser wording it replaces ("whenever the document names a person") never
+matched the practice. This holds regardless of what the
 organisation does: a congregation is treated exactly like a farm or a company, because the
 field means *employer*, not *belief*.
 - `Org.nr.: 987654321 (Stavanger Menighetssenter)` → EMPLOYMENT_INFO
