@@ -275,6 +275,15 @@ documents (3.6%) carry an identifier label that list does not name.
 - Not tagged: `journalnummer` and `pasientjournal` (a hospital's internal record),
   `lånenummer` (a bank's), `medlemsnummer` (a private association's), `våpennummer`
   (a manufacturer's serial on the weapon itself, as distinct from the state-issued card).
+- **A vehicle registration number is GOV_ID and is tagged as its own span.** The state
+  assigns it and it identifies the registered keeper, so it is exactly what the issuer
+  test is for: `registreringsnummer DK 45778`, `Registreringsnummer: OS78945`, `reg.nr.
+  BT 12345`. Tag the plate alone -- never absorb it into the surrounding vehicle
+  description, and never extend the span to cover the label word. Gold had left three
+  of these untagged from before this rule existed; they are tagged now.
+- Shape alone does not decide it. `AB12345` is a rifle serial and `HG12345` a firearms
+  card number; both share the two-letters-five-digits form and go opposite ways. Read the
+  label.
 - The test is who issued the number, not whether it identifies a person. A hospital record
   number does identify someone, but it is not a government identifier and no other type
   covers it, so it is left untagged — as with religious affiliation.
