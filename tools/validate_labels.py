@@ -24,14 +24,17 @@ import re
 import sys
 from typing import Dict, List, Optional, Tuple
 
-# The 18 types present in the raw corpus. The training config currently lists
-# only 15 of these; see docs/DATA_QUALITY.md for the discrepancy.
+# The 16 types defined in docs/ANNOTATION_SPEC.md, which is the authority.
+# The raw corpus additionally carries CONTEXT_SENSITIVE and IDENTIFIABLE_IMAGE
+# (cut from the taxonomy -- neither identifies a natural person under GDPR
+# Art. 4(1)) plus three stray keys the labeler invented. Those are reported as
+# unknown_type here and removed by tools/clean_corpus.py.
 ALL_TYPES = [
     "PERSON", "DATE_TIME", "HEALTH_INFO", "GOV_ID", "NO_ADDRESS",
     "CRIMINAL_RECORD", "POSTAL_CODE", "NO_PHONE_NUMBER", "EMAIL_ADDRESS",
-    "FAMILY_RELATION", "CONTEXT_SENSITIVE", "FINANCIAL_INFO",
-    "EMPLOYMENT_INFO", "POLITICAL_CASE", "BEHAVIORAL_PATTERN",
-    "ECONOMIC_STATUS", "IDENTIFIABLE_IMAGE", "SEXUAL_ORIENTATION",
+    "FAMILY_RELATION", "FINANCIAL_INFO", "EMPLOYMENT_INFO",
+    "POLITICAL_CASE", "BEHAVIORAL_PATTERN", "ECONOMIC_STATUS",
+    "SEXUAL_ORIENTATION",
 ]
 
 # Violation codes, ordered roughly by severity.
@@ -308,7 +311,10 @@ def _print_report(report: dict, types: List[str]) -> None:
     for code, count in report["codes"].most_common():
         share = count / report["spans"] * 100 if report["spans"] else 0
         flag = "repairable" if code in REPAIRABLE else "needs review"
-        print(f"  {code:22} {count:>7,}  ({share:5.2f}% of spans)  [{flag}]")
+        # unknown_type is raised once per (record, type), not once per span, so a
+        # share of the span total would misdescribe it.
+        unit = "of records x types" if code == UNKNOWN_TYPE else "of spans"
+        print(f"  {code:22} {count:>7,}  ({share:5.2f}% {unit})  [{flag}]")
         for etype, span in report["examples"].get(code, [])[:3]:
             print(f"       e.g. [{etype}] {span!r}")
 
