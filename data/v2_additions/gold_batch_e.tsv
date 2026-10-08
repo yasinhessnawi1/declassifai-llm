@@ -1,0 +1,66 @@
+E001	LOCATION	Vestland
+E001	LOCATION	Bergen
+E001	ANIMAL_INFO	tre kapusineraper
+E002	LOCATION	Viken
+E002	LOCATION	Bærum
+E002	LOCATION	Rud
+E002	ANIMAL_INFO	hund
+E002	ANIMAL_INFO	schäferhund
+E003	LOCATION	Bergen
+E003	ANIMAL_INFO	storfe
+E003	ANIMAL_INFO	Flere kyr
+E003	RELIGIOUS_BELIEF	ateist
+E004	LOCATION	Kristiansand
+E004	RELIGIOUS_BELIEF	hennes religiøse overbevisning (en avlegger av kristendommen med fokus på åndelig renhet og strenge kostholdsregler)
+E005	LOCATION	Bergen
+E005	RELIGIOUS_BELIEF	praktiserende katolikk
+E006	LOCATION	Hadsel
+E006	LOCATION	Lødingen
+E006	ANIMAL_INFO	sau
+E006	RELIGIOUS_BELIEF	medlem av pinsemenigheten i Lødingen
+E007	LOCATION	Bergen
+E007	LOCATION	Paradis
+E007	ANIMAL_INFO	storfe
+E007	RELIGIOUS_BELIEF	medlem av den lokale pinsemenigheten
+E008	LOCATION	Leknes
+E008	ANIMAL_INFO	sau
+E008	RELIGIOUS_BELIEF	ateist
+E009	LOCATION	Vestfold og Telemark
+E009	LOCATION	Sandefjord
+E009	ANIMAL_INFO	flere hunder
+E009	ANIMAL_INFO	blanding av terrier og lignende raser
+E010	LOCATION	Vestland
+E010	LOCATION	Bergen
+E010	ORGANIZATION	Fjordland AS
+E011	LOCATION	Innlandet
+E011	LOCATION	Hamar
+E011	ANIMAL_INFO	sauer
+E011	ANIMAL_INFO	omtrent 30 dyr
+E012	LOCATION	Vestland
+E012	LOCATION	Voss
+E012	ANIMAL_INFO	sauene
+E012	ANIMAL_INFO	rundt 30-40 sauer
+E013	LOCATION	Viken
+E013	LOCATION	Drammen
+E013	ANIMAL_INFO	flere hunder
+E013	ANIMAL_INFO	pitbull-typer
+E014	LOCATION	Svolvær
+E014	ANIMAL_INFO	Flere kyr
+E014	RELIGIOUS_BELIEF	medlem av Den norske kirke
+E015	LOCATION	Bjørnefjord
+E015	ANIMAL_INFO	elg
+E015	ANIMAL_INFO	gaupe
+E015	ANIMAL_INFO	fjellrev
+E015	RELIGIOUS_BELIEF	ateist
+E016	LOCATION	Ås
+E016	LOCATION	Indonesia
+E016	RELIGIOUS_BELIEF	hans religiøse overbevisning (medlem av en mindre kjent kristen sekt)
+E017	LOCATION	Viken
+E017	LOCATION	Bærum
+E017	LOCATION	Lommedalen
+E017	ANIMAL_INFO	schäferhund
+E017	AGE	2 år gammel
+E018	LOCATION	Svolvær
+E018	ANIMAL_INFO	sau
+E018	ANIMAL_INFO	Flere sauer
+E018	RELIGIOUS_BELIEF	registrert katolikk

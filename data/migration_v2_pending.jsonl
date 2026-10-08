@@ -1,4 +1,5 @@
 {"id": "B011", "legacy": "GOV_ID", "span": "HG123456", "reason": "firearms_licence", "context": "r registrert eier av et haglegevær (lisensnummer: "}
+{"id": "G008", "legacy": "GOV_ID", "span": "HR-2024-4321", "reason": "firearms_licence", "context": "recent acquisition of a hunting rifle (Permit ID: "}
 {"id": "L002", "legacy": "GOV_ID", "span": "HG12345", "reason": "firearms_licence", "context": "egistrert eier av et haglegevær (våpenkortnummer: "}
 {"id": "L007", "legacy": "GOV_ID", "span": "W0987654", "reason": "firearms_licence", "context": "Solberg eier en registrert rifle (våpenkortnummer "}
 {"id": "Q011", "legacy": "GOV_ID", "span": "ST-476", "reason": "vessel_registration", "context": " Magnusson sin fiskebåt \"Havbris\" (registrert som "}

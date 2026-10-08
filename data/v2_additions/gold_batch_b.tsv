@@ -1,0 +1,73 @@
+B001	LOCATION	Bergen
+B001	BANK_ACCOUNT	L7890123
+B001	ORGANIZATION	Restaurant "Sjømatdrømmen"
+B002	LOCATION	Innlandet
+B002	LOCATION	Ringsaker
+B002	LOCATION	Nes
+B002	ANIMAL_INFO	Tre hester
+B002	ANIMAL_INFO	to geiter
+B003	LOCATION	Hamar
+B003	RELIGIOUS_BELIEF	bekjenner seg til den norske kirke
+B003	ANIMAL_INFO	minst 7 kyr
+B004	LOCATION	Svolvær
+B004	RELIGIOUS_BELIEF	medlem av Den norske kirke
+B004	ANIMAL_INFO	Flere kyr
+B005	LOCATION	Vestland
+B005	LOCATION	Bergen
+B005	ANIMAL_INFO	flere eksotiske dyr
+B005	ANIMAL_INFO	to lamaer
+B005	ANIMAL_INFO	minst fire påfugler
+B005	ANIMAL_INFO	kapybara
+B006	LOCATION	Bodø
+B006	RELIGIOUS_BELIEF	medlem av Humanetisk Forbund
+B006	ANIMAL_INFO	tre hunder
+B006	ANIMAL_INFO	Siberian Husky
+B006	ANIMAL_INFO	Golden Retriever
+B006	ANIMAL_INFO	blandingshund
+B006	ANIMAL_INFO	to katter
+B007	LOCATION	Hosle
+B007	LOCATION	Akershus
+B007	LOCATION	Bærum
+B007	ANIMAL_INFO	to hunder av rasen Rottweiler
+B008	LOCATION	Viken
+B008	LOCATION	Bærum
+B008	LOCATION	Lommedalen
+B008	ANIMAL_INFO	mellomstor hund
+B008	ANIMAL_INFO	blandingsrase
+B009	LOCATION	Jessheim
+B009	RELIGIOUS_BELIEF	practicing member of the Church of Jesus Christ of Latter-day Saints
+B010	LOCATION	Bergen
+B010	LOCATION	Netherlands
+B010	RELIGIOUS_BELIEF	Humanist
+B011	LOCATION	Bergen
+B011	RELIGIOUS_BELIEF	sin tilknytning til den åsatruiske bevegelsen
+B012	LOCATION	Vestland
+B012	LOCATION	Bergen
+B012	ANIMAL_INFO	flere hunder
+B012	ANIMAL_INFO	pitbull-typen
+B013	LOCATION	Bergen
+B014	LOCATION	Vestland
+B014	LOCATION	Bergen
+B014	ANIMAL_INFO	hund
+B014	ANIMAL_INFO	schäferblanding
+B015	LOCATION	Oslo
+B016	LOCATION	Viken
+B016	LOCATION	Bærum
+B016	LOCATION	Lommedalen
+B016	ANIMAL_INFO	Golden Retriever
+B016	ANIMAL_INFO	hann
+B016	AGE	5 år gammel
+B017	LOCATION	Vestland
+B017	LOCATION	Bergen
+B017	ANIMAL_INFO	kyrne
+B017	ANIMAL_INFO	mellom 20 og 30 melkekyr
+B018	LOCATION	Svolvær
+B018	LOCATION	Bodø
+B018	RELIGIOUS_BELIEF	medlem av Den norske kirke
+B018	ANIMAL_INFO	Flere sauer
+B018	ANIMAL_INFO	sau
+B019	LOCATION	Bergen
+B019	RELIGIOUS_BELIEF	ateist
+B020	LOCATION	Lørenskog
+B020	RELIGIOUS_BELIEF	ateist
+B021	LOCATION	Bergen

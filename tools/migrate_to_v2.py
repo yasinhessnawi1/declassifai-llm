@@ -318,6 +318,36 @@ def load_additions(directory: str) -> Dict[str, List[Tuple[str, str]]]:
     return adds
 
 
+def load_corrections(path: str) -> Dict[str, List[dict]]:
+    """Span edits found while reviewing the v2 sweep: `{id, type, old, new}` per line,
+    `new: null` to delete. Applied after migration and before additions."""
+    out: Dict[str, List[dict]] = collections.defaultdict(list)
+    if os.path.exists(path):
+        for line in open(path, encoding="utf-8"):
+            if line.strip():
+                c = json.loads(line)
+                out[c["id"]].append(c)
+    return out
+
+
+def apply_corrections(rec: dict, corrections: List[dict]) -> int:
+    n = 0
+    for c in corrections:
+        spans = rec["output"].get(c["type"], [])
+        if c["old"] not in spans:
+            raise SystemExit(f"{rec['id']}: correction target not found: {c['type']} {c['old']!r}")
+        spans.remove(c["old"])
+        if c.get("new"):
+            if c["new"] not in rec["text_input"]:
+                raise SystemExit(f"{rec['id']}: correction is not verbatim: {c['new']!r}")
+            if c["new"] not in spans:
+                spans.append(c["new"])
+        if not spans:
+            rec["output"].pop(c["type"], None)
+        n += 1
+    return n
+
+
 def apply_additions(rec: dict, adds: List[Tuple[str, str]], v2_types: set) -> int:
     n = 0
     for typ, span in adds:
@@ -341,6 +371,8 @@ def main() -> int:
     ap.add_argument("--show", type=int, default=0, help="print N samples per bucket")
     ap.add_argument("--pending", default="data/migration_v2_pending.jsonl",
                     help="where spans with no v2 home are parked rather than dropped")
+    ap.add_argument("--corrections", default="data/v2_corrections.jsonl",
+                    help="span edits from reviewing the v2 sweep, applied before additions")
     ap.add_argument("--additions", default="data/v2_additions",
                     help="directory of v2-sweep addition files, applied after migration")
     args = ap.parse_args()
@@ -351,7 +383,8 @@ def main() -> int:
         pass
     overrides = load_overrides(args.overrides)
     additions = load_additions(args.additions)
-    added = 0
+    corrections = load_corrections(args.corrections)
+    added = corrected = 0
     stats: collections.Counter = collections.Counter()
     unresolved: List[tuple] = []
     samples = collections.defaultdict(list)
@@ -361,6 +394,7 @@ def main() -> int:
             recs = [json.loads(l) for l in open(path, encoding="utf-8") if l.strip()]
             migrated = [migrate_record(r, overrides, stats, unresolved) for r in recs]
             for r_new in migrated:
+                corrected += apply_corrections(r_new, corrections.get(r_new["id"], []))
                 added += apply_additions(r_new, additions.get(r_new["id"], []), v2_types)
             for r_old, r_new in zip(recs, migrated):
                 for t, spans in r_new["output"].items():
@@ -374,7 +408,8 @@ def main() -> int:
     print("legacy -> v2 relabel counts")
     for (legacy, new), n in sorted(stats.items()):
         print(f"  {legacy:18} -> {new:18} {n:6,}")
-    print(f"\nv2-sweep additions applied: {added:,}")
+    print(f"\nv2-sweep corrections applied: {corrected:,}")
+    print(f"v2-sweep additions applied: {added:,}")
     print(f"\nunresolved: {len(unresolved)}")
     for u in unresolved[:40]:
         print(f"  {u[0]:6} [{u[1]}] {u[2]!r:32} ...{u[3][-48:]!r}")

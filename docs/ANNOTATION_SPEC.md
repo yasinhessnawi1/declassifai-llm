@@ -1604,10 +1604,19 @@ documents while the project's own framing is built on Article 9.
 #### Include
 - Membership and affiliation with the verb: `medlem av Den norske kirke`,
   `medlem av Jehovas Vitner`, `medlem av pinsemenigheten`, `aktiv i menigheten`.
-- Professed belief or its absence, with or without a verb: `er ateist`,
-  `oppgir å være ateist`, `praktiserende katolikk`, `identifiserer seg som kristen`,
-  `agnostiker`. A bare belief noun **is** the disclosure and is tagged; this differs from
-  POLITICAL, where a bare party name discloses nothing about the person.
+- Professed belief or its absence: `ateist`, `praktiserende katolikk`, `agnostiker`,
+  `bekjenner seg til Jehovas vitner`. A bare belief noun **is** the disclosure and is
+  tagged; this differs from POLITICAL, where a bare party name discloses nothing about the
+  person.
+- **Verbs of saying are cut; verbs of belonging are kept.** The global reporting-frame rule
+  and B1 apply here as everywhere: `oppgir å være ateist`, `hevder å være ateist`,
+  `identifiserer seg som kristen`, `erklærte seg som kristen` and `er ateist` all tag as
+  `ateist` / `kristen`; `hevder å være medlem av Den norske kirke` tags as `medlem av Den
+  norske kirke`. A verb that states the affiliation itself stays: `medlem av`,
+  `tilhører`, `bekjenner seg til`, `registrert som medlem av`, `aktiv i`. An earlier
+  revision of this section listed `oppgir å være ateist` and `identifiserer seg som
+  kristen` as examples, contradicting the global rule; 19 spans tagged that way were
+  trimmed in the v2 sweep (`data/v2_corrections.jsonl`).
 - Conversion and its direction: `konvertitt til Islam`, `konvertert fra islam til
   kristendommen`.
 - Observance presented as the person's practice: `bærer hijab av religiøse grunner`,

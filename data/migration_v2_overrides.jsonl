@@ -2,3 +2,8 @@
 {"id": "D002", "legacy": "EMPLOYMENT_INFO", "span": "\"Fjordens Delikatesser AS,\" owned and operated by Bjørn Helge Pedersen", "v2": "EMPLOYMENT", "why": "role clause or role noun, not an organisation name (v2 sweep pilot review)"}
 {"id": "X0273", "legacy": "EMPLOYMENT_INFO", "span": "linjearbeider ved Nortura SA, avd. Oslo", "v2": "EMPLOYMENT", "why": "role clause or role noun, not an organisation name (v2 sweep pilot review)"}
 {"id": "X0274", "legacy": "EMPLOYMENT_INFO", "span": "Ny ledelse de siste 6 månedene", "v2": "EMPLOYMENT", "why": "role clause or role noun, not an organisation name (v2 sweep pilot review)"}
+{"id": "F016", "legacy": "EMPLOYMENT_INFO", "span": "Eieren", "v2": "EMPLOYMENT", "why": "v2 sweep review of gold"}
+{"id": "B019", "legacy": "EMPLOYMENT_INFO", "span": "Eriksen Veterinærtjenester", "v2": "ORGANIZATION", "why": "v2 sweep review of gold"}
+{"id": "G008", "legacy": "GOV_ID", "span": "HR-2024-4321", "v2": "NO_V2_HOME:firearms_licence", "why": "v2 sweep review of gold"}
+{"id": "G009", "legacy": "EMPLOYMENT_INFO", "span": "Direktør", "v2": "EMPLOYMENT", "why": "v2 sweep review of gold"}
+{"id": "X0103", "legacy": "EMPLOYMENT_INFO", "span": "Larsen Veterinærtjenester AS", "v2": "ORGANIZATION", "why": "v2 sweep review of gold"}

@@ -1,0 +1,72 @@
+A001	LOCATION	Bergen
+A001	RELIGIOUS_BELIEF	medlem av Jehovas Vitner
+A002	LOCATION	Oslo
+A002	ANIMAL_INFO	grønn arapapegøye
+A002	ANIMAL_INFO	én papegøye
+A003	LOCATION	Bergen
+A003	LOCATION	Thailand
+A003	RELIGIOUS_BELIEF	praktiserer Wicca
+A003	ORGANIZATION	Berg's Beauty Boutique
+A004	LOCATION	Innlandet
+A004	LOCATION	Ringsaker
+A004	LOCATION	Nes
+A004	ANIMAL_INFO	tre hester
+A004	ANIMAL_INFO	to sauer
+A005	LOCATION	Oslo
+A005	ANIMAL_INFO	gnagerne
+A005	ANIMAL_INFO	hamstrene
+A005	ANIMAL_INFO	marsvinene
+A005	ANIMAL_INFO	kaninene
+A006	LOCATION	Bergen
+A006	RELIGIOUS_BELIEF	medlem av den kontroversielle religiøse gruppen "Solens Sirkel"
+A007	LOCATION	Tjongsfjorden
+A007	LOCATION	Nordland
+A007	RELIGIOUS_BELIEF	aktiv i den lokale pinsemenigheten
+A008	LOCATION	Oslo
+A008	ANIMAL_INFO	to katter
+A008	ANIMAL_INFO	hannkatt
+A008	ANIMAL_INFO	hunnkatt
+A008	ANIMAL_INFO	grå perserkatt
+A008	ANIMAL_INFO	svart huskatt
+A008	AGE	8 år gamle
+A009	LOCATION	Viken
+A009	LOCATION	Bærum
+A009	LOCATION	Lommedalen
+A010	LOCATION	Oslo
+A010	LOCATION	Innlandet
+A010	RELIGIOUS_BELIEF	Ateist
+A011	LOCATION	Bergen
+A011	ANIMAL_INFO	flere reptiler, inkludert en Grønn Iguan og en Kongepyton
+A012	LOCATION	Valle
+A012	RELIGIOUS_BELIEF	medlem av Den norske kirke
+A012	ANIMAL_INFO	Flere sauer
+A013	LOCATION	Bergen
+A013	RELIGIOUS_BELIEF	medlem av Den Gyldne Sirkel
+A014	LOCATION	Hamar
+A014	LOCATION	Innlandet
+A014	ANIMAL_INFO	omtrent 25 sauer
+A014	ANIMAL_INFO	sauene
+A015	LOCATION	Svolvær
+A015	RELIGIOUS_BELIEF	medlem av Den Hellige Ånds Menighet
+A015	ORGANIZATION	Lothbroksson Geitegård
+A016	LOCATION	Oslo
+A017	LOCATION	Svolvær
+A017	RELIGIOUS_BELIEF	aktiv medlem i Den norske kirke
+A017	ANIMAL_INFO	Flere kyr
+A018	LOCATION	Oslo
+A018	ORGANIZATION	"Dyreparadis" Pet Shop
+A018	ANIMAL_INFO	valper
+A018	ANIMAL_INFO	kattunger
+A018	ANIMAL_INFO	minst fire valper
+A018	ANIMAL_INFO	seks kattunger
+A019	LOCATION	Oslo
+A020	LOCATION	Svolvær
+A020	RELIGIOUS_BELIEF	aktiv i den lokale pinsemenigheten
+A020	ANIMAL_INFO	Flere sauer
+A021	LOCATION	Svolvær
+A021	RELIGIOUS_BELIEF	medlem av Den norske kirke
+A022	LOCATION	Vestland
+A022	LOCATION	Bergen
+A022	ANIMAL_INFO	flere hunder
+A022	ANIMAL_INFO	pitbullterriere
+A017	ORGANIZATION	Sæther Gård
