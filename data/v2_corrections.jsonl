@@ -51,3 +51,9 @@
 {"id": "X0866", "type": "EMPLOYMENT", "old": "bachelorgrad i dyrevelferd", "new": null, "why": "a credential: ACADEMIC_RECORD (added in the sweep), not EMPLOYMENT"}
 {"id": "X0813", "type": "POLITICAL", "old": "benektet å ha nazistiske sympatier", "new": null, "why": "a denial discloses no affiliation (B7)"}
 {"id": "X0809", "type": "EMPLOYMENT", "old": "Veterinærklinikk \"Dyrehelse Vest\"", "new": null, "why": "ORGANIZATION wins over EMPLOYMENT on the same string"}
+{"id": "X0999", "type": "HEALTH", "old": "har nedsatt mobilitet", "new": null, "why": "a named person's impairment: DISABILITY (added in the sweep)"}
+{"id": "X0903", "type": "RELIGIOUS_BELIEF", "old": "angivelig praktiserende katolikk", "new": "praktiserende katolikk", "why": "hedge outside the span"}
+{"id": "X0944", "type": "RELIGIOUS_BELIEF", "old": "oppgitt sin religiøse tilknytning som humanistisk", "new": "sin religiøse tilknytning som humanistisk", "why": "cut the verb of saying"}
+{"id": "X0976", "type": "RELIGIOUS_BELIEF", "old": "oppgitt å være åsatru", "new": "åsatru", "why": "cut the verb of saying"}
+{"id": "X0982", "type": "RELIGIOUS_BELIEF", "old": "har uttrykt tilhørighet til Den norske kirke", "new": "tilhørighet til Den norske kirke", "why": "cut the verb of saying"}
+{"id": "X0973", "type": "RELIGIOUS_BELIEF", "old": "utestengelse av tidligere medlem Gunnar Hansen", "new": null, "why": "names no belief"}

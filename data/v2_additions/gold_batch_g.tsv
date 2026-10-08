@@ -20,7 +20,7 @@ G005	ANIMAL_INFO	tre hunder
 G005	RELIGIOUS_BELIEF	praktiserende katolikk
 G006	LOCATION	Oslo
 G006	ORGANIZATION	"Smakfullt"
-G006	RELIGIOUS_BELIEF	identifiserer seg som ateist
+G006	RELIGIOUS_BELIEF	ateist
 G007	LOCATION	Vestland
 G007	LOCATION	Bergen
 G008	LOCATION	Bergen
@@ -34,7 +34,7 @@ G012	LOCATION	Bygda
 G012	RELIGIOUS_BELIEF	registrert medlem av Den Norske Kirke
 G013	LOCATION	Bergen
 G013	LOCATION	Bergen-området
-G013	RELIGIOUS_BELIEF	oppgir å være ateist
+G013	RELIGIOUS_BELIEF	ateist
 G014	LOCATION	Bergen
 G015	LOCATION	Viken
 G015	LOCATION	Bærum
