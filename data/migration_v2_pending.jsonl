@@ -19,5 +19,6 @@
 {"id": "X0664", "legacy": "GOV_ID", "span": "123456", "reason": "firearms_licence", "context": "ovlig våpenbesittelse (hagle, registrert våpennr: "}
 {"id": "X0822", "legacy": "GOV_ID", "span": "123456", "reason": "firearms_licence", "context": "n registrert rifle (kaliber .308, våpenkortnummer "}
 {"id": "X0829", "legacy": "GOV_ID", "span": "2018-475963", "reason": "firearms_licence", "context": " registrert våpeneier med en rifle (lisensnummer: "}
+{"id": "X0831", "legacy": "GOV_ID", "span": "1234567", "reason": "firearms_licence", "context": " ref.: 2024/10/27-4789 Dato: 27.10.2024 Org.nr.: 9"}
 {"id": "X0856", "legacy": "GOV_ID", "span": "KF-4789", "reason": "vessel_registration", "context": ": Inspeksjon av fiskefartøy \"Havbris\" (registrert "}
 {"id": "X0915", "legacy": "GOV_ID", "span": "NO-12345", "reason": "vessel_registration", "context": "ntroll av fiskefartøyet \"Havbris\" (registrert som "}

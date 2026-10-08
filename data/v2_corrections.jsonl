@@ -47,3 +47,7 @@
 {"id": "X0706", "type": "HEALTH", "old": "begrenset mobilitet", "new": null, "why": "a named person's functional limitation is DISABILITY"}
 {"id": "X0385", "type": "EMPLOYMENT", "old": "restaurant \"The Golden Axe\"", "new": null, "why": "ORGANIZATION wins over EMPLOYMENT on the same string"}
 {"id": "X0731", "type": "HEALTH", "old": "begrenset mobilitet", "new": null, "why": "DISABILITY wins over HEALTH on the same string"}
+{"id": "X0833", "type": "RELIGIOUS_BELIEF", "old": "nevnte medlemskap i den religiøse organisasjonen \"Den Universelle Livskraft\"", "new": "medlemskap i den religiøse organisasjonen \"Den Universelle Livskraft\"", "why": "cut the verb of saying"}
+{"id": "X0866", "type": "EMPLOYMENT", "old": "bachelorgrad i dyrevelferd", "new": null, "why": "a credential: ACADEMIC_RECORD (added in the sweep), not EMPLOYMENT"}
+{"id": "X0813", "type": "POLITICAL", "old": "benektet å ha nazistiske sympatier", "new": null, "why": "a denial discloses no affiliation (B7)"}
+{"id": "X0809", "type": "EMPLOYMENT", "old": "Veterinærklinikk \"Dyrehelse Vest\"", "new": null, "why": "ORGANIZATION wins over EMPLOYMENT on the same string"}
