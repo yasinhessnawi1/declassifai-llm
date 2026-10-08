@@ -20,12 +20,12 @@ split by rule:
 |---|---|---:|
 | GOV_ID | CASE_NUMBER 1,586 · NATIONAL_ID 1,069 · ORG_NUMBER 679 · LICENSE_PLATE 14 · DRIVER_LICENSE 9 · PASSPORT 7 · TAX_ID 3 · IDENTITY_CARD 1 | 3,368 |
 | HEALTH_INFO | HEALTH 8,420 · MEDICATION 93 | 8,513 |
-| DATE_TIME | DATE_TIME 2,723 · DATE_OF_BIRTH 465 · AGE 1 | 3,189 |
+| DATE_TIME | DATE_TIME 2,718 · DATE_OF_BIRTH 470 · AGE 1 | 3,189 |
 | EMPLOYMENT_INFO | EMPLOYMENT 1,216 · ORGANIZATION 776 | 1,992 |
 | FAMILY_RELATION | FAMILY_RELATION 1,055 · MARITAL_STATUS 370 | 1,425 |
 | FINANCIAL_INFO | FINANCIAL 807 · BANK_ACCOUNT 3 | 810 |
 
-Result: 1,400 documents, 35,125 spans, 30 of 59 v2 types populated, every file valid against
+Result: 1,400 documents, 35,125 spans, 30 of 59 v2 types populated (30 of 57 after the 2026-10-08 cut), every file valid against
 v2 (`validate_labels.py --taxonomy data/synthetic/taxonomy.json`). The only spans not carried
 over are the 22 in section 3.
 
@@ -71,20 +71,19 @@ into the nearest-looking type.
 Two clean options: add `FIREARMS_LICENSE` and `VESSEL_REGISTRATION`, or broaden
 LICENSE_PLATE to "a vehicle or vessel registration mark" and add only the firearms type.
 
-## 4. Still unpopulated — 29 types
+## 4. Still unpopulated — 27 of 57 types
 
 Nothing in the annotated sets carries these, because the 17-type spec never asked for them:
 
 CREDIT_CARD, CRYPTO, DEVICE_ID, FAX_NUMBER, IBAN, INSURANCE_NUMBER, IP_ADDRESS,
 MEDICAL_LICENSE, MILITARY_ID, PASSWORD, SOCIAL_MEDIA, STUDENT_ID, URL, USERNAME,
 VISA_NUMBER, ACADEMIC_RECORD, ANIMAL_INFO, GENDER, LOCATION, NATIONALITY, AGE_INFO,
-BIOMETRIC_DATA, CONTEXT_SENSITIVE, DISABILITY, ETHNICITY, GENETIC_DATA,
-IDENTIFIABLE_IMAGE, IMMIGRATION_STATUS, TRADE_UNION.
+BIOMETRIC_DATA, DISABILITY, ETHNICITY, GENETIC_DATA, IMMIGRATION_STATUS, TRADE_UNION.
 
 Most of the Tier A ones (IBAN, IP_ADDRESS, URL, CREDIT_CARD) are regex-findable and may
 simply be absent from this corpus. The judgement ones need an annotation pass.
 
-**CONTEXT_SENSITIVE and IDENTIFIABLE_IMAGE need an owner decision before that pass.** Both
-were cut from the 16-type spec early on — neither identifies a natural person under GDPR
-Art. 4(1), and CONTEXT_SENSITIVE was a 24,000-span catch-all in the original corpus. v2
-reinstates both. That should be a deliberate choice rather than inherited.
+**CONTEXT_SENSITIVE and IDENTIFIABLE_IMAGE: resolved 2026-10-08, both dropped.** The owner
+ruled them out ("no need"), which keeps the 16-type spec's original cut: neither identifies a
+natural person under GDPR Art. 4(1). The taxonomy is now 57 types, and all 75 v2 files still
+validate against it, since no migrated span ever carried either type.

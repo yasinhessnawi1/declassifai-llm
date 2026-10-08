@@ -191,7 +191,7 @@ def date_time(span: str, text: str) -> str:
     if re.fullmatch(r"\d{1,3}\s*år(?:\s+gammel)?", s):
         return "AGE"
     head = _context(text, span, 14).lower()
-    if re.search(r"(?:\bf\.|født|fødselsdato|født:)\s*$", head):
+    if re.search(r"(?:\bf\.|\bfødt(?:\s+den)?|\bfødd|fødselsdato|fødselsdag)\s*:?\s*$", head):
         return "DATE_OF_BIRTH"
     return "DATE_TIME"
 
