@@ -241,9 +241,15 @@ def iban_no(bban_11_digits: str) -> str:
 
 
 def is_valid_iban_no(value: str) -> bool:
-    """Return whether a Norwegian IBAN's mod-97 checksum is valid."""
+    """Return whether a Norwegian IBAN is valid: its mod-97 checksum and the embedded account's mod-11.
+
+    Both are part of what makes a Norwegian IBAN valid. Checking only mod-97 made
+    an IBAN built on a deliberately invalid account number "valid" (its check
+    digits are computed over whatever account it wraps), so G4 saw a declared-
+    invalid IBAN that tested valid and discarded the document.
+    """
     compact = value.replace(" ", "")
-    if not re.fullmatch(r"NO\d{13}", compact):
+    if not re.fullmatch(r"NO\d{13}", compact) or not is_valid_bank_account(compact[4:]):
         return False
     rearranged = compact[4:] + compact[:4]
     numeric = "".join(
@@ -632,7 +638,9 @@ def animal_descriptor(rng: random.Random) -> str:
         singular, plural = rng.choice(_LIVESTOCK)
         return f"{rng.randint(3, 240)} {plural}"
     singular, plural = rng.choice(_LIVESTOCK)
-    return f"en besetning på {rng.randint(8, 180)} {plural}"
+    # No leading "en": ANNOTATION_SPEC B2 drops a leading determiner from a span,
+    # and the span is what the generator labels. The prompt may print the article.
+    return f"besetning på {rng.randint(8, 180)} {plural}"
 
 
 def format_bank_account(rng: random.Random, digits: str) -> str:

@@ -14,18 +14,25 @@ and its G11 audit reports the two cue phrases in `gendoc_backends`
 (`MOCK_ELABORATION_CUE`, `MOCK_FRAMING_CUE`) so the content-audit gate can be
 exercised without a language model's judgement in the loop.
 
+It also carries the checks that need no generation: the benchmark/training
+partition is disjoint, the leakage checker fires on an injected leak, and G13's
+thresholds reject the table dumps they were calibrated on while passing the gold
+set. `--calibrate-g13` prints the numbers those thresholds came from.
+
 Run it from the repository root; it exits non-zero if any case fails or if
 `tools/validate_labels.py` reports a violation on what the run accepted:
 
-    python3 tools/check_generator_gates.py [--out DIR]
+    python3 tools/check_generator_gates.py [--out DIR] [--calibrate-g13]
 """
 
 from __future__ import annotations
 
 import argparse
+import glob
 import json
 import os
 import re
+import statistics
 import subprocess
 import sys
 import tempfile
@@ -33,7 +40,10 @@ from typing import Dict, List, Optional, Tuple
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+import check_dataset_leakage as leakage  # noqa: E402
+import gendoc_audit as audit  # noqa: E402
 import gendoc_data as data  # noqa: E402
+import gendoc_dataset as dataset_mod  # noqa: E402
 import gendoc_gates as gates  # noqa: E402
 import generate_documents as gen  # noqa: E402
 from gendoc_backends import (  # noqa: E402
@@ -73,7 +83,20 @@ CASES: Dict[int, Tuple[str, Optional[str]]] = {
     23: ("pii_free_clean", None),
     24: ("repetition", "G12_repetition"),
     25: ("category_heading", "G9_slot"),
+    26: ("table_dump", "G13_tabular"),
+    27: ("double_label", "G13_tabular"),
+    28: ("field_dump", "G13_tabular"),
+    29: ("small_id_block", None),
+    30: ("negative_planted", None),
+    31: ("negative_survives_audit", None),
+    32: ("negative_elaboration", None),
+    33: ("wrong_role", "G14_roles"),
+    34: ("unplanned_reference", "G14_roles"),
 }
+
+# Cases that plan hard negatives, as the benchmark does. They need a plan with
+# `n_negatives` and a run config carrying a negative bank.
+_NEGATIVE_CASES = {30, 31, 32}
 
 # Which genre and plan shape each case needs. The slot-label cases need a
 # document with a seeded judgement clause; the checksum case needs a genre whose
@@ -83,7 +106,9 @@ _GENRE_FOR = {
     5: "gp_referral", 6: "gp_referral", 12: "gp_referral", 15: "nav_decision",
     18: "gp_referral", 19: "police_report", 20: "nav_decision", 21: "gp_referral",
     22: "admin_circular", 23: "admin_circular", 24: "nav_decision",
-    25: "gp_referral",
+    25: "gp_referral", 26: "nav_decision", 27: "nav_decision", 28: "nav_decision",
+    29: "nav_decision", 30: "police_report", 31: "police_report", 32: "police_report",
+    33: "nav_decision", 34: "nav_decision",
 }
 _DEFAULT_GENRES = ["gp_referral", "police_report", "nav_decision", "dismissal_letter",
                    "udi_decision"]
@@ -124,6 +149,9 @@ class InjectingMock(MockBackend):
             seed = int(re.search(r"SEED\|(\d+)", prompt).group(1))
             idx, attempt = divmod(seed - BASE_SEED * 100003, 97)
             ok = True
+            if not is_generation and "\nAUDIT|1" in prompt and CASES.get(idx, ("",))[0] == "negative_survives_audit":
+                negatives = self.states[idx].record.planted_negatives
+                text = "\n".join(f"FUNN|SENSITIV|{neg.text}" for neg in negatives)
             if is_generation and attempt == 1 and "REPAIR|" not in _manifest(prompt):
                 text, ok = self._inject(idx, text, prompt)
                 self.first_texts[idx] = text
@@ -155,6 +183,34 @@ class InjectingMock(MockBackend):
             return (text.replace(clauses[0], "")
                     + "\n\nHelserelaterte opplysningar\nDet er registrert at vedkommende "
                     + clauses[0] + " i denne perioden.\n"), True
+        if name == "table_dump":
+            rows = "\n".join(f"| Felt {k} | {v} |" for k, v in enumerate(_values(prompt)[:12]))
+            return "| Identifikasjon | Opplysning |\n| :--- | :--- |\n" + rows + "\n\n" + text, True
+        if name == "double_label":
+            value = next(v for v in _values(prompt) if len(v) > 6)
+            return f"Fødselsnummer: {value}\nStatlig ID: {value}\n\n" + text, True
+        if name == "field_dump":
+            labels = ["Navn", "Adresse", "Telefon", "E-post", "Saksnummer", "Dato", "Kontonummer",
+                      "Stilling", "Virksomhet", "Merknad"]
+            lines = "\n".join(f"{labels[k]}: {v}" for k, v in enumerate(_values(prompt)[:10]))
+            return text + "\n\n" + lines + "\n", True
+        if name == "small_id_block":
+            # The mock's own header lines become a two-row table; the rest of the
+            # header stays as plain fields. Each value appears once, under one label.
+            head, _blank, rest = text.partition("\n\n")
+            lines = head.split("\n")
+            rows = ["| " + line.replace(": ", " | ", 1) + " |" for line in lines[:2]]
+            table = ["| Identifikasjon | Opplysning |", "| :--- | :--- |"] + rows
+            return "\n".join(table + lines[2:]) + "\n\n" + rest, True
+        if name == "wrong_role":
+            fnr = next(line.split("|", 2)[2] for line in _manifest(prompt).splitlines()
+                       if line.startswith("VALUE|NATIONAL_ID|"))
+            return text + f" Saksnummeret er {fnr}.", True
+        if name == "unplanned_reference":
+            return text + " Vår ref: 2024/05891.", True
+        if name == "negative_elaboration":
+            negative = self.states[idx].record.planted_negatives[0].text
+            return text + f" Det ble notert at vedkommende {negative} {MOCK_ELABORATION_CUE}.", True
         if name == "marker":
             return text + " ⟦TYPE: setning⟧", True
         if name == "length":
@@ -206,10 +262,12 @@ def build_plans() -> List[gen.DocPlan]:
         pii_free = name.startswith("pii_free")
         forced = ["HEALTH"] if idx in (5, 6, 18, 21, 25) else []
         plans.append(gen.DocPlan(
+            n_negatives=2 if idx in _NEGATIVE_CASES else 0,
             idx=idx, genre=genre, variant="prose_letter", form="nb",
             length_band=(800, 1600) if pii_free else (1600, 2800),
             forced_types=forced, profile="pii_free" if pii_free else "typical",
-            type_target=0 if pii_free else 8, art9_cap=1, pii_free=pii_free,
+            type_target=0 if pii_free else (14 if idx in (26, 28) else 8), art9_cap=1,
+            pii_free=pii_free,
         ))
     return plans
 
@@ -275,6 +333,28 @@ def _check(state: gen.DocState) -> Tuple[bool, str]:
         # mock retry can legitimately collide with one of them on G6.
         return (failure == "G9_slot" and accepted and state.attempt >= 2), \
             f"attempt={state.attempt}"
+    if name == "small_id_block":
+        # A two-row table is an identification block: it must not trip G13.
+        return (accepted and failure is None and state.attempt == 1), \
+            f"failure={failure} attempt={state.attempt}"
+    if name in ("negative_planted", "negative_survives_audit", "negative_elaboration"):
+        negatives = state.record.planted_negatives
+        texts = [n.text for n in negatives]
+        spans = [sp for vals in result.get("output", {}).values() for sp in vals]
+        allowed = {sub for n in negatives for sub in n.also_labelled.values()}
+        verbatim = all(t in result.get("text", "") for t in texts)
+        unlabelled = not any(t in sp or sp in t for t in texts for sp in spans
+                             if sp not in allowed and len(sp) >= 4)
+        base = accepted and bool(negatives) and verbatim and unlabelled
+        if name == "negative_planted":
+            return base, f"negatives={texts} verbatim={verbatim} unlabelled={unlabelled}"
+        kept = sum(entry["kept"] for entry in state.audit_log)
+        overruled = sum(entry.get("exempt_negative_quotes", 0) for entry in state.audit_log)
+        if name == "negative_survives_audit":
+            return (base and kept == 0 and overruled >= 1 and state.audit_repairs_total == 0), \
+                f"kept={kept} overruled={overruled} audit_repairs={state.audit_repairs_total}"
+        return (base and state.audit_repairs_total == 1 and MOCK_ELABORATION_CUE not in result["text"]), \
+            f"audit_repairs={state.audit_repairs_total} cue_removed={MOCK_ELABORATION_CUE not in result['text']}"
     if name == "pii_free_invented_date":
         # The attempt count is not asserted here: every PII-free mock document
         # is a permutation of the same eight boilerplate sentences, so a retry
@@ -287,6 +367,236 @@ def _check(state: gen.DocState) -> Tuple[bool, str]:
     return (failure == expected and accepted and state.attempt == 2), f"attempt={state.attempt}"
 
 
+def _quantiles(values: List[float]) -> str:
+    ordered = sorted(values)
+    at = lambda p: ordered[min(len(ordered) - 1, int(p * len(ordered)))]  # noqa: E731
+    return (f"n={len(ordered)} mean={statistics.mean(ordered):.3f} median={at(.5):.3f} "
+            f"p90={at(.9):.3f} p95={at(.95):.3f} p99={at(.99):.3f} max={ordered[-1]:.3f}")
+
+
+def _load_jsonl(paths: List[str]) -> List[dict]:
+    return [json.loads(line) for path in paths for line in open(path, encoding="utf-8") if line.strip()]
+
+
+def calibrate_g13(gold_glob: str, pilot_dir: str) -> int:
+    """Print the measurements G13's thresholds were calibrated on.
+
+    Gold documents are flattened to one line, so only the value measure applies to
+    them; pilot v3's accepted documents keep their line structure, so the table
+    measure applies there. Both are printed with the gate's verdict.
+    """
+    gold = _load_jsonl(sorted(glob.glob(gold_glob)))
+    shares, rejected = [], []
+    for doc in gold:
+        values = [s for spans in doc["output"].values() for s in spans]
+        profile = gates.tabular_profile(doc["text_input"], values)
+        if profile["values_in_slots"] > gates.MAX_SLOT_VALUES:
+            shares.append(profile["value_slot_share"])
+        ok, violations = gates.gate_tabular_dump(doc["text_input"], values)
+        if not ok:
+            rejected.append((doc["id"], [v["kind"] for v in violations]))
+    print(f"gold: {len(gold)} documents, thresholds table_line_share>{gates.MAX_TABLE_LINE_SHARE} "
+          f"(rows>={gates.MIN_TABLE_ROWS}), value_slot_share>{gates.MAX_VALUE_SLOT_SHARE} "
+          f"(more than {gates.MAX_SLOT_VALUES} values in fields), any duplicate label")
+    all_shares = []
+    for doc in gold:
+        values = [s for spans in doc["output"].values() for s in spans]
+        profile = gates.tabular_profile(doc["text_input"], values)
+        if profile["values_located"] >= 5:
+            all_shares.append(profile["value_slot_share"])
+    print("  value slot share, documents with >=5 located values:", _quantiles(all_shares))
+    print(f"  documents with more than {gates.MAX_SLOT_VALUES} values in fields: {len(shares)}"
+          + (f", share {_quantiles(shares)}" if shares else ""))
+    print(f"  rejected by G13: {len(rejected)} of {len(gold)} {rejected}")
+    pilot_path = os.path.join(pilot_dir, "synthetic_batch.jsonl")
+    if os.path.exists(pilot_path):
+        pilot = _load_jsonl([pilot_path])
+        rows = []
+        for doc in pilot:
+            values = [s for spans in doc["output"].values() for s in spans]
+            profile = gates.tabular_profile(doc["text_input"], values)
+            ok, violations = gates.gate_tabular_dump(doc["text_input"], values)
+            rows.append((doc["id"], profile, [v["kind"] for v in violations]))
+        print(f"pilot accepted: {len(pilot)} documents")
+        print("  table line share:", _quantiles([r[1]["table_line_share"] for r in rows]))
+        print("  table line share distribution: "
+              + str(sorted(round(r[1]["table_line_share"], 2) for r in rows if r[1]["table_line_share"])))
+        print("  value slot share (>=5 located):",
+              _quantiles([r[1]["value_slot_share"] for r in rows if r[1]["values_located"] >= 5]))
+        for doc_id, profile, kinds in rows:
+            if kinds:
+                print(f"  rejected {doc_id}: {kinds} table_line_share={profile['table_line_share']} "
+                      f"table_rows={profile['table_rows']} value_slot_share={profile['value_slot_share']} "
+                      f"in_fields={profile['values_in_slots']} duplicates={list(profile['duplicate_labels'])}")
+        print(f"  rejected by G13: {sum(1 for r in rows if r[2])} of {len(rows)}")
+    return 0
+
+
+# The pilot v3 documents the orchestrator measured as table dumps (more than half
+# of their lines, or a value listed twice); G13 has to reject every one.
+_PILOT_V3_DUMPS = {"SYN-000002", "SYN-000015", "SYN-000018", "SYN-000038"}
+
+
+def spec_alignment_checks(clause_bank: dict) -> bool:
+    """Check the four labelling disagreements ANNOTATION_SPEC open question 23 found in pilot v3.
+
+    (a) ANIMAL_INFO keeps no leading determiner; (b) LOCATION inside an
+    organisation's name is dropped; (c) one age is one span, and an age inside
+    FAMILY_RELATION, AGE_INFO or ANIMAL_INFO is not tagged again; (d)
+    MARITAL_STATUS is the bare word in a field and the full clause when the
+    partner is named, with the partner also a PERSON.
+    """
+    import random
+    ok = True
+
+    def report(name: str, passed: bool, detail: str) -> None:
+        nonlocal ok
+        ok &= passed
+        print(f"{'PASS' if passed else 'FAIL'} unit {name:<34} {detail}")
+
+    import gendoc_identifiers as ident
+    rng = random.Random(3)
+    drawn = {ident.animal_descriptor(rng) for _ in range(800)}
+    determiner = re.compile(r"^(?:en|ei|et|ein|eit)\b", re.IGNORECASE)
+    bank_hits = [e["text"] for t, v in clause_bank.items() if t != "negatives" for e in v
+                 if determiner.match(e["text"]) and e.get("genres")]
+    report("a_animal_no_leading_determiner",
+           not [d for d in drawn if determiner.match(d)] and any(d.startswith("besetning på") for d in drawn)
+           and not bank_hits, f"descriptors={len(drawn)} bank_determiner_initial={bank_hits}")
+
+    text = "Møtet var i lokaler tilhørende Fredrikstad Sjømat AS i dag."
+    dropped = gen._drop_absorbed_spans(text, {"LOCATION": ["Fredrikstad"],
+                                              "ORGANIZATION": ["Fredrikstad Sjømat AS"]}, set())
+    kept = gen._drop_absorbed_spans(text + " Han bor i Fredrikstad.", {
+        "LOCATION": ["Fredrikstad"], "ORGANIZATION": ["Fredrikstad Sjømat AS"]}, set())
+    in_address = gen._drop_absorbed_spans("Han bor på Storgata 1, 1600 Fredrikstad.", {
+        "LOCATION": ["Fredrikstad"], "ADDRESS": ["Storgata 1, 1600 Fredrikstad"]}, set())
+    agency = gen._drop_absorbed_spans("Saken er sendt til Oslo tingrett.",
+                                      {"LOCATION": ["Oslo"]}, {"Oslo tingrett"})
+    report("b_location_inside_org_name",
+           "LOCATION" not in dropped and "LOCATION" in kept and "LOCATION" in in_address
+           and "LOCATION" not in agency,
+           f"org_only={'LOCATION' in dropped} also_standalone={'LOCATION' in kept} "
+           f"in_address={'LOCATION' in in_address} agency={'LOCATION' in agency}")
+
+    age_value, _ = gen._generate_value_kind(
+        "AGE", random.Random(1), gen.Person("Kari", "Test", "F", gen.date(2013, 1, 1)), 0.0)
+    nested = gen._drop_absorbed_spans("De har to barn på 15 og 12 år og han er 40 år gammel.", {
+        "FAMILY_RELATION": ["to barn på 15 og 12 år"], "AGE": ["12 år", "40 år"]}, set())
+    twice = gen._prune_redundant_nested("Hun er 43 år gammel.", {"AGE": ["43 år", "43 år gammel"]})
+    report("c_age_is_one_span", age_value.endswith(" år") and nested.get("AGE") == ["40 år"]
+           and twice.get("AGE") == ["43 år gammel"],
+           f"planned={age_value!r} nested_kept={nested.get('AGE')} longer_form={twice.get('AGE')}")
+
+    taxonomy_index = data.taxonomy_index(data.load_taxonomy("data/synthetic/taxonomy.json"))
+    bank = {t: v for t, v in clause_bank.items() if t != "negatives"}
+    forms = set()
+    persons_ok = True
+    for seed in range(60):
+        plan = gen.DocPlan(idx=0, genre="gp_referral", variant="prose_letter", form="nb",
+                           length_band=(1600, 2800), forced_types=["MARITAL_STATUS"], profile="dense",
+                           type_target=10, art9_cap=1)
+        plan.type_target = 12
+        rec = gen.sample_record(random.Random(seed), seed, plan, "seeded", taxonomy_index, bank,
+                                set(data.PUBLIC_FIGURES))
+        for pv in rec.planned:
+            if pv.type != "MARITAL_STATUS":
+                continue
+            if " med " in pv.value:
+                forms.add("clause")
+                partner = pv.value.split(" med ", 1)[1]
+                persons_ok &= any(q.type == "PERSON" and q.value == partner for q in rec.planned)
+            else:
+                forms.add("bare")
+    report("d_marital_both_forms", forms == {"clause", "bare"} and persons_ok,
+           f"forms={sorted(forms)} partner_also_person={persons_ok}")
+    return ok
+
+
+def unit_checks(clause_bank: dict, partition: dict, gold_glob: str, pilot_dir: str) -> bool:
+    """Run the checks that need no generation. Returns True when all pass."""
+    ok = True
+
+    def report(name: str, passed: bool, detail: str) -> None:
+        nonlocal ok
+        ok &= passed
+        print(f"{'PASS' if passed else 'FAIL'} unit {name:<34} {detail}")
+
+    train_bank = dataset_mod.select_clause_bank(clause_bank, partition, "train")
+    bench_bank = dataset_mod.select_clause_bank(clause_bank, partition, "benchmark")
+    texts = lambda bank: {e["text"] for t, v in bank.items() if t != "negatives" for e in v  # noqa: E731
+                          if e.get("genres")}
+    shared = texts(train_bank) & texts(bench_bank)
+    neg_shared = ({e["text"] for v in bench_bank["negatives"].values() for e in v}
+                  & (texts(train_bank) | {e["text"] for v in train_bank["negatives"].values() for e in v}))
+    report("partition_clauses_disjoint", not shared and not neg_shared,
+           f"train={len(texts(train_bank))} benchmark={len(texts(bench_bank))} "
+           f"shared={sorted(shared | neg_shared)[:3]}")
+    train_pools = dataset_mod.select_pools(partition, "train")
+    bench_pools = dataset_mod.select_pools(partition, "benchmark")
+    overlaps = {name: sorted(set(getattr(train_pools, name)) & set(getattr(bench_pools, name)))
+                for name in ("first_male", "first_female", "surnames", "street_names", "org_prefixes")}
+    for nat in train_pools.foreign_names:
+        for k, label in enumerate(("first_male", "first_female", "surnames")):
+            overlaps[f"{nat}:{label}"] = sorted(set(train_pools.foreign_names[nat][k])
+                                                & set(bench_pools.foreign_names[nat][k]))
+    report("partition_pools_disjoint", not any(overlaps.values()),
+           f"surnames train/benchmark={len(train_pools.surnames)}/{len(bench_pools.surnames)} "
+           f"streets={len(train_pools.street_names)}/{len(bench_pools.street_names)} "
+           f"overlaps={ {k: v for k, v in overlaps.items() if v} }")
+    pinned_present = all(
+        any(e["text"] == t and e.get("plantable") for v in bench_bank["negatives"].values() for e in v)
+        for t in dataset_mod.PINNED_BENCHMARK_NEGATIVES)
+    report("pinned_negatives_in_benchmark", pinned_present,
+           str(list(dataset_mod.PINNED_BENCHMARK_NEGATIVES)))
+
+    leaked = next(e["text"] for t, v in bench_bank.items() if t != "negatives" for e in v
+                  if e.get("genres") and e["form"] == "nb" and len(e["text"]) >= 20 and "{" not in e["text"])
+    clean_train = [{"id": "T1", "text_input": "Et vanlig dokument uten noe spesielt.", "output": {}}]
+    clean_bench = [{"id": "B1", "text_input": "Et annet dokument uten overlapp.", "output": {}}]
+    clean = leakage.check(clean_train, clean_bench, clause_bank, partition)
+    leaky = leakage.check(
+        [{"id": "T1", "text_input": f"Det er opplyst at vedkommende {leaked}.", "output": {"PERSON": ["Kari Test"]}}],
+        [{"id": "B1", "text_input": f"Det er opplyst at vedkommende {leaked}.", "output": {"PERSON": ["Kari Test"]}}],
+        clause_bank, partition)
+    report("leakage_check_fires", clean["ok"] and not leaky["ok"]
+           and bool(leaky["shared_clause_texts"]) and bool(leaky["shared_full_names"])
+           and bool(leaky["shared_skeleton_hashes"]),
+           f"clean_ok={clean['ok']} leaky: texts={len(leaky['shared_clause_texts'])} "
+           f"names={leaky['shared_full_names']} skeletons={len(leaky['shared_skeleton_hashes'])}")
+
+    quote = "nektet å oppgi om han er fagorganisert"
+    document = f"Saksbehandleren noterte at vedkommende {quote}. Saken avsluttes."
+    pairs = [("SENSITIV", quote)]
+    with_exempt = audit.filter_audit_findings(document, [], pairs, exempt_spans=[quote])
+    without = audit.filter_audit_findings(document, [], pairs)
+    extended = f"Saksbehandleren noterte at vedkommende {quote} fordi han er medlem av LO. Saken avsluttes."
+    still = audit.filter_audit_findings(
+        extended, [], [("SENSITIV", f"{quote} fordi han er medlem av LO")], exempt_spans=[quote])
+    report("audit_exempts_planted_negative", not with_exempt and bool(without) and bool(still),
+           f"exempt={len(with_exempt)} not_exempt={len(without)} elaboration_still_flagged={len(still)}")
+
+    ok &= spec_alignment_checks(clause_bank)
+
+    gold_files = sorted(glob.glob(gold_glob))
+    if gold_files:
+        gold = _load_jsonl(gold_files)
+        passed = sum(1 for d in gold if gates.gate_tabular_dump(
+            d["text_input"], [s for spans in d["output"].values() for s in spans])[0])
+        report("g13_passes_gold", passed / len(gold) >= 0.98, f"{passed}/{len(gold)} gold documents pass")
+    pilot_path = os.path.join(pilot_dir, "synthetic_batch.jsonl")
+    if os.path.exists(pilot_path):
+        pilot = {d["id"]: d for d in _load_jsonl([pilot_path])}
+        verdict = {i: gates.gate_tabular_dump(d["text_input"], [s for spans in d["output"].values()
+                                                                for s in spans])[0]
+                   for i, d in pilot.items()}
+        missed = sorted(i for i in _PILOT_V3_DUMPS if i in verdict and verdict[i])
+        wrongly = sorted(i for i, passed in verdict.items() if not passed and i not in _PILOT_V3_DUMPS)
+        report("g13_rejects_pilot_v3_dumps", not missed and len(wrongly) <= 4,
+               f"missed={missed} also_rejected={wrongly}")
+    return ok
+
+
 def main() -> int:
     """Run every injected-failure case and report. Returns a process exit code."""
     parser = argparse.ArgumentParser(description=__doc__,
@@ -297,10 +607,20 @@ def main() -> int:
     parser.add_argument("--taxonomy", default="data/synthetic/taxonomy.json")
     parser.add_argument("--clause-bank", default="data/synthetic/clause_bank.json")
     parser.add_argument("--types-config", default="data/synthetic/types_config.yaml")
+    parser.add_argument("--calibrate-g13", action="store_true",
+                        help="print the gold and pilot_v3 measurements G13's thresholds came from, "
+                             "then exit")
+    parser.add_argument("--gold-glob", default="data/gold/batch_*_gold.jsonl")
+    parser.add_argument("--pilot-dir", default="data/synthetic/pilot_v3")
+    parser.add_argument("--partition", default=dataset_mod.PARTITION_PATH)
     args = parser.parse_args()
+    if args.calibrate_g13:
+        return calibrate_g13(args.gold_glob, args.pilot_dir)
 
     taxonomy_index = data.taxonomy_index(data.load_taxonomy(args.taxonomy))
     clause_bank = data.load_clause_bank(args.clause_bank)
+    partition = dataset_mod.load_partition(args.partition)
+    negative_bank = dataset_mod.select_clause_bank(clause_bank, partition, "benchmark")["negatives"]
     public_figures = set(data.PUBLIC_FIGURES)
     place_names = {p for _c, p in data.POSTAL_PAIRS}
     agency_names = set(data.AGENCY_NAMES)
@@ -327,7 +647,7 @@ def main() -> int:
         config = gen.GenerationConfig(
             strategy="seeded", invalid_checksum_rate=0.0, retries=3,
             near_dup_threshold=0.5, g7_policy="reject", batch_size=4,
-            audit=True, max_audit_repairs=1,
+            audit=True, max_audit_repairs=1, dataset="benchmark", negative_bank=negative_bank,
         )
         states, stats = gen.run_generation(
             build_plans(), BASE_SEED, taxonomy_index, clause_bank, public_figures,
@@ -344,6 +664,8 @@ def main() -> int:
               f" first_fail={_first_failure(state)} accepted={state.result.get('accepted')}"
               f" {detail}")
     print(f"run stats: {stats}")
+
+    all_passed &= unit_checks(clause_bank, partition, args.gold_glob, args.pilot_dir)
 
     similarity = gates.jaccard(
         gates.word_ngrams(states[0].result.get("text", "")),

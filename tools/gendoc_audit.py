@@ -41,6 +41,13 @@ Two rules make this safe to act on:
   it is dropped rather than trusted. A quote that merely restates an already
   labelled clause is not a finding either, so the labelled intervals are
   subtracted before the residue is measured.
+
+A benchmark plants hard negatives -- "nektet å oppgi om han er fagorganisert" --
+that read like a disclosure and are deliberately unlabelled. The auditor would
+flag every one of them, and the repair would delete the very sentence the
+benchmark exists to test, so planted negatives are *exempt*: they are subtracted
+like labelled spans and a quote that lies wholly inside one is dropped. Anything
+the model adds around a negative is still a finding.
 """
 
 from __future__ import annotations
@@ -209,6 +216,7 @@ def _trim_to_substring(text: str, quote: str) -> str:
 
 def filter_audit_findings(
     text: str, labelled_spans: Sequence[str], pairs: Sequence[Tuple[str, str]],
+    exempt_spans: Sequence[str] = (),
 ) -> List[dict]:
     """Keep only audit findings that are exact substrings and not already labelled.
 
@@ -216,6 +224,9 @@ def filter_audit_findings(
         text: The document text.
         labelled_spans: Every span in the document's `output`.
         pairs: Parsed (kind, quote) pairs from `parse_audit_reply`.
+        exempt_spans: Planted hard negatives. Treated like labelled spans for the
+            residue test, and a quote lying wholly inside one is dropped for
+            either reason code.
 
     Returns:
         Finding dicts with `reason`, `quote`, `residue`, `start` and `end`.
@@ -223,7 +234,8 @@ def filter_audit_findings(
         residue is shorter than `MIN_RESIDUE_CHARS`, is dropped; so is a quote
         that is not a substring of the text at all.
     """
-    covered = _covered_intervals(text, labelled_spans)
+    exempt = _covered_intervals(text, exempt_spans)
+    covered = _covered_intervals(text, list(labelled_spans) + list(exempt_spans))
     findings: List[dict] = []
     seen: set = set()
     for kind, raw_quote in pairs:
@@ -234,6 +246,8 @@ def filter_audit_findings(
         if not spots:
             continue
         start, end = spots[0]
+        if any(lo <= start and end <= hi for lo, hi in exempt):
+            continue
         residue = _residue(text, start, end, covered)
         # A RAMME finding is about how a sentence frames a fact, so the fact
         # itself being labelled does not excuse it; only the substring test and
@@ -249,6 +263,23 @@ def filter_audit_findings(
             "raw_quote": raw_quote if raw_quote != quote else None,
         })
     return findings
+
+
+def exempt_quote_count(text: str, pairs: Sequence[Tuple[str, str]], exempt_spans: Sequence[str]) -> int:
+    """Count the audit quotes that lie wholly inside a planted negative.
+
+    Reported so a benchmark run can show how often the auditor wanted to flag a
+    hard negative and was overruled, which is the evidence that the exemption is
+    doing something rather than being unreachable.
+    """
+    exempt = _covered_intervals(text, exempt_spans)
+    count = 0
+    for _kind, raw_quote in pairs:
+        quote = _trim_to_substring(text, raw_quote)
+        spots = _occurrences(text, quote) if quote else []
+        if spots and any(lo <= spots[0][0] and spots[0][1] <= hi for lo, hi in exempt):
+            count += 1
+    return count
 
 
 def audit_stats(pairs: Sequence[Tuple[str, str]], findings: Sequence[dict]) -> Dict[str, int]:

@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import json
 import os
+from dataclasses import dataclass
 from typing import Dict, List, Optional, Set, Tuple
 
 # ---------------------------------------------------------------------------
@@ -171,6 +172,10 @@ STREET_NAMES: List[str] = [
     "Nedre Torggate", "Øvre Torggate", "Ringveien", "Furuveien", "Lyngveien",
     "Bergveien", "Åsveien", "Myrveien", "Dalveien", "Havnegata", "Torvet",
     "Nygata", "Kongensgate", "Bispegata", "Domkirkeplassen",
+    "Sjøgata", "Hagaveien", "Lerkeveien", "Tunveien", "Kaigata", "Brattbakken",
+    "Åkerveien", "Sentrumsveien", "Lundeveien", "Vollveien", "Eikeveien",
+    "Heggeveien", "Fabrikkgata", "Jernbanegata", "Stasjonsveien", "Mølleveien",
+    "Nordre gate", "Vestre Strandgate",
 ]
 
 # ---------------------------------------------------------------------------
@@ -278,16 +283,14 @@ _TIER_B_VALUE = [
 ]
 _TIER_B_CLAUSE = ["ACADEMIC_RECORD", "EMPLOYMENT", "FAMILY_RELATION"]
 
-# Matches the real data/synthetic/taxonomy.json: 20 clause-kind types, of which
-# IDENTIFIABLE_IMAGE is the one Tier C type that turned out to be "value" kind
-# rather than "clause" -- a short descriptive phrase, not a judgement clause.
+# Matches the real data/synthetic/taxonomy.json: the 57-type taxonomy, whose Tier C
+# is judgement clauses only (CONTEXT_SENSITIVE and IDENTIFIABLE_IMAGE were dropped).
 _TIER_C_CLAUSE = [
-    "AGE_INFO", "BEHAVIORAL_PATTERN", "BIOMETRIC_DATA", "CONTEXT_SENSITIVE",
+    "AGE_INFO", "BEHAVIORAL_PATTERN", "BIOMETRIC_DATA",
     "CRIMINAL", "DISABILITY", "ECONOMIC_STATUS", "ETHNICITY", "FINANCIAL",
     "GENETIC_DATA", "HEALTH", "IMMIGRATION_STATUS", "MEDICATION",
     "POLITICAL", "RELIGIOUS_BELIEF", "SEXUAL_ORIENTATION", "TRADE_UNION",
 ]
-_TIER_C_VALUE = ["IDENTIFIABLE_IMAGE"]
 
 _GDPR_ART9 = {
     "BIOMETRIC_DATA": "Art. 9 -- biometric data",
@@ -341,12 +344,6 @@ def _default_taxonomy() -> dict:
             "name": name, "tier": "C", "gdpr": _GDPR_ART9.get(name),
             "legacy_type": _LEGACY_MAP.get(name), "value_kind": "clause",
             "definition": f"Tier C judgement clause: {name.replace('_', ' ').lower()}.",
-        })
-    for name in _TIER_C_VALUE:
-        types.append({
-            "name": name, "tier": "C", "gdpr": _GDPR_ART9.get(name),
-            "legacy_type": _LEGACY_MAP.get(name), "value_kind": "value",
-            "definition": f"Tier C descriptive value: {name.replace('_', ' ').lower()}.",
         })
     return {"types": types, "legacy_map": _LEGACY_MAP}
 
@@ -418,9 +415,6 @@ _DEFAULT_CLAUSE_BANK = {
     "BIOMETRIC_DATA": [
         {"text": "fingeravtrykk registrert i forbindelse med saken", "form": "nb", "subject": "biometric", "difficulty": "medium"},
     ],
-    "CONTEXT_SENSITIVE": [
-        {"text": "opplyser om forhold som kan ha betydning for saken, men som ikke er nærmere spesifisert", "form": "nb", "subject": "context", "difficulty": "hard"},
-    ],
     "CRIMINAL": [
         {"text": "ble domfelt for skadeverk i 2019, sonet samfunnsstraff", "form": "nb", "subject": "criminal", "difficulty": "hard"},
         {"text": "vart sikta for grovt tjuveri, saka vart seinare lagt bort", "form": "nn", "subject": "criminal", "difficulty": "hard"},
@@ -444,9 +438,6 @@ _DEFAULT_CLAUSE_BANK = {
     "HEALTH": [
         {"text": "lider av type 2 diabetes og kronisk depresjon", "form": "nb", "subject": "health", "difficulty": "hard"},
         {"text": "har vore sjukmeldt grunna alvorleg angstliding", "form": "nn", "subject": "health", "difficulty": "hard"},
-    ],
-    "IDENTIFIABLE_IMAGE": [
-        {"text": "er avbildet i overvåkningsopptak fra hendelsen", "form": "nb", "subject": "image", "difficulty": "medium"},
     ],
     "IMMIGRATION_STATUS": [
         {"text": "har midlertidig oppholdstillatelse på humanitært grunnlag", "form": "nb", "subject": "immigration", "difficulty": "medium"},
@@ -518,36 +509,36 @@ def load_clause_bank(path: Optional[str]) -> dict:
 # the kind of incoherence a reader notices at once. Small per-nationality
 # pools, keyed by the nationality adjective the record carries.
 FOREIGN_NAMES: Dict[str, Tuple[List[str], List[str], List[str]]] = {
-    "somalisk": (["Abdi", "Mohamed", "Ahmed", "Hassan", "Yusuf", "Abdirahman"],
-                 ["Fadumo", "Hodan", "Asha", "Amina", "Sahra", "Ifrah"],
-                 ["Warsame", "Farah", "Abdullahi", "Hussein", "Omar", "Jama"]),
-    "syrisk": (["Omar", "Khaled", "Mahmoud", "Rami", "Yazan", "Bashar"],
-               ["Rasha", "Lina", "Nour", "Hiba", "Dima", "Rana"],
-               ["Haddad", "Al-Hamwi", "Khalil", "Nasser", "Darwish", "Suleiman"]),
-    "polsk": (["Piotr", "Tomasz", "Krzysztof", "Marek", "Paweł", "Łukasz"],
-              ["Agnieszka", "Katarzyna", "Magdalena", "Joanna", "Ewa", "Monika"],
-              ["Kowalski", "Nowak", "Wiśniewski", "Wójcik", "Kamiński", "Zieliński"]),
-    "litauisk": (["Tomas", "Mindaugas", "Darius", "Andrius", "Vytautas"],
-                 ["Rasa", "Jurgita", "Aistė", "Ieva", "Laura"],
-                 ["Kazlauskas", "Petrauskas", "Jankauskas", "Stankevičius", "Vasiliauskas"]),
-    "eritreisk": (["Yonas", "Tesfay", "Mehari", "Samuel", "Filmon", "Dawit"],
-                  ["Helen", "Senait", "Ruta", "Saba", "Yordanos", "Mebrat"],
-                  ["Tesfamariam", "Gebremedhin", "Haile", "Berhane", "Kidane", "Tekle"]),
-    "afghansk": (["Ahmad", "Mohammad", "Ali", "Reza", "Farid", "Jawad"],
-                 ["Zahra", "Fatima", "Maryam", "Shabnam", "Parisa", "Nilofar"],
-                 ["Rahimi", "Ahmadi", "Hakimi", "Karimi", "Noori", "Sadiqi"]),
-    "irakisk": (["Haider", "Mustafa", "Ali", "Karim", "Saif", "Hussein"],
-                ["Zainab", "Noor", "Shaima", "Huda", "Sara", "Rusul"],
-                ["Al-Jabouri", "Al-Saadi", "Kareem", "Hamid", "Abbas", "Jawad"]),
-    "ukrainsk": (["Oleksandr", "Andrii", "Dmytro", "Serhii", "Mykola", "Taras"],
-                 ["Olena", "Iryna", "Oksana", "Nataliia", "Kateryna", "Yuliia"],
-                 ["Shevchenko", "Kovalenko", "Bondarenko", "Tkachenko", "Kravchenko", "Melnyk"]),
-    "iransk": (["Reza", "Hossein", "Mehdi", "Amir", "Babak", "Kaveh"],
-               ["Maryam", "Leila", "Shirin", "Nasrin", "Parisa", "Azadeh"],
-               ["Hosseini", "Mohammadi", "Rezaei", "Moradi", "Karimi", "Jafari"]),
-    "svensk": (["Johan", "Mikael", "Anders", "Niklas", "Olof"],
-               ["Anna", "Karin", "Maria", "Sara", "Emelie"],
-               ["Andersson", "Johansson", "Karlsson", "Nilsson", "Lindqvist"]),
+    "somalisk": (["Abdi", "Mohamed", "Ahmed", "Hassan", "Yusuf", "Abdirahman", "Liban", "Ismail", "Guled"],
+                 ["Fadumo", "Hodan", "Asha", "Amina", "Sahra", "Ifrah", "Khadra", "Muna", "Ladan"],
+                 ["Warsame", "Farah", "Abdullahi", "Hussein", "Omar", "Jama", "Mohamud", "Egal", "Duale"]),
+    "syrisk": (["Omar", "Khaled", "Mahmoud", "Rami", "Yazan", "Bashar", "Samer", "Tarek", "Wael"],
+               ["Rasha", "Lina", "Nour", "Hiba", "Dima", "Rana", "Reem", "Salma", "Dalia"],
+               ["Haddad", "Al-Hamwi", "Khalil", "Nasser", "Darwish", "Suleiman", "Mansour", "Barakat", "Qasem"]),
+    "polsk": (["Piotr", "Tomasz", "Krzysztof", "Marek", "Paweł", "Łukasz", "Jakub", "Michał", "Grzegorz"],
+              ["Agnieszka", "Katarzyna", "Magdalena", "Joanna", "Ewa", "Monika", "Aleksandra", "Barbara", "Beata"],
+              ["Kowalski", "Nowak", "Wiśniewski", "Wójcik", "Kamiński", "Zieliński", "Lewandowski", "Dąbrowski", "Szymański"]),
+    "litauisk": (["Tomas", "Mindaugas", "Darius", "Andrius", "Vytautas", "Gediminas", "Rokas", "Paulius"],
+                 ["Rasa", "Jurgita", "Aistė", "Ieva", "Laura", "Gintarė", "Dalia", "Rūta"],
+                 ["Kazlauskas", "Petrauskas", "Jankauskas", "Stankevičius", "Vasiliauskas", "Butkus", "Navickas", "Žukauskas"]),
+    "eritreisk": (["Yonas", "Tesfay", "Mehari", "Samuel", "Filmon", "Dawit", "Michael", "Abel", "Henok"],
+                  ["Helen", "Senait", "Ruta", "Saba", "Yordanos", "Mebrat", "Selam", "Lidya", "Kisanet"],
+                  ["Tesfamariam", "Gebremedhin", "Haile", "Berhane", "Kidane", "Tekle", "Ghebreab", "Woldu", "Mesfin"]),
+    "afghansk": (["Ahmad", "Mohammad", "Ali", "Reza", "Farid", "Jawad", "Hamid", "Nasir", "Sayed"],
+                 ["Zahra", "Fatima", "Maryam", "Shabnam", "Parisa", "Nilofar", "Roya", "Mahbooba", "Sima"],
+                 ["Rahimi", "Ahmadi", "Hakimi", "Karimi", "Noori", "Sadiqi", "Faizi", "Wardak", "Azizi"]),
+    "irakisk": (["Haider", "Mustafa", "Ali", "Karim", "Saif", "Hussein", "Ammar", "Basim", "Yasser"],
+                ["Zainab", "Noor", "Shaima", "Huda", "Sara", "Rusul", "Dalal", "Mariam", "Ruqaya"],
+                ["Al-Jabouri", "Al-Saadi", "Kareem", "Hamid", "Abbas", "Jawad", "Al-Tamimi", "Shakir", "Al-Obaidi"]),
+    "ukrainsk": (["Oleksandr", "Andrii", "Dmytro", "Serhii", "Mykola", "Taras", "Volodymyr", "Yaroslav", "Bohdan"],
+                 ["Olena", "Iryna", "Oksana", "Nataliia", "Kateryna", "Yuliia", "Halyna", "Svitlana", "Tetiana"],
+                 ["Shevchenko", "Kovalenko", "Bondarenko", "Tkachenko", "Kravchenko", "Melnyk", "Savchenko", "Marchenko", "Lysenko"]),
+    "iransk": (["Reza", "Hossein", "Mehdi", "Amir", "Babak", "Kaveh", "Farhad", "Siavash", "Omid"],
+               ["Maryam", "Leila", "Shirin", "Nasrin", "Parisa", "Azadeh", "Mina", "Zohre", "Niloufar"],
+               ["Hosseini", "Mohammadi", "Rezaei", "Moradi", "Karimi", "Jafari", "Tehrani", "Ghorbani", "Mirzaei"]),
+    "svensk": (["Johan", "Mikael", "Anders", "Niklas", "Olof", "Lennart", "Stefan", "Gunnar"],
+               ["Anna", "Karin", "Maria", "Sara", "Emelie", "Birgitta", "Lena", "Maja"],
+               ["Andersson", "Johansson", "Karlsson", "Nilsson", "Lindqvist", "Eriksson", "Persson", "Gustafsson"]),
 }
 
 FOREIGN_NATIONALITIES: List[str] = [n for n in FOREIGN_NAMES if n != "svensk"]
@@ -688,4 +679,50 @@ ORG_NAME_PREFIXES: List[str] = [
     "Nordlys", "Fjellheim", "Havbris", "Solsiden", "Granlund", "Bølgen", "Fjordgløtt",
     "Vestkyst", "Midtnorsk", "Østlandske", "Nordkapp", "Bjørketun", "Lyngheim",
     "Sjøkanten", "Skogly", "Brattli", "Kystlinje", "Elvebakken", "Toppen", "Fossheim",
+    "Havørn", "Blåfjell", "Polaris", "Sørlys", "Kvitfjell", "Storelva", "Nordvind",
+    "Gullring", "Fjellrev", "Skarpnes",
 ]
+
+
+# ---------------------------------------------------------------------------
+# The pools the *sampler* draws from, which are not the vocabularies the *gates*
+# recognise. G3 and the G7 name sweep must know every name that exists, so they
+# read the module-level lists above. Sampling reads `active_pools()` instead,
+# which a benchmark or training run narrows to its own disjoint share of each
+# list (see `gendoc_dataset`), so no string a benchmark scores on was ever
+# generated into the training set.
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class NamePools:
+    """The name, street and employer-prefix pools one dataset samples from."""
+
+    first_male: Tuple[str, ...]
+    first_female: Tuple[str, ...]
+    surnames: Tuple[str, ...]
+    foreign_names: Dict[str, Tuple[Tuple[str, ...], Tuple[str, ...], Tuple[str, ...]]]
+    street_names: Tuple[str, ...]
+    org_prefixes: Tuple[str, ...]
+
+
+def full_pools() -> NamePools:
+    """Return pools covering every embedded name, the behaviour before datasets existed."""
+    return NamePools(
+        tuple(FIRST_NAMES_MALE), tuple(FIRST_NAMES_FEMALE), tuple(SURNAMES),
+        {nat: (tuple(m), tuple(f), tuple(s)) for nat, (m, f, s) in FOREIGN_NAMES.items()},
+        tuple(STREET_NAMES), tuple(ORG_NAME_PREFIXES),
+    )
+
+
+_ACTIVE_POOLS: NamePools = full_pools()
+
+
+def use_pools(pools: NamePools) -> None:
+    """Make `pools` what the record sampler draws names, streets and employers from."""
+    global _ACTIVE_POOLS
+    _ACTIVE_POOLS = pools
+
+
+def active_pools() -> NamePools:
+    """Return the pools the sampler currently draws from."""
+    return _ACTIVE_POOLS

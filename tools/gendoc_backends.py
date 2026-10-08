@@ -83,7 +83,7 @@ class GenerationBackend(abc.ABC):
 
 
 _MANIFEST_LINE_RE = re.compile(
-    r"^(VALUE|CLAUSE_SEEDED|CLAUSE_MARKED|SEED|META|REPAIR|MISSING|AUDIT|AUDIT_REPAIR|REMOVE|KEEP)\|(.*)$"
+    r"^(VALUE|CLAUSE_SEEDED|CLAUSE_MARKED|NEGATIVE|SEED|META|REPAIR|MISSING|AUDIT|AUDIT_REPAIR|REMOVE|KEEP)\|(.*)$"
 )
 
 # Sentinels the audit prompt wraps the document in; duplicated from
@@ -100,6 +100,8 @@ AUDIT_CLOSE = "<<<SLUTT PÅ DOKUMENT>>>"
 # contains either, so a clean mock document audits clean.
 MOCK_ELABORATION_CUE = "og har difor eit vedvarande rusproblem"
 MOCK_FRAMING_CUE = "relevant for etterforskningen"
+
+MOCK_HEADER_FIELDS = 4
 
 _BOILERPLATE_NB = [
     "Saken er behandlet i samsvar med gjeldende regelverk.",
@@ -129,9 +131,12 @@ class MockBackend(GenerationBackend):
 
     Parses the machine-readable manifest block the prompt builder embeds in
     every prompt (`VALUE|type|value`, `CLAUSE_SEEDED|type|text`,
-    `CLAUSE_MARKED|type`, `SEED|n`) and assembles a document that places every
-    value verbatim, some in a field-header block and some inline in generated
-    boilerplate sentences, seeded for reproducibility.
+    `CLAUSE_MARKED|type`, `NEGATIVE|type|text`, `SEED|n`) and assembles a
+    document that places every value verbatim, a few in a short field-header
+    block and the rest inline in generated boilerplate sentences, seeded for
+    reproducibility. The header is capped at `MOCK_HEADER_FIELDS` for the same
+    reason the prompt caps it: a document that opens with a row per planted value
+    is the table dump G13 rejects.
     """
 
     def generate(
@@ -199,6 +204,7 @@ class MockBackend(GenerationBackend):
 
     def _parse_manifest(self, prompt: str):
         values, seeded_clauses, marked_types, seed, form = [], [], [], 0, "nb"
+        negatives: List[str] = []
         manifest = prompt.split(MANIFEST_SENTINEL, 1)[1] if MANIFEST_SENTINEL in prompt else prompt
         for line in manifest.splitlines():
             m = _MANIFEST_LINE_RE.match(line.strip())
@@ -213,21 +219,24 @@ class MockBackend(GenerationBackend):
                 seeded_clauses.append((etype, value))
             elif kind == "CLAUSE_MARKED":
                 marked_types.append(rest)
+            elif kind == "NEGATIVE":
+                negatives.append(rest.split("|", 1)[1])
             elif kind == "SEED":
                 seed = int(rest)
             elif kind == "META":
                 if rest.startswith("form="):
                     form = rest.split("=", 1)[1]
-        return values, seeded_clauses, marked_types, seed, form
+        return values, seeded_clauses, marked_types, negatives, seed, form
 
     def _fill(self, prompt: str) -> str:
-        values, seeded_clauses, marked_types, seed, form = self._parse_manifest(prompt)
+        values, seeded_clauses, marked_types, negatives, seed, form = self._parse_manifest(prompt)
         rng = random.Random(seed)
         boilerplate = _BOILERPLATE_NB if form == "nb" else _BOILERPLATE_NN
 
         header_items, prose_items = [], []
         for etype, value in values:
-            (header_items if rng.random() < 0.55 else prose_items).append((etype, value))
+            to_header = rng.random() < 0.55 and len(header_items) < MOCK_HEADER_FIELDS
+            (header_items if to_header else prose_items).append((etype, value))
 
         lines = []
         for etype, value in header_items:
@@ -238,6 +247,8 @@ class MockBackend(GenerationBackend):
             body_sentences.append(f"Opplysning ({etype}) i saken er {value}.")
         for etype, text in seeded_clauses:
             body_sentences.append(f"Videre er det opplyst at vedkommende {text}.")
+        for text in negatives:
+            body_sentences.append(f"Det er også notert at vedkommende {text}.")
         for etype in marked_types:
             body_sentences.append(f"⟦{etype}: vedkommende har forhold av denne typen som er nærmere beskrevet i saken⟧.")
 

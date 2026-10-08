@@ -87,8 +87,6 @@ entity_types:
     tier: C
   BIOMETRIC_DATA:
     tier: C
-  CONTEXT_SENSITIVE:
-    tier: C
   CRIMINAL:
     tier: C
   DISABILITY:
@@ -102,8 +100,6 @@ entity_types:
   GENETIC_DATA:
     tier: C
   HEALTH:
-    tier: C
-  IDENTIFIABLE_IMAGE:
     tier: C
   IMMIGRATION_STATUS:
     tier: C

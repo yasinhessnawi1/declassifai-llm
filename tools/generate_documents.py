@@ -18,9 +18,9 @@ Pipeline per document:
     plan_batch -> sample_record -> build_prompt -> backend.generate (batched)
         -> marker check, truncation, G0 placeholders, length
         -> G2 verbatim (1-2 missing values: targeted repair of the draft)
-        -> G9 slot labels, G3 names, G4 checksums, G6 near-duplicate,
-           seeded-clause boundary extension, G7 (unplanned names and dates
-           labelled, other unplanned PII rejected)
+        -> G9 slot labels, G13 tabular dumps, G3 names, G4 checksums, G6
+           near-duplicate, seeded-clause boundary extension, G7 (unplanned names
+           and dates labelled, other unplanned PII rejected)
         -> G11 content audit (a second, temperature-0 pass of the same model:
            any unlabelled sensitive statement or any sentence framing origin,
            belief or sexuality as relevant to suspicion triggers one targeted
@@ -52,14 +52,23 @@ learns that everything contains PII.
 **Coverage is a property of the batch.** `--coverage-target K` schedules every
 schedulable type into at least K documents, always in a genre where a real
 Norwegian document would carry it, and never more of them into one document than
-its profile can absorb. `CONTEXT_SENSITIVE` and `IDENTIFIABLE_IMAGE` are
-deliberately left uncovered and reported as such; see
-`gendoc_genres.UNCOVERED_TYPES`.
+its profile can absorb. The target is all 57 taxonomy types.
+
+**Two datasets, never mixed.** `--dataset train` is the large, easier set;
+`--dataset benchmark` is the held-out one (`docs/PROJECT_SPEC_V2.md` Section 4).
+Each draws only from its own share of the clause bank and of the name, street and
+employer pools, fixed in `data/synthetic/benchmark_partition.json`
+(`tools/gendoc_dataset.py`), so no string a benchmark scores on was generated into
+training data; `tools/check_dataset_leakage.py` verifies that on finished files.
+The benchmark also leans on `difficulty: hard` clauses and on dense and case-file
+documents, and plants hard negatives -- near-miss sentences such as "nektet å oppgi
+om han er fagorganisert" -- that must stay verbatim and unlabelled, recorded in the
+metadata as `planted_negatives`. Benchmark ids are `SYB-`, training ids `SYN-`.
 
 Usage:
     python3 tools/generate_documents.py --backend hf --model Qwen/Qwen3.5-9B \\
         --n 50 --strategy seeded --seed 1 --batch-size 4 --coverage-target 3 \\
-        --out data/synthetic/pilot_v3/
+        --dataset train --out data/synthetic/pilot_v4_train/
 """
 
 from __future__ import annotations
@@ -68,6 +77,7 @@ import argparse
 import collections
 import dataclasses
 import json
+import math
 import os
 import random
 import re
@@ -77,12 +87,13 @@ import time
 import unicodedata
 from dataclasses import dataclass, field
 from datetime import date, timedelta
-from typing import Dict, List, Optional, Sequence, Set, Tuple
+from typing import Callable, Dict, List, Optional, Sequence, Set, Tuple
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import gendoc_audit as audit
 import gendoc_data as data
+import gendoc_dataset as dataset_mod
 import gendoc_gates as gates
 import gendoc_genres as genres_mod
 import gendoc_identifiers as ident
@@ -135,6 +146,25 @@ class PlannedValue:
 
 
 @dataclass
+class PlantedNegative:
+    """A near-miss sentence planted verbatim and deliberately left unlabelled.
+
+    Attributes:
+        type: The type it is a near-miss for (the bank's `negatives` key).
+        text: The sentence, exactly as the document must contain it.
+        why_not: The annotation-spec reason it is not a disclosure.
+        also_labelled: `{TYPE: substring}` for a real value of another type inside
+            the text (a case number that happens to contain "LO"); that substring
+            is labelled as its own type, the near-miss reading is the one left alone.
+    """
+
+    type: str
+    text: str
+    why_not: str
+    also_labelled: Dict[str, str] = field(default_factory=dict)
+
+
+@dataclass
 class Record:
     """A fully sampled, typed record for one document.
 
@@ -157,6 +187,9 @@ class Record:
     employer: Optional[str] = None
     profile: str = "typical"
     pii_free: bool = False
+    dataset: str = "train"
+    planted_negatives: List[PlantedNegative] = field(default_factory=list)
+    dropped_forced: List[str] = field(default_factory=list)
 
 
 def sample_person(rng: random.Random, age_profile: str = "adult", today: date = REFERENCE_DATE,
@@ -174,7 +207,7 @@ def sample_person(rng: random.Random, age_profile: str = "adult", today: date = 
         age_profile: Name of a distribution in `gendoc_genres.AGE_PROFILES`.
         today: Reference date for computing the birth date from an age.
         nationality: Nationality adjective; a non-Norwegian one draws the name
-            from that nationality's pool in `gendoc_data.FOREIGN_NAMES`.
+            from that nationality's pool in `gendoc_data.active_pools()`.
         gender: Force "M" or "F"; None picks at random.
         age: Force an exact age, bypassing the profile.
         age_clamp: (min, max) the drawn age is clamped into, for a genre that
@@ -184,13 +217,14 @@ def sample_person(rng: random.Random, age_profile: str = "adult", today: date = 
         A `Person`. Callers must still run G3 before shipping any document.
     """
     gender = gender or rng.choice(["M", "F"])
-    if nationality in data.FOREIGN_NAMES:
-        males, females, surnames = data.FOREIGN_NAMES[nationality]
+    pools = data.active_pools()
+    if nationality in pools.foreign_names:
+        males, females, surnames = pools.foreign_names[nationality]
         first = rng.choice(males if gender == "M" else females)
         last = rng.choice(surnames)
     else:
-        first = rng.choice(data.FIRST_NAMES_MALE if gender == "M" else data.FIRST_NAMES_FEMALE)
-        last = rng.choice(data.SURNAMES)
+        first = rng.choice(pools.first_male if gender == "M" else pools.first_female)
+        last = rng.choice(pools.surnames)
     if age is None:
         age = genres_mod.sample_age(rng, age_profile)
     if age_clamp:
@@ -231,7 +265,7 @@ _MARITAL = ["gift", "ugift", "skilt", "samboer", "enke", "enkemann"]
 
 def _address(rng: random.Random) -> Tuple[str, str, str]:
     """Return (full_address_with_postal, postal_code, place)."""
-    street = rng.choice(data.STREET_NAMES)
+    street = rng.choice(data.active_pools().street_names)
     number = rng.randint(1, 180)
     suffix = rng.choice(["", "", "", "A", "B", "C"])
     postal, place = rng.choice(data.POSTAL_PAIRS)
@@ -244,7 +278,7 @@ def _ascii(name: str) -> str:
     return "".join(c for c in folded if not unicodedata.combining(c))
 
 
-def _employer(rng: random.Random, place: str) -> Tuple[str, List[Tuple[str, str]]]:
+def _employer(rng: random.Random, place: Optional[str]) -> Tuple[str, List[Tuple[str, str]]]:
     """Sample an employer name and the (nb, nn) roles that fit its sector.
 
     The pilot named every organisation after the subject's own surname, which
@@ -253,14 +287,14 @@ def _employer(rng: random.Random, place: str) -> Tuple[str, List[Tuple[str, str]
     prefix, and the sector drives which roles EMPLOYMENT can take.
     """
     sector_words, roles = rng.choice(data.ROLE_SECTORS)
-    prefix = place if rng.random() < 0.4 else rng.choice(data.ORG_NAME_PREFIXES)
+    use_place = rng.random() < 0.4 and place is not None
+    prefix = place if use_place else rng.choice(data.active_pools().org_prefixes)
     suffix = rng.choice(["AS", "AS", "AS", "ASA", "Gruppen AS"])
     return f"{prefix} {rng.choice(sector_words)} {suffix}", roles
 
 
 # Types that are generated as a literal value rather than drawn from the clause
-# bank. `IDENTIFIABLE_IMAGE` and `CONTEXT_SENSITIVE` are deliberately absent:
-# see `gendoc_genres.UNCOVERED_TYPES`.
+# bank.
 _VALUE_KIND_TYPES = {
     "NATIONAL_ID", "DATE_OF_BIRTH", "ORG_NUMBER", "BANK_ACCOUNT", "IBAN",
     "CREDIT_CARD", "PHONE", "FAX_NUMBER", "EMAIL", "URL", "IP_ADDRESS",
@@ -369,7 +403,9 @@ def _generate_value_kind(
         full, _postal, _place = _address(rng)
         return full, None
     if etype == "AGE":
-        return str(person.age()), None
+        # AGE is one span including its unit ("13 år", ANNOTATION_SPEC); a bare
+        # "13" planned here and "13 år" found by the sweep were labelled twice.
+        return f"{person.age()} år", None
     if etype == "GENDER":
         return ("mann" if person.gender == "M" else "kvinne"), None
     if etype == "MARITAL_STATUS":
@@ -420,11 +456,13 @@ def localize_clause_names(
     """
     introduced: List[str] = []
 
+    pools = data.active_pools()
+
     def _fresh_full(kind: str) -> str:
         male = kind == "PERSON_M" or (kind == "PERSON" and rng.random() < 0.5)
         for _ in range(20):
-            first = rng.choice(data.FIRST_NAMES_MALE if male else data.FIRST_NAMES_FEMALE)
-            full = f"{first} {rng.choice(data.SURNAMES)}"
+            first = rng.choice(pools.first_male if male else pools.first_female)
+            full = f"{first} {rng.choice(pools.surnames)}"
             if full not in public_figures:
                 break
         return full
@@ -432,7 +470,7 @@ def localize_clause_names(
     def _sub(m: "re.Match") -> str:
         kind = m.group(1)
         if kind.startswith("SURNAME"):
-            return rng.choice(data.SURNAMES)
+            return rng.choice(pools.surnames)
         full = _fresh_full(kind)
         introduced.append(full)
         return full
@@ -615,13 +653,173 @@ def _cast_person(rng: random.Random, role: str, subject: Person, public_figures:
     )
 
 
+# A child under fifteen has no phone, mailbox or bank account of their own to
+# give a caseworker; the smoke run's eleven-year-old witness supplied a phone
+# number that the document then printed as the school's contact line.
+_NOT_FOR_YOUNG_CHILDREN = {"PHONE", "EMAIL", "FAX_NUMBER", "BANK_ACCOUNT", "ORG_NUMBER"}
+
 _STAFF_ROLES = {"physician", "psychologist", "veterinarian", "caseworker", "lawyer",
                 "officer", "teacher", "employer_contact", "creditor_contact"}
+
+
+def _weighted_entry(rng: random.Random, candidates: List[dict],
+                    difficulty_weights: Optional[Dict[str, float]]) -> dict:
+    """Draw a clause-bank entry, uniformly or weighted by its `difficulty`.
+
+    With no weights this is exactly `rng.choice`, so a training run draws the same
+    clauses it did before datasets existed.
+    """
+    if not difficulty_weights:
+        return rng.choice(candidates)
+    weights = [difficulty_weights.get(e.get("difficulty"), 1.0) for e in candidates]
+    return rng.choices(candidates, weights=weights, k=1)[0]
+
+
+def _nationalities_hosting(forced_clauses: Sequence[str], spec: dict, form: str,
+                           clause_bank: dict) -> List[str]:
+    """Return the foreign nationalities for which every forced clause type has a clause.
+
+    A clause entry may be restricted to a nationality (`identifiziserer seg som
+    etnisk somalisk`) or to a native/foreign subject, so a forced ETHNICITY clause
+    in a Nynorsk UDI decision found a fitting entry for four of the nine
+    nationalities and was dropped for the other five. Drawing the nationality
+    from the compatible ones is what makes a forced type land.
+
+    Args:
+        forced_clauses: Forced types that are clause types.
+        spec: The genre spec, for its `clause_genres`.
+        form: "nb" or "nn".
+        clause_bank: Loaded clause bank (or one dataset's share of it).
+
+    Returns:
+        Compatible nationalities; every foreign nationality when none constrains
+        the draw, and also when the constraints cannot be met together.
+    """
+    everyone = list(data.active_pools().foreign_names)
+    genres = set(spec["clause_genres"])
+    allowed = set(everyone)
+    for etype in forced_clauses:
+        fits = set()
+        for entry in clause_bank.get(etype, []):
+            if entry.get("form") != form or not genres & set(entry.get("genres", [])):
+                continue
+            if entry.get("origin") == "native" or entry.get("subject", "person") != "person":
+                continue
+            fits |= set(entry.get("nationalities") or everyone)
+        if fits:
+            allowed &= fits
+    return [n for n in everyone if n in allowed] or everyone
+
+
+def _age_for_forced_clauses(rng: random.Random, forced_clauses: Sequence[str], spec: dict, form: str,
+                            clause_bank: dict) -> Tuple[Optional[int], Optional[str]]:
+    """Pick a subject age (and gender) that a forced age-restricted clause can use.
+
+    AGE_INFO clauses are written for a minor or for someone over 75; an age drawn
+    from the genre's working-age profile fits none of them, and the sampler
+    dropped every forced AGE_INFO (24 of 24 in a measured run). The age comes from
+    a fitting entry's own `age_range` instead. A minor is only chosen in a genre
+    whose subject is a child: making an adult genre's subject six years old to
+    place one clause would drop every other adult clause scheduled with it.
+
+    Args:
+        rng: Seeded RNG; consumed only when a forced clause is age-restricted.
+        forced_clauses: Forced types that are clause types.
+        spec: The genre spec.
+        form: "nb" or "nn".
+        clause_bank: Loaded clause bank.
+
+    Returns:
+        (age, gender) inside the genre's own subject range; gender is the one the
+        chosen entry requires, if any. (None, None) when no forced clause
+        restricts age.
+    """
+    genres = set(spec["clause_genres"])
+    youth = spec.get("age_profile") == "youth"
+    lo_clamp, hi_clamp = (6, 17) if youth else spec.get("subject_age", (18, 120))
+    for etype in forced_clauses:
+        ranged = [e for e in clause_bank.get(etype, [])
+                  if e.get("age_range") and e.get("form") == form
+                  and genres & set(e.get("genres", []))
+                  and e["age_range"][0] <= hi_clamp and e["age_range"][1] >= lo_clamp
+                  and (youth or e["age_range"][0] >= 18)]
+        if ranged:
+            entry = rng.choice(ranged)
+            lo, hi = entry["age_range"]
+            return rng.randint(max(lo, lo_clamp), min(hi, hi_clamp)), entry.get("gender")
+    return None, None
+
+
+def _plant_negatives(rng: random.Random, plan: "DocPlan", spec: dict, person: Person, form: str,
+                     clause_types: Set[str], negative_bank: dict,
+                     literals: Sequence[str] = ()) -> List[PlantedNegative]:
+    """Choose the hard negatives to plant in one benchmark document.
+
+    A negative is only planted where it reads as an ordinary sentence of the
+    genre (its `genres` meet the genre's clause genres, its form, the
+    subject's gender and age match) and never next to a real disclosure of the type it
+    imitates: "nektet å oppgi om han er fagorganisert" in a document that also
+    says he is a union member is a contradiction, not a near-miss. At most one
+    negative per type, so a document does not read as a list of refusals.
+
+    Args:
+        rng: Seeded RNG.
+        plan: The document plan; `n_negatives` is how many to plant.
+        spec: Genre spec.
+        person: The data subject.
+        form: "nb" or "nn".
+        clause_types: Clause types this document already discloses.
+        negative_bank: `{TYPE: [negative entries]}` for the active dataset.
+        literals: The document's planned value strings. A negative that contains
+            one is skipped: the value would be located inside the near-miss, and
+            the near-miss would stop being unlabelled.
+
+    Returns:
+        The planted negatives, possibly fewer than requested.
+    """
+    genres = set(spec["clause_genres"])
+    options: List[Tuple[str, dict]] = []
+    for etype, entries in negative_bank.items():
+        if etype in clause_types:
+            continue
+        # The same restriction as the ETHNICITY clause itself: a near-miss about a
+        # name that "sounds foreign" in a clearance or a police report is the
+        # origin-as-suspicion framing that restriction exists to prevent.
+        if etype == "ETHNICITY" and plan.genre not in genres_mod.ETHNICITY_ALLOWED_GENRES:
+            continue
+        for entry in entries:
+            if not entry.get("plantable") or entry.get("form") != form:
+                continue
+            if not genres & set(entry.get("genres", [])):
+                continue
+            if entry.get("gender") and entry["gender"] != person.gender:
+                continue
+            lo, hi = entry.get("age_range", [18, 120])
+            if not lo <= person.age() <= hi:
+                continue
+            if any(re.search(r"(?<!\w)" + re.escape(v) + r"(?!\w)", entry["text"])
+                   for v in literals if len(v) >= 3):
+                continue
+            options.append((etype, entry))
+    chosen: List[PlantedNegative] = []
+    used_types: Set[str] = set()
+    rng.shuffle(options)
+    for etype, entry in options:
+        if len(chosen) >= plan.n_negatives:
+            break
+        if etype in used_types:
+            continue
+        used_types.add(etype)
+        chosen.append(PlantedNegative(etype, entry["text"], entry.get("why_not", ""),
+                                      dict(entry.get("also_labelled") or {})))
+    return chosen
 
 
 def sample_record(
     rng: random.Random, doc_seed: int, plan: "DocPlan", strategy: str,
     taxonomy_index: Dict[str, dict], clause_bank: dict, public_figures: Set[str],
+    negative_bank: Optional[dict] = None, difficulty_weights: Optional[Dict[str, float]] = None,
+    dataset: str = "train",
 ) -> Record:
     """Sample a coherent, genre-realistic typed record for one document.
 
@@ -649,9 +847,15 @@ def sample_record(
         taxonomy_index: Type name -> taxonomy entry.
         clause_bank: Loaded clause bank dict.
         public_figures: Embedded set of real public figures, to reject collisions.
+        negative_bank: `{TYPE: [negative entries]}` to plant `plan.n_negatives`
+            hard negatives from; None plants none.
+        difficulty_weights: Relative weight of a clause entry by `difficulty`;
+            None draws uniformly.
+        dataset: "train" or "benchmark", recorded on the record.
 
     Returns:
         A `Record` with `planned` fully populated (empty for a PII-free plan).
+        `dropped_forced` lists scheduled types the sampler could not place.
     """
     genre, form, length_band = plan.genre, plan.form, plan.length_band
     spec = genres_mod.GENRES[genre]
@@ -659,15 +863,24 @@ def sample_record(
 
     if plan.pii_free:
         return Record(doc_seed, genre, plan.variant, form, length_band, None, [], [],
-                      profile=plan.profile, pii_free=True)
+                      profile=plan.profile, pii_free=True, dataset=dataset)
 
+    is_clause_type = lambda t: taxonomy_index.get(t, {}).get("value_kind") == "clause"  # noqa: E731
     foreign = rng.random() < spec.get("foreign_subject_p", 0.0)
+    foreign = foreign or bool(set(plan.forced_types) & genres_mod.FOREIGN_SUBJECT_TYPES)
     minor = rng.random() < spec.get("minor_subject_p", 0.0)
-    nationality = rng.choice(data.FOREIGN_NATIONALITIES) if foreign else "norsk"
+    nationality = "norsk"
+    if foreign:
+        compatible = _nationalities_hosting(
+            [t for t in plan.forced_types if is_clause_type(t)], spec, form, clause_bank)
+        compatible = [n for n in compatible if n != "svensk"] or compatible
+        nationality = rng.choice(compatible)
     age_profile = spec.get("age_profile", "adult")
+    forced_age, forced_gender = _age_for_forced_clauses(
+        rng, [t for t in plan.forced_types if is_clause_type(t)], spec, form, clause_bank)
     person = _resample_until_no_collision(
         rng, public_figures, nationality=nationality, age_profile=age_profile,
-        age=rng.randint(13, 17) if minor else None,
+        age=rng.randint(13, 17) if minor else forced_age, gender=forced_gender,
         age_clamp=spec.get("subject_age"),
     )
     status = None
@@ -689,7 +902,7 @@ def sample_record(
 
     def _clause_types_ok(etype: str) -> bool:
         if taxonomy_index.get(etype, {}).get("value_kind") != "clause":
-            return etype in taxonomy_index and etype in _VALUE_KIND_TYPES
+            return etype in taxonomy_index and etype in _VALUE_KIND_TYPES and _value_fits(etype)
         if etype == "ETHNICITY" and genre not in genres_mod.ETHNICITY_ALLOWED_GENRES:
             return False
         if etype == "EMPLOYMENT" and minor:
@@ -699,6 +912,9 @@ def sample_record(
         if etype == "IMMIGRATION_STATUS" and not subject.foreign:
             return False
         return any(_clause_fits(e, subject) for e in clause_bank.get(etype, []))
+
+    def _value_fits(etype: str) -> bool:
+        return not (etype == "VISA_NUMBER" and not subject.foreign)
 
     special_used = [t for t in spec["core"] if t in genres_mod.SPECIAL_CATEGORIES]
     health_used = [t for t in spec["core"] if t in genres_mod.HEALTH_FAMILY]
@@ -738,7 +954,7 @@ def sample_record(
     # and counting them against the judgement budget left such a document with
     # one clause-level type, which is the opposite of what the judgement types
     # need. They are budgeted separately.
-    is_clause = lambda t: taxonomy_index.get(t, {}).get("value_kind") == "clause"  # noqa: E731
+    is_clause = is_clause_type
     judgement: List[str] = []
     forced_values: List[str] = []
     for etype in plan.forced_types:
@@ -769,11 +985,16 @@ def sample_record(
     planned: List[PlannedValue] = []
     tier = lambda t: taxonomy_index[t]["tier"]  # noqa: E731
 
+    # A place name inside an organisation's own name is not a LOCATION
+    # (ANNOTATION_SPEC), and the labeller marks every occurrence of a planned place
+    # string, so an employer named after the subject's town is not generated when
+    # the town is itself a planned LOCATION.
+    employer_place = None if "LOCATION" in chosen else place
     employer: Optional[str] = None
     employer_roles: List[Tuple[str, str]] = []
     if "ORGANIZATION" in chosen or ("EMPLOYMENT" in chosen and pair_employer
                                     and subject.status != "retired"):
-        employer, employer_roles = _employer(rng, place)
+        employer, employer_roles = _employer(rng, employer_place)
         if "EMPLOYMENT" in chosen and "ORGANIZATION" not in chosen:
             chosen.append("ORGANIZATION")
 
@@ -789,7 +1010,7 @@ def sample_record(
         candidates = [e for e in clause_bank.get(etype, []) if _clause_fits(e, subject)]
         if not candidates:
             continue
-        entry = rng.choice(candidates)
+        entry = _weighted_entry(rng, candidates, difficulty_weights)
         subject.status = subject.status or entry.get("status")
         subject.marital = subject.marital or entry.get("marital")
         if etype == "SEXUAL_ORIENTATION":
@@ -837,9 +1058,11 @@ def sample_record(
             continue
         if etype == "ORGANIZATION":
             if employer is None:
-                employer, employer_roles = _employer(rng, place)
-            planned.append(PlannedValue(etype, tier(etype), "value", employer, None, label(etype),
-                                        hint="hovedpersonens arbeidsgiver"))
+                employer, employer_roles = _employer(rng, employer_place)
+            planned.append(PlannedValue(
+                etype, tier(etype), "value", employer, None, label(etype),
+                hint=("en virksomhet nevnt i saken, ikke hovedpersonens arbeidsgiver"
+                      if person.age() < 18 else "hovedpersonens arbeidsgiver")))
             continue
         if etype == "NATIONALITY":
             planned.append(PlannedValue(etype, tier(etype), "value", person.nationality, None,
@@ -884,9 +1107,12 @@ def sample_record(
                 for name in introduced_names:
                     planned.append(PlannedValue("PERSON", "B", "value", name, None, label("PERSON"),
                                                 hint="person nevnt i en av opplysningene"))
+            # A civil-status clause with no kinship noun ("gift med Kari Hansen") is
+            # MARITAL_STATUS, not FAMILY_RELATION; the bank marks such entries.
+            as_type = chosen_entry.get("as_type", etype)
             planned.append(PlannedValue(
-                etype, tier(etype), "clause", text if strategy == "seeded" else None,
-                strategy, label(etype), difficulty=chosen_entry.get("difficulty"),
+                as_type, tier(as_type), "clause", text if strategy == "seeded" else None,
+                strategy, label(as_type), difficulty=chosen_entry.get("difficulty"),
             ))
             continue
         if entry.get("value_kind") == "clause":
@@ -903,15 +1129,23 @@ def sample_record(
         planned.append(PlannedValue(etype, tier(etype), "value", value, None, label(etype),
                                     checksum_valid, hint=hint))
 
-    if "MARITAL_STATUS" in chosen:
+    if "MARITAL_STATUS" in chosen and not any(pv.type == "MARITAL_STATUS" for pv in planned):
         marital = subject.marital
         if not marital:
             options = ["ugift", "gift", "skilt", "samboer"]
             if person.age() >= 55:
                 options.append("enke" if person.gender == "F" else "enkemann")
             marital = rng.choice(options if person.age() >= 20 else ["ugift"])
+        hint = "hovedpersonens sivilstand"
+        spouse = next((p for p in parties if p.role == "spouse"), None)
+        # ANNOTATION_SPEC: the bare word is right for a `Sivilstand:` field, but
+        # when the text names the partner the span is "gift med Kari Hansen" with
+        # the name also a PERSON. Both forms are generated.
+        if spouse and marital in ("gift", "samboer") and rng.random() < 0.5:
+            marital = f"{marital} med {spouse.person.full_name}"
+            hint = "hovedpersonens sivilstand, skrevet som en frase med navnet på partneren"
         planned.append(PlannedValue("MARITAL_STATUS", tier("MARITAL_STATUS"), "value", marital, None,
-                                    label("MARITAL_STATUS"), hint="hovedpersonens sivilstand"))
+                                    label("MARITAL_STATUS"), hint=hint))
 
     # Cast members bring their own values. This is where a case file's many
     # distinct spans come from: the output format is {TYPE: [unique spans]}, so
@@ -928,10 +1162,12 @@ def sample_record(
         for etype in role_values[:n_values]:
             if etype not in taxonomy_index or etype not in _VALUE_KIND_TYPES:
                 continue
+            if party.person.age() < 15 and etype in _NOT_FOR_YOUNG_CHILDREN:
+                continue
             if etype not in planned_types and len(planned_types) >= ceiling:
                 continue
             if etype == "ORGANIZATION":
-                value, checksum_valid = _employer(rng, place)[0], None
+                value, checksum_valid = _employer(rng, employer_place)[0], None
             else:
                 try:
                     value, checksum_valid = _generate_value_kind(
@@ -943,8 +1179,16 @@ def sample_record(
                 etype, tier(etype), "value", value, None, genres_mod.field_label(etype, form),
                 checksum_valid, hint=f"tilhører {party.label} {party.person.full_name}"))
 
+    negatives: List[PlantedNegative] = []
+    if plan.n_negatives and negative_bank:
+        literals = [pv.value for pv in planned if pv.value]
+        negatives = _plant_negatives(rng, plan, spec, person, form, set(clause_texts), negative_bank,
+                                     literals)
+    realised = {pv.type for pv in planned}
+    dropped = [t for t in plan.forced_types if t not in realised]
     return Record(doc_seed, genre, plan.variant, form, length_band, person, parties, planned,
-                  signatory_role=signatory_role, employer=employer, profile=plan.profile)
+                  signatory_role=signatory_role, employer=employer, profile=plan.profile,
+                  dataset=dataset, planted_negatives=negatives, dropped_forced=dropped)
 
 
 # ---------------------------------------------------------------------------
@@ -967,11 +1211,12 @@ _GENRE_INSTRUCTIONS_NN = (
 )
 
 _VARIANT_DESC = {
-    "field_header": "et skjema med feltoverskrifter for personalia og saksopplysninger, "
-                    "etterfulgt av en fritekstdel i hele setninger",
+    "field_header": "et brev eller skjema som åpner med en kort identifikasjonsblokk på høyst fem "
+                    "linjer med feltoverskrifter (hovedpersonens navn, nummer, adresse, saksnummer, "
+                    "dato), etterfulgt av en fritekstdel i hele setninger",
     "prose_letter": "et sammenhengende brev med hilsen og løpende prosa",
     "numbered_findings": "nummererte avsnitt med funn og vurderinger, hvert avsnitt i hele setninger",
-    "table_summary": "en kort tabell med bare identifikasjonsopplysninger (navn, nummer, datoer), "
+    "table_summary": "en tabell på høyst tre rader med hovedpersonens navn, nummer og dato, "
                      "etterfulgt av en vurdering i løpende tekst",
     "minutes": "et møtereferat der hvert punkt er skrevet som hele setninger",
 }
@@ -980,6 +1225,10 @@ _PRONOUNS = {
     ("F", "nb"): "hun / henne / hennes", ("M", "nb"): "han / ham / hans",
     ("F", "nn"): "ho / henne / hennar", ("M", "nn"): "han / han / hans",
 }
+
+# A negative written in the first person ("min seksuelle legning er privat") reads
+# as a mistake inside third-person prose; the prompt asks for it as a quotation.
+_FIRST_PERSON_RE = re.compile(r"(?:jeg|eg|min|mi|mitt|meg)\b", re.IGNORECASE)
 
 _POSITION_HINTS = [
     "tidlig i dokumentet", "i begrunnelsen eller vurderingen", "mot slutten",
@@ -1049,13 +1298,16 @@ def build_prompt(record: Record, rng: Optional[random.Random] = None) -> str:
         subject_line += (f" Andre personer som er nevnt i saken: {listed}. "
                          "Bruk bare disse navnene, og bare om disse personene.")
 
-    value_lines, clause_lines = [], []
+    value_lines, clause_lines, negative_lines = [], [], []
     manifest = [f"SEED|{record.doc_seed}", f"META|form={record.form}"]
     marked = False
     for pv in record.planned:
         if pv.value_kind == "value":
+            # The value leads and its kind trails, so the list does not read as a
+            # `Label: value` table the model would copy: pilot v3 mirrored the
+            # old `- Fødselsnummer: ...` lines into a 33-row table.
             hint = f" ({pv.hint})" if pv.hint else ""
-            value_lines.append(f"- {pv.field_label}{hint}: {pv.value}")
+            value_lines.append(f"- «{pv.value}» – {pv.field_label.lower()}{hint}")
             manifest.append(f"VALUE|{pv.type}|{pv.value}")
         elif pv.strategy == "seeded":
             clause_lines.append(f"- «{pv.value}» – {rng.choice(_POSITION_HINTS)}")
@@ -1067,13 +1319,19 @@ def build_prompt(record: Record, rng: Optional[random.Random] = None) -> str:
             )
             manifest.append(f"CLAUSE_MARKED|{pv.type}")
     rng.shuffle(clause_lines)
+    for neg in record.planted_negatives:
+        hint = ("som et direkte sitat fra personen selv, i anførselstegn"
+                if _FIRST_PERSON_RE.match(neg.text) else rng.choice(_POSITION_HINTS))
+        negative_lines.append(f"- «{neg.text}» – {hint}")
+        manifest.append(f"NEGATIVE|{neg.type}|{neg.text}")
 
     named = ", ".join(p.person.full_name for p in record.parties) or "ingen"
     rules = [
         "ALLE oppgitte verdier og opplysninger skal brukes ORDRETT, tegn for tegn, uten omskriving "
         "eller endret bøyning.",
         "Opplysningene om personene skal flettes inn i vanlige, hele setninger i brødteksten – "
-        "ikke i tabeller, ikke som punkter i en liste og ikke rett etter en feltetikett eller overskrift. "
+        "ikke i tabeller, ikke som punkter i en liste og ikke rett etter en feltetikett eller overskrift "
+        "(unntaket er den lille identifikasjonsblokken beskrevet nedenfor). "
         "Ingen overskrift eller etikett i dokumentet får nevne hva slags opplysning det er "
         "(for eksempel helse, atferd, religion, fagforening, seksuell legning, økonomi, familie, etnisitet).",
         f"Navngi ingen andre enn disse: {named}. Skriv ikke om denne regelen i dokumentet. "
@@ -1085,7 +1343,18 @@ def build_prompt(record: Record, rng: Optional[random.Random] = None) -> str:
         "oppgitt, skriv «samme dag» eller «tre uker senere» inne i en setning – aldri som verdien "
         "i et datofelt og aldri etter en overskrift som «Dato».",
         "Ikke bruk plassholdere som [NAVN] eller [DATO], og ikke skriv noe på engelsk.",
-        "Varier hvor verdiene står – noen i felt, noen midt i løpende tekst, og noen kan gjentas naturlig.",
+        "Dokumentet kan åpne med én liten identifikasjonsblokk på høyst fem linjer. Hver linje har en "
+        "etikett som sier hva verdien er («Navn:», «Fødselsnummer:», «Adresse:», «Saksnummer:», "
+        "«Dato:»), og blokken har bare hovedpersonens egne verdier fra listen ovenfor. Finn ikke på "
+        "et saksnummer eller en referanse som ikke står i listen, og sett aldri et nummer under "
+        "etiketten for en annen slags nummer (et tjenestenummer eller en enhetsidentifikator er "
+        "aldri et saksnummer). Alt annet – andre personers navn og nummer, telefon, e-post, "
+        "kontonumre, datoer, virksomheter – står i løpende setninger, i signaturen eller i en "
+        "kontaktlinje på slutten av brevet. Aldri en tabell eller liste med flere enn fem rader, og "
+        "ingen tabell for noe annet enn identifikasjon.",
+        "Hver verdi står under én etikett, og bare én gang som felt. Gjenta aldri det samme nummeret "
+        "under to etiketter (for eksempel både «Fødselsnummer» og «Statlig ID»); i teksten kan en "
+        "verdi gjentas naturlig.",
         # The pilot's most serious defect: the model added diagnoses, offences,
         # suspicions and financial troubles of its own around the seeded
         # clauses, and nothing labelled them. See tools/gendoc_audit.py.
@@ -1100,6 +1369,16 @@ def build_prompt(record: Record, rng: Optional[random.Random] = None) -> str:
         "stå som nøytrale personopplysninger. De skal ALDRI knyttes til mistanke, risiko, "
         "kriminalitet, farlighet eller troverdighet.",
     ]
+    planned_types = {pv.type for pv in record.planned}
+    if "CASE_NUMBER" not in planned_types:
+        rules.append("Dette dokumentet har ikke noe saksnummer og ingen referanse. Skriv ingen linje "
+                     "eller setning med «Saksnummer», «Sak nr.», «Sak» foran et nummer, «Vår ref.» "
+                     "eller «Deres ref.».")
+    for etype, word in (("MILITARY_ID", "tjenestenummer"), ("IDENTITY_CARD", "ID-kortnummer"),
+                        ("DEVICE_ID", "enhetsidentifikator")):
+        if etype in planned_types:
+            rules.append(f"Verdien oppgitt som {word} skal alltid omtales som {word} og aldri som "
+                         "saksnummer, referanse eller noe annet nummer.")
     if marked:
         rules.append("For markerte setninger: skriv ⟦TYPE: setning⟧ nøyaktig én gang per type, "
                      "uten andre ⟦ ⟧ tegn i teksten for øvrig.")
@@ -1113,6 +1392,11 @@ def build_prompt(record: Record, rng: Optional[random.Random] = None) -> str:
     if clause_lines:
         prompt += ("\n\nOpplysninger som skal stå ordrett inne i løpende setninger:\n"
                    + "\n".join(clause_lines))
+    if negative_lines:
+        prompt += ("\n\nNøytrale formuleringer som også skal stå ordrett inne i løpende setninger. "
+                   "De sier ikke noe om personens helse, tro, tilhørighet, opprinnelse, seksualitet "
+                   "eller straffbare forhold. Utdyp dem ikke, forklar dem ikke og knytt dem ikke til "
+                   "noen diagnose, medlemskap eller lovbrudd:\n" + "\n".join(negative_lines))
     prompt += "\n\nRegler:\n" + "\n".join(f"{i}. {r}" for i, r in enumerate(rules, 1))
     return prompt + "\n" + MANIFEST_SENTINEL + "\n" + "\n".join(manifest)
 
@@ -1182,10 +1466,13 @@ def build_repair_prompt(record: Record, draft: str, missing: List[str]) -> str:
     """
     form_name = "bokmål" if record.form == "nb" else "nynorsk"
     by_value = {pv.value: pv for pv in record.planned if pv.value}
+    negative_texts = {neg.text for neg in record.planted_negatives}
     lines = []
     for m in missing:
         pv = by_value.get(m)
-        if pv is not None and pv.value_kind == "value":
+        if m in negative_texts:
+            lines.append(f"- en nøytral formulering som skal stå ordrett i en setning i brødteksten: «{m}»")
+        elif pv is not None and pv.value_kind == "value":
             what = pv.field_label + (f" ({pv.hint})" if pv.hint else "")
             lines.append(f"- {what}: «{m}»")
         else:
@@ -1322,6 +1609,9 @@ class GenerationConfig:
     audit: bool = True
     max_audit_repairs: int = 1
     audit_max_new_tokens: int = 512
+    dataset: str = "train"
+    difficulty_weights: Optional[Dict[str, float]] = None
+    negative_bank: Dict[str, List[dict]] = field(default_factory=dict)
 
 
 @dataclass
@@ -1344,6 +1634,7 @@ class DocPlan:
     type_target: int = 7
     art9_cap: int = 1
     pii_free: bool = False
+    n_negatives: int = 0
 
 
 @dataclass
@@ -1382,6 +1673,8 @@ def new_attempt_record(state: DocState, base_seed: int, taxonomy_index: Dict[str
     rng = random.Random(doc_seed)
     record = sample_record(
         rng, doc_seed, plan, config.strategy, taxonomy_index, clause_bank, public_figures,
+        negative_bank=config.negative_bank, difficulty_weights=config.difficulty_weights,
+        dataset=config.dataset,
     )
     for pv in record.planned:
         if pv.tier == "A" and pv.checksum_valid is not None and rng.random() < config.invalid_checksum_rate:
@@ -1425,6 +1718,47 @@ def _prune_redundant_nested(text: str, output: Dict[str, List[str]]) -> Dict[str
             keep.append(short)
         pruned[etype] = keep
     return {k: v for k, v in pruned.items() if v}
+
+
+_AGE_ABSORBERS = ("FAMILY_RELATION", "AGE_INFO", "ANIMAL_INFO")
+
+
+def _drop_absorbed_spans(text: str, output: Dict[str, List[str]],
+                         agency_names: Set[str]) -> Dict[str, List[str]]:
+    """Drop labels that ANNOTATION_SPEC says a larger span absorbs.
+
+    The labeller marks every occurrence of a planned string, so a string whose
+    every occurrence lies inside a span of another type is a label the spec does
+    not allow:
+
+    * an AGE inside a FAMILY_RELATION, AGE_INFO or ANIMAL_INFO span ("12 år" in
+      "to barn på 15 og 12 år") is not tagged again;
+    * a LOCATION inside an organisation's or authority's own name ("Fredrikstad"
+      in "Fredrikstad Sjømat AS") is not a LOCATION. A city inside an ADDRESS is,
+      and is left alone.
+
+    Args:
+        text: The document.
+        output: `{TYPE: [spans]}`.
+        agency_names: Known authority and institution names.
+
+    Returns:
+        The output without the absorbed spans; types left empty are removed.
+    """
+    def intervals(spans: Sequence[str]) -> List[Tuple[int, int]]:
+        return gates._covered_intervals(text, spans)
+
+    def absorbed(span: str, wide: List[Tuple[int, int]]) -> bool:
+        spots = intervals([span])
+        return bool(spots) and all(any(lo <= a and b <= hi for lo, hi in wide) for a, b in spots)
+
+    out = {k: list(v) for k, v in output.items()}
+    wide_age = [iv for t in _AGE_ABSORBERS for iv in intervals(out.get(t, []))]
+    out["AGE"] = [s for s in out.get("AGE", []) if not absorbed(s, wide_age)]
+    names = list(out.get("ORGANIZATION", [])) + [a for a in agency_names if a in text]
+    wide_org = intervals(names)
+    out["LOCATION"] = [s for s in out.get("LOCATION", []) if not absorbed(s, wide_org)]
+    return {k: v for k, v in out.items() if v}
 
 
 def evaluate_candidate(
@@ -1495,7 +1829,8 @@ def evaluate_candidate(
     ]
     if record.pii_free and literal_values:
         return fail("plan_inconsistent", "a PII-free record must plan no values")
-    g2_ok, g2_missing = gates.gate_verbatim(literal_values, clean_text)
+    negative_texts = [neg.text for neg in record.planted_negatives]
+    g2_ok, g2_missing = gates.gate_verbatim(literal_values + negative_texts, clean_text)
     missing_marks = [pv.type for pv in record.planned if pv.strategy == "marked" and pv.type not in marked_spans]
     if not g2_ok or missing_marks:
         state.gate_log.append({**stage_tag, "stage": "G2_verbatim", "ok": False,
@@ -1505,7 +1840,7 @@ def evaluate_candidate(
         # case file was discarded for one inflected string out of twenty-five,
         # which threw away a document whose other twenty-four labels were
         # correct. The repair allowance scales with how much was planted.
-        n_planted = max(1, len(literal_values))
+        n_planted = max(1, len(literal_values) + len(negative_texts))
         allowance = max(config.repair_max_missing, n_planted // config.repair_missing_per_values)
         if (not missing_marks and len(g2_missing) <= allowance
                 and state.repairs < config.max_repairs):
@@ -1514,9 +1849,17 @@ def evaluate_candidate(
 
     clauses = [pv.value for pv in record.planned if pv.value_kind == "clause" and pv.value]
     clauses += [span for spans in marked_spans.values() for span in spans]
-    slot_ok, slot_hits = gates.gate_slot_labels(clean_text, clauses)
+    slot_ok, slot_hits = gates.gate_slot_labels(clean_text, clauses + negative_texts)
     if not slot_ok:
         return fail("G9_slot", slot_hits)
+    tabular_ok, tabular_hits = gates.gate_tabular_dump(clean_text, literal_values + negative_texts)
+    if not tabular_ok:
+        return fail("G13_tabular", tabular_hits)
+    roles_ok, role_hits = gates.gate_identifier_roles(
+        clean_text, [(pv.type, pv.value) for pv in record.planned if pv.value_kind == "value"],
+        literal_values + negative_texts)
+    if not roles_ok:
+        return fail("G14_roles", role_hits)
 
     names_to_check = [p.person.full_name for p in record.parties]
     g3_ok, g3_hits = gates.gate_name_collision(names_to_check, clean_text, public_figures, place_names, agency_names)
@@ -1548,7 +1891,11 @@ def evaluate_candidate(
                 spans = output[pv.type]
                 output[pv.type] = [extensions.get(sp, sp) if sp == pv.value else sp for sp in spans]
 
-    covered = [v for vals in output.values() for v in vals]
+    for neg in record.planted_negatives:
+        for etype, sub in neg.also_labelled.items():
+            if sub in clean_text and sub not in output.get(etype, []):
+                output.setdefault(etype, []).append(sub)
+    covered = [v for vals in output.values() for v in vals] + negative_texts
     g7_ok, g7_findings = gates.gate_unplanned_pii(clean_text, covered, place_names, agency_names)
     # A PII-free document planned nothing, so nothing is covered and there is no
     # owner the sweep could attribute a hit to. Every finding rejects, including
@@ -1583,14 +1930,17 @@ def evaluate_candidate(
         if f["match"] not in output.get(etype, []):
             output.setdefault(etype, []).append(f["match"])
             labelled.append({"type": etype, "text": f["match"], "pattern": f["pattern"]})
+    output = _drop_absorbed_spans(clean_text, output, agency_names)
     output = _prune_redundant_nested(clean_text, output)
 
     state.gate_log.append({**stage_tag, "stage": "accepted", "ok": True,
                            "g7_findings": g7_findings, "g7_policy": config.g7_policy})
+    tabular = gates.tabular_profile(clean_text, literal_values + negative_texts)
     state.result = {
         "accepted": True, "record": record, "text": clean_text, "output": output,
         "ngrams": ngrams, "tier_a_findings": tier_a_findings, "g7_labelled": labelled,
         "clause_extensions": extensions, "clause_extensions_count": n_extended,
+        "tabular": tabular,
     }
     return "accepted", None
 
@@ -1668,6 +2018,9 @@ def run_generation(
     def _covered_spans(st: DocState) -> List[str]:
         return [v for vals in st.result["output"].values() for v in vals]
 
+    def _exempt_spans(st: DocState) -> List[str]:
+        return [neg.text for neg in st.record.planted_negatives]
+
     while queue:
         kind = queue[0][1]
         jobs = [j for j in queue if j[1] == kind][:config.batch_size]
@@ -1683,10 +2036,10 @@ def run_generation(
                 budgets.append(_token_budget(config, max(st.record.length_band[1], len(st.last_text))))
             elif kind == "audit":
                 prompts.append(audit.build_audit_prompt(
-                    st.result["text"], _covered_spans(st), st.record.doc_seed))
+                    st.result["text"], _covered_spans(st) + _exempt_spans(st), st.record.doc_seed))
                 budgets.append(config.audit_max_new_tokens)
             else:
-                keep = [pv.value for pv in st.record.planned if pv.value]
+                keep = [pv.value for pv in st.record.planned if pv.value] + _exempt_spans(st)
                 prompts.append(audit.build_audit_repair_prompt(
                     st.result["text"], payload, keep, st.record.form, st.record.doc_seed))
                 budgets.append(_token_budget(config, max(st.record.length_band[1],
@@ -1714,10 +2067,13 @@ def run_generation(
                 st.audit_calls += 1
                 document = st.result["text"]
                 pairs = audit.parse_audit_reply(text)
-                findings = audit.filter_audit_findings(document, _covered_spans(st), pairs)
+                findings = audit.filter_audit_findings(
+                    document, _covered_spans(st), pairs, exempt_spans=_exempt_spans(st))
                 st.audit_log.append({
                     "attempt": st.attempt, "audit_repairs": st.audit_repairs,
                     **audit.audit_stats(pairs, findings),
+                    "exempt_negative_quotes": audit.exempt_quote_count(
+                        document, pairs, _exempt_spans(st)),
                     "findings": [{k: v for k, v in f.items() if k != "residue"} for f in findings],
                 })
                 stats["audit_raw_quotes"] += len(pairs)
@@ -1825,6 +2181,11 @@ def write_sample_dump(path: str, records: List[dict], n: int, rng: random.Random
         if r.get("clause_extensions"):
             lines.append(f"\n**Clause labels extended over a completing date:** "
                          f"{r['clause_extensions']}")
+        if rec.planted_negatives:
+            lines.append("\n**Planted hard negatives (verbatim in the text, unlabelled by design):**")
+            for neg in rec.planted_negatives:
+                lines.append(f"- `{neg.type}`: {neg.text!r}"
+                             + (f" (labelled as its own type: {neg.also_labelled})" if neg.also_labelled else ""))
         audit_findings = [f for entry in r["state"].audit_log for f in entry["findings"]]
         if audit_findings:
             lines.append("\n**G11 audit findings (never labels; repaired or regenerated):**")
@@ -1891,7 +2252,7 @@ MAX_FORCED_BY_PROFILE = {
 }
 
 
-def _draw_profiles(rng: random.Random, n: int) -> List[str]:
+def _draw_profiles(rng: random.Random, n: int, shares: Optional[Dict[str, float]] = None) -> List[str]:
     """Allocate density profiles across a batch by their target shares.
 
     Quotas are allocated by largest remainder rather than by an independent draw
@@ -1901,11 +2262,14 @@ def _draw_profiles(rng: random.Random, n: int) -> List[str]:
     Args:
         rng: Run-level RNG, used only to shuffle the allocation.
         n: Number of documents.
+        shares: Profile shares overriding `gendoc_genres.PROFILES`, which is how
+            a benchmark leans toward dense and case-file documents.
 
     Returns:
         One profile name per document, in shuffled order.
     """
-    quotas = {name: genres_mod.PROFILES[name]["share"] * n for name in genres_mod.PROFILE_ORDER}
+    quotas = {name: (shares or {}).get(name, genres_mod.PROFILES[name]["share"]) * n
+              for name in genres_mod.PROFILE_ORDER}
     counts = {name: int(q) for name, q in quotas.items()}
     remainder = n - sum(counts.values())
     for name, _frac in sorted(quotas.items(), key=lambda kv: -(kv[1] - int(kv[1])))[:remainder]:
@@ -1925,6 +2289,9 @@ def plan_batch(
     rng: random.Random, n: int, genre_list: List[str], forced_types: List[str],
     rare_force_share: float, coverage_target: int = 0,
     schedulable_types: Optional[List[str]] = None,
+    mode: Optional[dataset_mod.DatasetMode] = None, clause_bank: Optional[dict] = None,
+    coverage_margin: int = 0,
+    natural_probe: Optional[Callable[[DocPlan, int], Set[str]]] = None,
 ) -> Tuple[List[DocPlan], dict]:
     """Fix genre, variant, form, density profile, length, type target and forced types.
 
@@ -1954,13 +2321,23 @@ def plan_batch(
             disable coverage scheduling.
         schedulable_types: Types coverage scheduling should cover; defaults to
             every type any requested genre hosts.
+        mode: Dataset mode; sets the profile shares and how many hard negatives
+            each document plans. None is the training distribution.
+        clause_bank: The clause bank the run samples from. Coverage scheduling
+            only places a clause type in a genre the bank can actually fill.
+        coverage_margin: Extra documents a type is aimed at on top of
+            `coverage_target`, to absorb discards and sampler drops.
+        natural_probe: `(plan, k) -> types the sampler draws for that plan with
+            nothing forced`. When given, a type that the plans already carry often
+            enough on their own is scheduled fewer times, which is what leaves room
+            for the scarce ones.
 
     Returns:
         Tuple of (one `DocPlan` per document, a scheduling report with the
         planned per-type document counts, the shortfalls and the types no
         requested genre can host).
     """
-    profiles = _draw_profiles(rng, n)
+    profiles = _draw_profiles(rng, n, mode.profile_shares if mode else None)
     pii_free_genres = [g for g in genre_list if g in genres_mod.PII_FREE_GENRES]
     plans: List[DocPlan] = []
     for i, profile in enumerate(profiles):
@@ -1986,7 +2363,9 @@ def plan_batch(
         ))
 
     if coverage_target > 0:
-        report = _schedule_coverage(rng, plans, genre_list, coverage_target, schedulable_types or [])
+        natural = (_natural_expectation(plans, natural_probe) if natural_probe else None)
+        report = _schedule_coverage(rng, plans, genre_list, coverage_target, schedulable_types or [],
+                                    clause_bank=clause_bank, margin=coverage_margin, natural=natural)
     else:
         report = _schedule_rare_types(rng, plans, rare_force_share)
 
@@ -2003,6 +2382,12 @@ def plan_batch(
                 and not any(t in plan.forced_types for t in contact)
                 and rng.random() < CONTACT_FLOOR_SHARE):
             plan.forced_types.append(rng.choice(contact))
+    if mode and mode.negatives_by_profile:
+        for plan in plans:
+            lo, hi = mode.negatives_by_profile.get(plan.profile, (0, 0))
+            plan.n_negatives = 0 if plan.pii_free else rng.randint(lo, hi)
+    report["dataset"] = mode.name if mode else "train"
+    report["planned_negatives"] = sum(p.n_negatives for p in plans)
     report["planned_profiles"] = dict(collections.Counter(p.profile for p in plans))
     report["planned_pii_free"] = sum(1 for p in plans if p.pii_free)
     report["planned_nn_share"] = round(sum(1 for p in plans if p.form == "nn") / max(1, len(plans)), 3)
@@ -2033,18 +2418,76 @@ def _schedule_rare_types(rng: random.Random, plans: List[DocPlan], rare_force_sh
             "coverage_target": 0, "shortfall": [], "unreachable": []}
 
 
+# How often a document of each profile survives every gate, lowest risk first.
+# Pilot v3 discarded 7 of 50 documents and every one of them was dense or a case
+# file (7 of 17); none of the 33 lighter ones. A type scheduled only into dense
+# and case-file documents therefore reached its target only when none of them
+# was lost, which is why CREDIT_CARD and CRYPTO, scheduled three times each into
+# the same three large documents, were absent from the output.
+_PROFILE_RISK = {"pii_free": 0, "minimal": 0, "light": 0, "typical": 0, "dense": 1, "case_file": 2}
+
+# Share of documents of each profile that survive every gate: pilot v3 lost 4 of
+# its 10 dense documents and 3 of its 7 case files, and none of the other 33.
+_PROFILE_SURVIVAL = {"dense": 0.6, "case_file": 0.57}
+_DEFAULT_SURVIVAL = 0.97
+_FORCED_SLOT_SURVIVAL = 0.85
+NATURAL_PROBES = 3
+
+
+def _natural_expectation(plans: List[DocPlan], probe: Callable[[DocPlan, int], Set[str]]) -> Dict[str, float]:
+    """Estimate how many surviving documents carry each type with nothing forced.
+
+    Coverage scheduling used to treat every type as absent until forced, so it
+    spent a case file's eight slots on PERSON-adjacent types that appear in half
+    the batch anyway and starved the scarce ones. The sampler is cheap, so the
+    estimate is the sampler itself: each non-PII-free plan is drawn
+    `NATURAL_PROBES` times with no forced types and the type's share of those
+    draws is weighted by the profile's survival rate.
+
+    Args:
+        plans: The plans, with their genres as drawn before scheduling.
+        probe: `(plan, k) -> set of types the k-th draw carries`.
+
+    Returns:
+        `{type: expected surviving documents}`.
+    """
+    expected: collections.Counter = collections.Counter()
+    for plan in plans:
+        if plan.pii_free:
+            continue
+        survival = _PROFILE_SURVIVAL.get(plan.profile, _DEFAULT_SURVIVAL)
+        for k in range(NATURAL_PROBES):
+            for etype in probe(plan, k):
+                expected[etype] += survival / NATURAL_PROBES
+    return dict(expected)
+
+
 def _schedule_coverage(
     rng: random.Random, plans: List[DocPlan], genre_list: List[str], target: int,
-    schedulable: List[str],
+    schedulable: List[str], clause_bank: Optional[dict] = None, margin: int = 0,
+    natural: Optional[Dict[str, float]] = None,
 ) -> dict:
     """Assign genres and forced types so every schedulable type reaches K documents.
 
-    The pass is greedy and deliberately simple: documents that can host the most
-    forced types go first, each is given the genre that covers the largest
-    remaining deficit, and the deficit types that genre hosts are attached to it
-    up to its profile's limit. A type whose host genres are all outside
-    `genre_list` is reported as unreachable rather than forced somewhere
-    implausible.
+    The pass is greedy and deliberately simple: each document is given the genre
+    that covers the largest remaining deficit, and the deficit types that genre
+    hosts are attached to it up to its profile's limit. A type whose host genres
+    are all outside `genre_list`, or that the clause bank cannot fill in any of
+    them, is reported as unreachable rather than forced somewhere implausible.
+
+    Three things were added after pilot v3 realised 54 of 57 types:
+
+    * **Reliable documents first.** Plans are visited light and typical before
+      dense before case file, and the scarcest types pick first, so the types
+      that are hardest to land are scheduled into the documents least likely to
+      be discarded.
+    * **A margin.** Each type is scheduled `target + margin` times, because a
+      forced slot is lost to a discard or a sampler drop about a third of the
+      time and exactly K slots meant exactly K chances.
+    * **Budgets the sampler enforces.** A type is only scheduled into a document
+      whose Art. 9 and health-family budgets still have room, so the sampler does
+      not silently drop it (GENETIC_DATA in a typical-profile health genre, whose
+      core HEALTH had already used the one health-family slot).
 
     Args:
         rng: Run-level RNG, for tie-breaking.
@@ -2052,15 +2495,26 @@ def _schedule_coverage(
         genre_list: Genres the run may use.
         target: Documents each type should reach.
         schedulable: Types to cover.
+        clause_bank: Clause bank to check clause types against; None skips it.
+        margin: Documents each type is aimed at beyond `target`.
+        natural: Expected surviving documents per type that the plans carry with
+            nothing forced (`_natural_expectation`). A type's slots are then only
+            the shortfall, divided by the survival rate a forced slot has; None
+            schedules the full `target + margin` for every type.
 
     Returns:
         A scheduling report.
     """
-    hosts = {t: [g for g in genres_hosting_cached(t) if g in genre_list] for t in schedulable}
+    hosts = {t: [g for g in genres_hosting_cached(t, clause_bank) if g in genre_list] for t in schedulable}
     unreachable = sorted(t for t, gs in hosts.items() if not gs)
-    deficit = {t: target for t in schedulable if hosts[t]}
+    want = target + margin
+    if natural is None:
+        deficit = {t: want for t in schedulable if hosts[t]}
+    else:
+        deficit = {t: math.ceil(max(0.0, want - natural.get(t, 0.0)) / _FORCED_SLOT_SURVIVAL)
+                   for t in schedulable if hosts[t]}
     assignable = [p for p in plans if not p.pii_free and MAX_FORCED_BY_PROFILE[p.profile] > 0]
-    order = sorted(assignable, key=lambda p: (-MAX_FORCED_BY_PROFILE[p.profile], p.idx))
+    order = sorted(assignable, key=lambda p: (_PROFILE_RISK[p.profile], -MAX_FORCED_BY_PROFILE[p.profile], p.idx))
     scheduled: collections.Counter = collections.Counter()
 
     used_genres: collections.Counter = collections.Counter(p.genre for p in plans)
@@ -2068,7 +2522,7 @@ def _schedule_coverage(
         room = MAX_FORCED_BY_PROFILE[plan.profile] - len(plan.forced_types)
         if room <= 0:
             continue
-        wanted = [t for t, d in deficit.items() if d > 0]
+        wanted = [t for t, d in deficit.items() if d > 0 and t not in plan.forced_types]
         if not wanted:
             break
         # Score a genre by how much *scarce* deficit it can absorb, not by how
@@ -2081,11 +2535,12 @@ def _schedule_coverage(
         for genre in genre_list:
             if genre in genres_mod.PII_FREE_GENRES and not plan.pii_free:
                 continue
-            hostable = _hostable_for(genre, wanted, hosts, plan.art9_cap)[:room]
+            hostable = _hostable_for(genre, wanted, hosts, plan.art9_cap,
+                                     genres_mod.health_family_cap(plan.profile))[:room]
             if not hostable:
                 continue
             score = (sum(1.0 / len(hosts[t]) for t in hostable)
-                     / (1.0 + 0.30 * used_genres[genre]))
+                     / (1.0 + 0.60 * used_genres[genre]))
             if score > best_score:
                 best_genre, best_types, best_score = genre, hostable, score
         if best_genre is None:
@@ -2102,55 +2557,63 @@ def _schedule_coverage(
             deficit[etype] -= 1
             scheduled[etype] += 1
 
-    shortfall = [{"type": t, "scheduled": scheduled[t], "target": target}
+    shortfall = [{"type": t, "scheduled": scheduled[t], "target": want}
                  for t in sorted(deficit) if deficit[t] > 0]
-    return {"mode": "coverage_target", "coverage_target": target,
+    return {"mode": "coverage_target", "coverage_target": target, "coverage_margin": margin,
             "scheduled": dict(scheduled.most_common()), "shortfall": shortfall,
             "unreachable": unreachable}
 
 
 def _hostable_for(
     genre: str, wanted: Sequence[str], hosts: Dict[str, List[str]], art9_cap: int,
+    health_cap: int = 99,
 ) -> List[str]:
-    """Return the deficient types a genre can host, scarcest first, Art. 9 capped.
+    """Return the deficient types a genre can host, scarcest first, within the sampler's budgets.
 
-    A document's Art. 9 budget is decided by its profile, so the scheduler must
-    respect it: scheduling three special categories into a short document only
-    to have the sampler drop two of them wastes the forced slots and is why
-    RELIGIOUS_BELIEF and GENETIC_DATA reached no document in an earlier run.
+    A document's Art. 9 and health-family budgets are decided by its profile, so
+    the scheduler must respect them: scheduling three special categories into a
+    short document only to have the sampler drop two of them wastes the forced
+    slots and is why RELIGIOUS_BELIEF and GENETIC_DATA reached no document in an
+    earlier run. The health-family cap is the same trap: a typical-profile
+    `hospital_discharge` already carries HEALTH in its core, which uses its one
+    health-family slot, so a scheduled GENETIC_DATA was refused there.
 
     Args:
         genre: Candidate genre id.
         wanted: Types still short of their target.
         hosts: Type -> the requested genres that host it.
         art9_cap: How many Art. 9 categories this document may carry.
+        health_cap: How many health-family types this document may carry.
 
     Returns:
         Hostable type names, scarcest host set first.
     """
-    core_art9 = sum(1 for t in genres_mod.GENRES[genre]["core"]
-                    if t in genres_mod.SPECIAL_CATEGORIES)
-    budget = max(0, art9_cap - core_art9)
+    core = genres_mod.GENRES[genre]["core"]
+    budget = max(0, art9_cap - sum(1 for t in core if t in genres_mod.SPECIAL_CATEGORIES))
+    health_budget = max(0, health_cap - sum(1 for t in core if t in genres_mod.HEALTH_FAMILY))
     hostable = sorted((t for t in wanted if genre in hosts[t]),
                       key=lambda t: (len(hosts[t]), t))
-    picked, art9_used = [], 0
+    picked, art9_used, health_used = [], 0, 0
     for etype in hostable:
-        if etype in genres_mod.SPECIAL_CATEGORIES:
-            if art9_used >= budget:
-                continue
-            art9_used += 1
+        if etype in genres_mod.SPECIAL_CATEGORIES and art9_used >= budget:
+            continue
+        if etype in genres_mod.HEALTH_FAMILY and health_used >= health_budget:
+            continue
+        art9_used += etype in genres_mod.SPECIAL_CATEGORIES
+        health_used += etype in genres_mod.HEALTH_FAMILY
         picked.append(etype)
     return picked
 
 
-_HOSTS_CACHE: Dict[str, List[str]] = {}
+_HOSTS_CACHE: Dict[Tuple[str, int], List[str]] = {}
 
 
-def genres_hosting_cached(etype: str) -> List[str]:
+def genres_hosting_cached(etype: str, clause_bank: Optional[dict] = None) -> List[str]:
     """Memoised `gendoc_genres.genres_hosting`; the scheduler calls it O(n*genres) times."""
-    if etype not in _HOSTS_CACHE:
-        _HOSTS_CACHE[etype] = genres_mod.genres_hosting(etype)
-    return _HOSTS_CACHE[etype]
+    key = (etype, id(clause_bank))
+    if key not in _HOSTS_CACHE:
+        _HOSTS_CACHE[key] = genres_mod.genres_hosting(etype, clause_bank)
+    return _HOSTS_CACHE[key]
 
 
 def _bucket(value: int, edges: Sequence[int]) -> str:
@@ -2166,14 +2629,9 @@ def coverage_report(
 ) -> dict:
     """Report how many accepted documents each type reached, and what fell short.
 
-    `docs/PROJECT_SPEC_V2.md` intends the 59-type taxonomy to become
-    project-wide, so a type that the synthetic data never exercises is a gap
-    that has to be found now rather than after the gold set is relabelled.
-    `CONTEXT_SENSITIVE` and `IDENTIFIABLE_IMAGE` are reported separately as
-    deliberately uncovered: `docs/ANNOTATION_SPEC.md` cut both with documented
-    reasoning and `PROJECT_SPEC_V2.md` reinstates them without a definition, and
-    guessing one would put invented semantics into a dataset whose whole claim
-    is that its labels are not guessed.
+    The 57-type taxonomy is to become project-wide, so a type that the synthetic
+    data never exercises is a gap that has to be found now rather than after the
+    gold set is relabelled.
 
     Args:
         accepted_meta: One dict per accepted document with its realised `types`.
@@ -2195,12 +2653,6 @@ def coverage_report(
         "per_type_documents": dict(counts.most_common()),
         "types_absent": sorted(t for t in schedulable if not counts.get(t)),
         "types_below_target": sorted(below, key=lambda r: (r["documents"], r["type"])),
-        "deliberately_uncovered": {
-            "types": genres_mod.UNCOVERED_TYPES,
-            "reason": "ANNOTATION_SPEC.md cut both with documented reasoning; "
-                      "PROJECT_SPEC_V2.md reinstates them without defining either. "
-                      "Nothing is generated for them and no definition is invented here.",
-        },
         "unreachable_in_requested_genres": plan_report.get("unreachable", []),
         "planned_schedule": plan_report,
     }
@@ -2263,6 +2715,73 @@ def density_report(accepted: List[dict], plans: List[DocPlan]) -> dict:
     }
 
 
+def negatives_report(accepted: List[dict], states: List[DocState], plans: List[DocPlan]) -> dict:
+    """Report what happened to the planted hard negatives.
+
+    A negative that is in an accepted document is, by G2, verbatim in its text;
+    what the run still has to show is that none was *labelled* (apart from the
+    declared `also_labelled` value of another type) and how often the auditor
+    wanted to flag one and was overruled by the exemption.
+
+    Args:
+        accepted: Accepted document dicts.
+        states: Every document state.
+        plans: Every plan.
+
+    Returns:
+        The hard-negative section of the gate report.
+    """
+    planted = [(r["id"], neg) for r in accepted for neg in r["record"].planted_negatives]
+    labelled_by_mistake = []
+    for doc_id, neg in planted:
+        record = next(r for r in accepted if r["id"] == doc_id)
+        for etype, spans in record["output"].items():
+            allowed = neg.also_labelled.get(etype)
+            for span in spans:
+                if span == allowed or len(span) < 4:
+                    continue
+                if re.search(r"(?<!\w)" + re.escape(span) + r"(?!\w)", neg.text) or neg.text in span:
+                    labelled_by_mistake.append({"id": doc_id, "type": etype, "span": span,
+                                                "negative": neg.text})
+    return {
+        "planned": sum(p.n_negatives for p in plans),
+        "planted_in_accepted_documents": len(planted),
+        "kept_verbatim": sum(1 for doc_id, neg in planted
+                             if neg.text in next(r for r in accepted if r["id"] == doc_id)["text"]),
+        "labelled_by_mistake": labelled_by_mistake,
+        "audit_quotes_overruled_by_exemption": sum(
+            e.get("exempt_negative_quotes", 0) for st in states for e in st.audit_log),
+        "by_type": dict(collections.Counter(neg.type for _doc, neg in planted)),
+        "distinct_texts": len({neg.text for _doc, neg in planted}),
+    }
+
+
+def tabular_report(accepted: List[dict]) -> dict:
+    """Report the table and field share of the accepted documents (G13's measurements).
+
+    Args:
+        accepted: Accepted document dicts, each with the `tabular` profile
+            `evaluate_candidate` measured.
+
+    Returns:
+        Per-document shares, their summary, and how many documents carry a table.
+    """
+    profiles = {r["id"]: r.get("tabular", {}) for r in accepted}
+    table = [p.get("table_line_share", 0.0) for p in profiles.values()]
+    field = [p.get("field_line_share", 0.0) for p in profiles.values()]
+    slots = [p.get("value_slot_share", 0.0) for p in profiles.values()]
+    mean = lambda xs: round(sum(xs) / len(xs), 3) if xs else None  # noqa: E731
+    return {
+        "per_document": {i: {k: p.get(k) for k in ("table_line_share", "field_line_share", "table_rows",
+                                                   "value_slot_share", "values_in_slots")}
+                         for i, p in profiles.items()},
+        "table_line_share": {"mean": mean(table), "max": max(table, default=None)},
+        "field_line_share": {"mean": mean(field), "max": max(field, default=None)},
+        "value_slot_share": {"mean": mean(slots), "max": max(slots, default=None)},
+        "documents_with_a_table": sum(1 for p in profiles.values() if p.get("table_rows")),
+    }
+
+
 def audit_report(states: List[DocState], accepted: List[dict], wall_seconds: float) -> dict:
     """Report what G11 found, what it repaired and what it cost.
 
@@ -2299,6 +2818,18 @@ def audit_report(states: List[DocState], accepted: List[dict], wall_seconds: flo
     }
 
 
+def _make_natural_probe(run_seed: int, taxonomy_index: Dict[str, dict], clause_bank: dict,
+                        public_figures: Set[str]) -> Callable[[DocPlan, int], Set[str]]:
+    """Build the sampler-backed probe `plan_batch` uses to estimate natural coverage."""
+    def probe(plan: DocPlan, k: int) -> Set[str]:
+        bare = dataclasses.replace(plan, forced_types=[], n_negatives=0)
+        seed = run_seed * 31 + plan.idx * 7 + k + 1_000_003
+        record = sample_record(random.Random(seed), seed, bare, "seeded", taxonomy_index,
+                               clause_bank, public_figures)
+        return {pv.type for pv in record.planned}
+    return probe
+
+
 def main() -> int:
     """CLI entry point."""
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -2327,6 +2858,16 @@ def main() -> int:
     parser.add_argument("--coverage-target", type=int, default=3, metavar="K",
                         help="schedule every schedulable type into at least K documents; 0 disables "
                              "coverage scheduling and falls back to rare-type forcing")
+    parser.add_argument("--coverage-margin", type=int, default=1, metavar="M",
+                        help="aim each type at K+M documents, because a forced slot is lost to a "
+                             "discard or a sampler drop about a fifth of the time; forced capacity "
+                             "is finite, and in a 50-document batch M=2 already leaves 15 types short")
+    parser.add_argument("--dataset", choices=sorted(dataset_mod.MODES), default="train",
+                        help="train: the large, easier set. benchmark: held out, hard, with hard "
+                             "negatives planted; draws only from the benchmark share of the clause "
+                             "bank and name pools (see tools/gendoc_dataset.py)")
+    parser.add_argument("--partition", default=dataset_mod.PARTITION_PATH,
+                        help="benchmark/training partition file")
     parser.add_argument("--no-audit", dest="audit", action="store_false",
                         help="skip the G11 content audit (a second model pass per document)")
     parser.add_argument("--max-audit-repairs", type=int, default=1,
@@ -2337,11 +2878,18 @@ def main() -> int:
     args = parser.parse_args()
 
     os.makedirs(args.out, exist_ok=True)
-    rng = random.Random(args.seed)
+    mode = dataset_mod.MODES[args.dataset]
+    run_seed = args.seed + mode.seed_offset
+    rng = random.Random(run_seed)
 
     taxonomy = data.load_taxonomy(args.taxonomy if os.path.exists(args.taxonomy) else None)
     taxonomy_index = data.taxonomy_index(taxonomy)
-    clause_bank = data.load_clause_bank(args.clause_bank if os.path.exists(args.clause_bank) else None)
+    full_bank = data.load_clause_bank(args.clause_bank if os.path.exists(args.clause_bank) else None)
+    partition = dataset_mod.load_partition(args.partition)
+    clause_bank = dataset_mod.select_clause_bank(full_bank, partition, args.dataset)
+    negative_bank = clause_bank.pop("negatives") if mode.negatives_by_profile else {}
+    clause_bank.pop("negatives", None)
+    data.use_pools(dataset_mod.select_pools(partition, args.dataset))
     used_fallback_taxonomy = not os.path.exists(args.taxonomy)
     used_fallback_clause_bank = not os.path.exists(args.clause_bank)
 
@@ -2367,12 +2915,15 @@ def main() -> int:
         retries=args.retries, near_dup_threshold=args.near_dup_threshold,
         g7_policy=args.g7_policy, batch_size=args.batch_size, max_repairs=args.max_repairs,
         audit=args.audit, max_audit_repairs=args.max_audit_repairs,
+        dataset=args.dataset, difficulty_weights=mode.difficulty_weights, negative_bank=negative_bank,
     )
 
     schedulable = genres_mod.coverage_types([entry["name"] for entry in taxonomy["types"]])
     plans, plan_report = plan_batch(
         rng, args.n, genre_list, forced_types, args.rare_force_share,
         coverage_target=args.coverage_target, schedulable_types=schedulable,
+        mode=mode, clause_bank=clause_bank, coverage_margin=args.coverage_margin,
+        natural_probe=_make_natural_probe(run_seed, taxonomy_index, clause_bank, public_figures),
     )
 
     run_started = time.time()
@@ -2382,7 +2933,7 @@ def main() -> int:
         finished_count[0] += 1
         ok = st.result and st.result.get("accepted")
         print(
-            f"[{finished_count[0]}/{args.n}] #{st.plan.idx} {st.plan.genre}/{st.plan.form}/"
+            f"[{finished_count[0]}/{args.n}] {mode.id_prefix}#{st.plan.idx} {st.plan.genre}/{st.plan.form}/"
             f"{st.plan.profile} {'accepted' if ok else 'DISCARDED'} after {st.attempt} attempt(s), "
             f"{st.repairs_total} repair(s), {st.audit_repairs_total} audit repair(s), "
             f"{time.time() - run_started:.0f}s elapsed",
@@ -2390,7 +2941,7 @@ def main() -> int:
         )
 
     states, run_stats = run_generation(
-        plans, args.seed, taxonomy_index, clause_bank, public_figures, place_names,
+        plans, run_seed, taxonomy_index, clause_bank, public_figures, place_names,
         agency_names, backend, config, progress=_progress,
     )
     wall_seconds = time.time() - run_started
@@ -2401,23 +2952,25 @@ def main() -> int:
             discarded_records.append({
                 "index": st.plan.idx, "genre": st.plan.genre, "variant": st.plan.variant,
                 "form": st.plan.form, "profile": st.plan.profile, "pii_free": st.plan.pii_free,
-                "reason": st.result.get("reason"), "gate_log": st.gate_log,
+                "dataset": args.dataset, "reason": st.result.get("reason"), "gate_log": st.gate_log,
                 "audit_log": st.audit_log, "last_text": st.last_text,
                 "planned": [dataclasses.asdict(pv) for pv in st.record.planned] if st.record else None,
             })
             continue
         accepted.append({
-            "id": f"SYN-{st.plan.idx:06d}", "record": st.result["record"], "text": st.result["text"],
+            "id": f"{mode.id_prefix}-{st.plan.idx:06d}", "record": st.result["record"],
+            "text": st.result["text"],
             "output": st.result["output"], "gate_log": st.gate_log,
             "tier_a_findings": st.result["tier_a_findings"], "g7_labelled": st.result["g7_labelled"],
             "clause_extensions": st.result.get("clause_extensions", {}),
+            "tabular": st.result.get("tabular", {}),
             "state": st,
         })
     discarded = len(discarded_records)
 
-    batch_path = os.path.join(args.out, "synthetic_batch.jsonl")
-    labelled_path = os.path.join(args.out, "synthetic_batch_labelled.jsonl")
-    meta_path = os.path.join(args.out, "synthetic_batch_meta.jsonl")
+    batch_path = os.path.join(args.out, f"{mode.file_stem}_batch.jsonl")
+    labelled_path = os.path.join(args.out, f"{mode.file_stem}_batch_labelled.jsonl")
+    meta_path = os.path.join(args.out, f"{mode.file_stem}_batch_meta.jsonl")
     with open(os.path.join(args.out, "discarded.jsonl"), "w", encoding="utf-8") as disc_f:
         for d in discarded_records:
             disc_f.write(json.dumps(d, ensure_ascii=False, default=str) + "\n")
@@ -2432,12 +2985,18 @@ def main() -> int:
                 lab_f.write(line + "\n")
             rec, st = r["record"], r["state"]
             meta_f.write(json.dumps({
-                "id": r["id"], "genre": rec.genre, "variant": rec.variant, "form": rec.form,
+                "id": r["id"], "dataset": rec.dataset, "genre": rec.genre, "variant": rec.variant,
+                "form": rec.form,
                 "profile": rec.profile, "pii_free": rec.pii_free,
                 "strategy": config.strategy, "seed": rec.doc_seed, "length": len(r["text"]),
                 "length_band": list(rec.length_band),
                 "planned_types": sorted({pv.type for pv in rec.planned}),
-                "forced_types": st.plan.forced_types,
+                "forced_types": st.plan.forced_types, "dropped_forced": rec.dropped_forced,
+                "planted_negatives": [
+                    {"type": neg.type, "text": neg.text, "why_not": neg.why_not,
+                     "also_labelled": neg.also_labelled, "in_text": neg.text in r["text"]}
+                    for neg in rec.planted_negatives],
+                "tabular": r["tabular"],
                 "type_target": st.plan.type_target, "art9_cap": st.plan.art9_cap,
                 "realised_types": sorted(r["output"]),
                 "distinct_spans": sum(len(v) for v in r["output"].values()),
@@ -2529,6 +3088,12 @@ def main() -> int:
         "G11_content_audit": audit_report(states, accepted, wall_seconds),
         "coverage": coverage_report(accepted_meta_for_g5, schedulable, args.coverage_target, plan_report),
         "density": density_report(accepted, plans),
+        "dataset": args.dataset,
+        "partition": {"path": args.partition, "counts": partition.get("counts")},
+        "hard_negatives": negatives_report(accepted, states, plans),
+        "tabular": tabular_report(accepted),
+        "forced_types_dropped_by_sampler": dict(collections.Counter(
+            t for r in accepted for t in r["record"].dropped_forced)),
     }
     report_path = os.path.join(args.out, "gate_report.json")
     with open(report_path, "w", encoding="utf-8") as handle:

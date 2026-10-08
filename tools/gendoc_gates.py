@@ -11,6 +11,10 @@ guarantee automatically:
 * G4 -- every Tier A span still has the right format/checksum after generation.
 * G6 -- the corpus is not secretly one template (skeleton hashing + near-dup).
 * G7 -- the model did not invent PII that was never planned and never labeled.
+* G13 -- the document is not a table dump: few table rows, few values in fields,
+  no value listed under two labels.
+* G14 -- no planned identifier is presented as a different kind of number, and no
+  case or reference number appears that nothing planned.
 
 G1 (schema validation via `tools/validate_labels.py`), G5 (distribution vs
 plan) and G8 (sample dump) are orchestrated directly in
@@ -114,11 +118,14 @@ _INSTITUTION_SUFFIXES = {
 # Template residue an instruct model leaves when it has no value to hand:
 # `[Navn saksbehandler]`, `<dato>`, `XXX`, `NN`, `(sett inn ...)`. Real PII
 # would sit where these are, so a document carrying one teaches the detector
-# that an empty slot is normal.
+# that an empty slot is normal. `NN` and `N.N.` are matched case-sensitively, and
+# `NN` not when digits follow: a lowercase "nn" is the language code of a Nynorsk
+# document, and "NN 23517" is a vehicle registration the generator itself
+# produces; under IGNORECASE the first discarded two pilot v3 documents.
 _PLACEHOLDER_RE = re.compile(
     r"\[[^\[\]\n]{2,60}\]"
     r"|<[^<>\n]{2,40}>"
-    r"|\b(?:X{3,}|x{3,}|N\.N\.|NN)\b"
+    r"|\b(?:X{3,}|x{3,})\b|\d{4,}[Xx]{3,}|(?-i:\bN\.N\.|\bNN\b(?![ \t]?\d))"
     r"|\((?:sett inn|fyll inn|set inn)[^)]*\)"
     r"|\{[A-Z_]{3,}\}",
     re.IGNORECASE,
@@ -264,7 +271,11 @@ TIER_A_PATTERNS: Dict[str, re.Pattern] = {
     "postal_like": re.compile(r"(?<![\d.,/\-])(\d{4})[ \t]+([A-ZÆØÅ][a-zæøå]+)\b"),
     "plate_like": re.compile(r"\b[A-Z]{2}[ \t]?\d{5}\b"),
     "iban_like": re.compile(r"\bNO\d{2}[ \t]?(?:\d{4}[ \t]?){2}\d{3}\b"),
-    "url_like": re.compile(r"https?://\S+|\bwww\.\S+"),
+    # A URL at the end of a sentence is followed by the sentence's full stop, and
+    # `\S+` swallowed it: the match then ran one character past the planned URL,
+    # `_is_covered` rejected it, and a correctly realised URL was discarded as
+    # unplanned. Pilot v3 lost three documents that way.
+    "url_like": re.compile(r"https?://\S*[^\s.,;:!?)\]»\"']|\bwww\.\S*[^\s.,;:!?)\]»\"']"),
     "ip_like": re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b"),
     # The Tier A set grew from 7 types to 28, and an identifier shape the sweep
     # does not know is an unplanned identifier it cannot reject. These cover the
@@ -687,6 +698,288 @@ def gate_slot_labels(text: str, clauses: Iterable[str]) -> Tuple[bool, List[dict
                 violations.append({"clause": clause, "kind": kind, "line": line.strip()[:160]})
                 break
             pos = text.find(clause, pos + 1)
+    return not violations, violations
+
+
+# -- G13: tabular dumps ------------------------------------------------------------
+#
+# G9 deliberately lets Tier A values sit in labelled fields, because a real form
+# has `Fødselsnummer: ...` on it. What it cannot see is a document that is mostly
+# fields: pilot v3's accepted `forsvaret_clearance` opened with 33 table rows
+# listing every planned value, then repeated each in prose, and listed one
+# fødselsnummer twice, as "Fødselsnummer" and as "Statlig ID". No Norwegian
+# clearance opens with that, and a detector trained on it learns that PII lives
+# in a header table. The gate measures three things, each with a threshold
+# calibrated on the 400 adjudicated gold documents and on pilot v3's accepted
+# set (see `check_generator_gates.py` and the thresholds' comments below).
+
+_FIELD_LINE_RE = re.compile(r"^\s*(?:[-*•]\s*)?\**([A-ZÆØÅ][^\n:|]{0,40}?)\**\s*:\s*\**\s*\S")
+_LABEL_BEFORE_RE = re.compile(
+    r"(?:^|[\s|*])([A-ZÆØÅ][\wæøåÆØÅ.\-]*(?: (?:[a-zæøå][\wæøåÆØÅ.\-]*|[A-ZÆØÅ]{2,})){0,3})\**\s*:\s*\**$")
+_TABLE_SEPARATOR_RE = re.compile(r"^\s*\|?[\s:|\-]+\|?\s*$")
+# What may follow a value that fills its field: the end of the line, a table
+# separator, a parenthetical gloss, or the next field's label. Prose that merely
+# begins after a section label ("Oppsummering: Kari Hansen har ...") is not a field.
+_FIELD_END_RE = re.compile(
+    r"[ \t]*(?:[,;.]?[ \t]*(?:\n|$)|\||\(|[A-ZÆØÅ][\wæøåÆØÅ.\-]*(?: (?:[a-zæøå][\wæøåÆØÅ.\-]*|[A-ZÆØÅ]{2,})){0,3}[ \t]*:)")
+FIELD_VALUE_MAX_CHARS = 70
+# A name is legitimately both the addressee and the subject of a letter
+# ("Til: Kari Hansen" above "Navn: Kari Hansen"), so these labels never count as
+# a second label for the same value.
+_ADDRESSING_LABELS = {"til", "fra", "kopi", "mottaker", "avsender", "vedrørende", "gjelder", "att"}
+
+# Calibration, measured by `python3 tools/check_generator_gates.py --calibrate-g13`:
+#   gold (400 documents, flattened to one line, so only the value measure
+#   applies): the share of a document's distinct labelled values that sit in a
+#   field has median 0.26, p90 0.38, p95 0.43, p99 0.67, max 0.75; real forms
+#   do put most of a short document's values in fields, which is why the share
+#   only counts once a document has more than MAX_SLOT_VALUES of them -- an
+#   identification block of five or six fields is what the prompt asks for.
+#   pilot v3 accepted (43 documents): the pipe-table line share is exactly 0 for
+#   30 documents and 0.55-0.90 for the 7 with a table, so nothing sits between 0
+#   and 0.55 and any threshold in that gap separates them. A table of fewer than
+#   MIN_TABLE_ROWS rows (header included) is an identification block however
+#   short the document makes its line share look.
+MAX_TABLE_LINE_SHARE = 0.40
+MIN_TABLE_ROWS = 5
+MAX_VALUE_SLOT_SHARE = 0.50
+MAX_SLOT_VALUES = 6
+
+
+def is_table_line(line: str) -> bool:
+    """Whether a line is a Markdown-style table row or separator."""
+    stripped = line.strip()
+    return stripped.startswith("|") or stripped.count("|") >= 2
+
+
+def is_field_line(line: str) -> bool:
+    """Whether a line is a short `Label: value` field, as opposed to prose with a colon."""
+    match = _FIELD_LINE_RE.match(line)
+    return bool(match) and len(line.split(":", 1)[1].strip()) <= FIELD_VALUE_MAX_CHARS
+
+
+def _normalise_label(label: str) -> str:
+    return re.sub(r"\s+", " ", label.strip(" *_:\t")).lower()
+
+
+def _table_label(lines: List[str], row: int, position: int, line: str) -> Optional[str]:
+    """Return the label of the table cell containing `position` in `line`."""
+    cells = [c.strip() for c in line.strip().strip("|").split("|")]
+    lead = 1 if line.lstrip().startswith("|") else 0
+    index = max(0, min(len(cells) - 1, line[:position].count("|") - lead))
+    if len(cells) == 2:
+        return _normalise_label(cells[0]) if index == 1 else None
+    top = row
+    while top > 0 and is_table_line(lines[top - 1]):
+        top -= 1
+    header = [c.strip() for c in lines[top].strip().strip("|").split("|")]
+    return _normalise_label(header[index]) if index < len(header) and top != row else None
+
+
+def value_slots(text: str, values: Iterable[str]) -> Dict[str, List[Optional[str]]]:
+    """Locate each value's occurrences and the field label it sits under, if any.
+
+    An occurrence is a *slot* when it is in a table row, or directly follows a
+    `Label:` and fills the field (the line, or the text up to the next label,
+    ends with it). Occurrences nested inside a longer planned value
+    (the postal code inside an address) are not reported separately.
+
+    Args:
+        text: The document.
+        values: Planned value strings; those under 3 characters are ignored.
+
+    Returns:
+        `{value: [label or None per occurrence]}`, only for values that occur.
+        A label of "" marks a slot whose label could not be read (a table cell
+        with no header).
+    """
+    distinct = sorted({v for v in values if v and len(v) >= 3}, key=len, reverse=True)
+    lines = text.split("\n")
+    starts, offset = [], 0
+    for line in lines:
+        starts.append(offset)
+        offset += len(line) + 1
+    taken: List[Tuple[int, int]] = []
+    found: Dict[str, List[Optional[str]]] = {}
+    for value in distinct:
+        pattern = re.compile(r"(?<!\w)" + re.escape(value) + r"(?!\w)")
+        for match in pattern.finditer(text):
+            lo, hi = match.span()
+            if any(a <= lo and hi <= b for a, b in taken):
+                continue
+            taken.append((lo, hi))
+            row = max(0, min(len(lines) - 1, text.count("\n", 0, lo)))
+            line, line_start = lines[row], starts[row]
+            if is_table_line(line):
+                label: Optional[str] = _table_label(lines, row, lo - line_start, line) or ""
+            else:
+                before = _LABEL_BEFORE_RE.search(text[max(line_start, lo - 45):lo])
+                fills_field = before and _FIELD_END_RE.match(text, hi)
+                label = _normalise_label(before.group(1)) if fills_field else None
+            found.setdefault(value, []).append(label)
+    return found
+
+
+def tabular_profile(text: str, values: Iterable[str]) -> dict:
+    """Measure how much of a document is table or field lines and where its values sit.
+
+    Args:
+        text: The document.
+        values: Planned value strings.
+
+    Returns:
+        `table_line_share` and `field_line_share` (of non-empty lines),
+        `table_rows` (non-separator table lines), `values_located`,
+        `values_in_slots` (distinct values with at least one slot occurrence),
+        `value_slot_share`, and `duplicate_labels`: values that sit under two or
+        more different field labels.
+    """
+    lines = [l for l in text.split("\n") if l.strip()]
+    table = [l for l in lines if is_table_line(l)]
+    fields = [l for l in lines if not is_table_line(l) and is_field_line(l)]
+    found = value_slots(text, values)
+    in_slots = [v for v, labels in found.items() if any(l is not None for l in labels)]
+    duplicates = {}
+    for value, labels in found.items():
+        distinct = {l for l in labels if l and l not in _ADDRESSING_LABELS}
+        if len(distinct) >= 2:
+            duplicates[value] = sorted(distinct)
+    return {
+        "lines": len(lines),
+        "table_line_share": round(len(table) / len(lines), 3) if lines else 0.0,
+        "field_line_share": round(len(fields) / len(lines), 3) if lines else 0.0,
+        "table_rows": sum(1 for l in table if not _TABLE_SEPARATOR_RE.match(l)),
+        "values_located": len(found),
+        "values_in_slots": len(in_slots),
+        "value_slot_share": round(len(in_slots) / len(found), 3) if found else 0.0,
+        "duplicate_labels": duplicates,
+    }
+
+
+def gate_tabular_dump(
+    text: str, values: Iterable[str], max_table_line_share: float = MAX_TABLE_LINE_SHARE,
+    min_table_rows: int = MIN_TABLE_ROWS, max_value_slot_share: float = MAX_VALUE_SLOT_SHARE,
+    max_slot_values: int = MAX_SLOT_VALUES,
+) -> Tuple[bool, List[dict]]:
+    """Reject a document that is mostly a table, lists its values as fields, or lists one twice.
+
+    Args:
+        text: The generated document.
+        values: The planned value and clause strings.
+        max_table_line_share: Maximum share of non-empty lines that are table rows.
+        min_table_rows: Tables with fewer rows (header included) are an
+            identification block, never a dump, whatever their share of a very
+            short document.
+        max_value_slot_share: Maximum share of the located values that sit in a
+            table row or fill a `Label:` field.
+        max_slot_values: A document may keep this many values in fields before
+            the share applies; it is the size of an identification block.
+
+    Returns:
+        Tuple of (passed, violations as `{"kind", ...}` dicts).
+    """
+    profile = tabular_profile(text, list(values))
+    violations = []
+    if profile["table_line_share"] > max_table_line_share and profile["table_rows"] >= min_table_rows:
+        violations.append({"kind": "table_lines", "table_line_share": profile["table_line_share"],
+                           "table_rows": profile["table_rows"]})
+    if profile["values_in_slots"] > max_slot_values and profile["value_slot_share"] > max_value_slot_share:
+        violations.append({"kind": "value_slots", "value_slot_share": profile["value_slot_share"],
+                           "values_in_slots": profile["values_in_slots"],
+                           "values_located": profile["values_located"]})
+    if profile["duplicate_labels"]:
+        violations.append({"kind": "duplicate_label", "values": profile["duplicate_labels"]})
+    return not violations, violations
+
+
+# -- G14: identifier roles ----------------------------------------------------------
+#
+# Asking for a small identification block and no longer printing a `Label:` in
+# front of every value in the prompt had a cost the first benchmark smoke run
+# showed: a service number printed as "Sak 24723932", a 15-digit device id as
+# "Sak: 999583174166724", "saksnummeret er 71056542" for a tjenestenummer, and a
+# case number ("Sak 2026-0451") that nothing planned. The span is still correct
+# by construction -- the value is there and typed -- but the sentence around it
+# tells the detector it is something else, which is the label-versus-context
+# mismatch a benchmark must not contain. G14 reads the words just before each
+# planned identifier and rejects one that names a different kind of number.
+
+_ROLE_WORDS: Dict[str, "re.Pattern"] = {
+    "CASE_NUMBER": re.compile(r"\b(?:saksnummer(?:et)?|saksnr\.?|sak(?:s)?[ \t]?nr\.?|sak)\b[ \t]*[:.]?", re.IGNORECASE),
+    "NATIONAL_ID": re.compile(r"\b(?:fødselsnummer(?:et)?|fødselsnr\.?|personnummer(?:et)?|fnr\.?|d-nummer(?:et)?)\b", re.IGNORECASE),
+    "MILITARY_ID": re.compile(r"\b(?:tjenestenummer(?:et)?|tenestenummer(?:et)?|tjenestenr\.?)\b", re.IGNORECASE),
+    "ORG_NUMBER": re.compile(r"\b(?:org\.?[ \t]?nr\.?|organisasjonsnummer(?:et)?)\b", re.IGNORECASE),
+    "BANK_ACCOUNT": re.compile(r"\b(?:kontonummer(?:et)?|kontonr\.?)\b", re.IGNORECASE),
+    "PASSPORT": re.compile(r"\b(?:passnummer(?:et)?|pass[ \t]med[ \t]nummer(?:et)?)\b", re.IGNORECASE),
+    "IDENTITY_CARD": re.compile(r"\b(?:id-?kort(?:nummer(?:et)?)?)\b", re.IGNORECASE),
+    "DRIVER_LICENSE": re.compile(r"\b(?:førerkort(?:nummer(?:et)?)?|førarkort(?:nummer(?:et)?)?)\b", re.IGNORECASE),
+    "STUDENT_ID": re.compile(r"\b(?:studentnummer(?:et)?|studentnr\.?)\b", re.IGNORECASE),
+    "PHONE": re.compile(r"\b(?:telefon(?:nummer(?:et)?)?|tlf\.?|mobil(?:nummer(?:et)?)?)\b", re.IGNORECASE),
+    "DEVICE_ID": re.compile(r"\b(?:enhets-?id(?:entifikator)?|imei)\b", re.IGNORECASE),
+}
+_ROLE_REACH_CHARS = 14
+
+# `Sak 2026-0451`, `Saksnummer 24723932`, `Vår ref: MT-2023-4789-BA`: a label that
+# introduces a reference number, and the number. The number has to look like one
+# (a digit, and either a separator or five characters) so "sak 3 av 7" is left alone.
+# A bare `Referanse: 187406` is not here: the gold set leaves that kind of agency
+# routing metadata untagged, while
+# it labels a case number and a `Vår ref`, so only the latter are unplanned PII.
+_REFERENCE_RE = re.compile(
+    r"\b(?:saksnummer(?:et)?|saksnr\.?|sak(?:s)?[ \t]?nr\.?|sak|vår[ \t]ref(?:eranse)?\.?|"
+    r"deres[ \t]ref(?:eranse)?\.?)\b[ \t]*[:.]?[ \t]*"
+    r"(\d[\w/\-.]*\w)", re.IGNORECASE)
+
+
+def _reference_like(token: str) -> bool:
+    return bool(re.search(r"\d", token)) and (len(token) >= 5 or re.search(r"[/\-]", token) is not None)
+
+
+def gate_identifier_roles(
+    text: str, typed_values: Iterable[Tuple[str, str]], covered_spans: Iterable[str],
+) -> Tuple[bool, List[dict]]:
+    """Reject an identifier presented as a different kind of number, or an unplanned reference number.
+
+    Args:
+        text: The generated document.
+        typed_values: `(type, value)` for each planned value.
+        covered_spans: Every planned or labelled span, so a reference number that
+            sits inside one (the case number in a seeded CRIMINAL clause) is not
+            reported as unplanned.
+
+    Returns:
+        Tuple of (passed, violations as `{"kind", ...}`): `wrong_role` when the
+        words just before a planned identifier name another type, and
+        `unplanned_reference` for a "Sak <number>" nothing planned.
+    """
+    violations = []
+    for etype, value in typed_values:
+        if not value:
+            continue
+        for match in re.finditer(r"(?<!\w)" + re.escape(value) + r"(?!\w)", text):
+            line_start = text.rfind("\n", 0, match.start()) + 1
+            window = text[max(line_start, match.start() - 48):match.start()]
+            nearest = None
+            for other, pattern in _ROLE_WORDS.items():
+                for hit in pattern.finditer(window):
+                    if len(window) - hit.end() <= _ROLE_REACH_CHARS and (nearest is None or hit.end() > nearest[0]):
+                        nearest = (hit.end(), other)
+            # Types with no role word of their own (an e-mail address, a date) are
+            # only checked against the two labels they were seen under in smoke
+            # runs, "Saksnummer: kari@x.no"; their own words are too varied to police.
+            if etype not in _ROLE_WORDS and (not nearest or nearest[1] not in ("CASE_NUMBER", "NATIONAL_ID")
+                                             or etype in ("DATE_TIME", "AGE", "GENDER", "PERSON")):
+                continue
+            if nearest and nearest[1] != etype:
+                violations.append({"kind": "wrong_role", "type": etype, "value": value,
+                                   "presented_as": nearest[1], "context": window.strip()[-60:]})
+                break
+    covered = _covered_intervals(text, covered_spans)
+    for match in _REFERENCE_RE.finditer(text):
+        token = match.group(1)
+        if _reference_like(token) and not _overlaps(match.start(1), match.end(1), covered):
+            violations.append({"kind": "unplanned_reference", "value": token,
+                               "context": text[max(0, match.start() - 10):match.end()].strip()})
     return not violations, violations
 
 

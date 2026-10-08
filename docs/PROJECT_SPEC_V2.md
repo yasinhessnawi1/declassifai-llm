@@ -42,15 +42,20 @@ generating them, which is the strongest argument for this whole effort.
 
 ---
 
-## 2. The taxonomy — 59 types in three tiers
+## 2. The taxonomy — 57 types in three tiers
+
+> **Revised 2026-10-08.** The owner dropped `CONTEXT_SENSITIVE` and `IDENTIFIABLE_IMAGE`,
+> which ANNOTATION_SPEC.md had already cut with documented reasoning, so the taxonomy is
+> 57 types, not 59. `RELIGIOUS_BELIEF` has since been added to ANNOTATION_SPEC.md as its
+> 17th type (commit aef6e15), so it is no longer new. Counts below reflect both changes.
 
 The product's entity list carries 116 tiered entries (`_F` / `_A` / `_S` suffixes plus a
 lowercase set). Collapsing the tier suffixes gives 78 stems; merging synonyms across tiers
 (`NO_PHONE_NUMBER`/`PHONE`, `GOV_ID`/`NATIONAL_ID`/`NO_FODSELSNUMMER`, `VEHICLE_REG`/
-`LICENSE_PLATE`, and so on) gives **59 distinct concepts**: 16 already in the annotation
-spec, **43 new**.
+`LICENSE_PLATE`, and so on) gave 59 distinct concepts; with the two types above dropped, **57**: 17 already in the
+annotation spec, **40 new**.
 
-Do not train one flat 59-way model. Split by how the type is actually decided:
+Do not train one flat 57-way model. Split by how the type is actually decided:
 
 - **Tier A — mechanical (28 types).** Decided by surface form and a field label. A regex or
   a checksum settles them; Presidio already does most. A model adds nothing and each extra
@@ -59,7 +64,7 @@ Do not train one flat 59-way model. Split by how the type is actually decided:
 - **Tier B — contextual (13 types).** Need context but are not contentious: who is a
   PERSON, which string is the ADDRESS, whether an ORGANIZATION is the subject. The corpus
   is already good here (0.91–1.00 relaxed F1).
-- **Tier C — judgement (18 types).** Clause-level, boundary-sensitive, and where the corpus
+- **Tier C — judgement (16 types).** Clause-level, boundary-sensitive, and where the corpus
   collapses. This is the whole difficulty of the project and where the generated data has
   to be best. Ten of the Article 9 categories live here.
 
@@ -109,7 +114,6 @@ Do not train one flat 59-way model. Split by how the type is actually decided:
 | `AGE_INFO` | C | **NEW** |  |
 | `BEHAVIORAL_PATTERN` | C | yes |  |
 | `BIOMETRIC_DATA` | C | **NEW** | **Art. 9** — biometric data |
-| `CONTEXT_SENSITIVE` | C | **NEW** |  |
 | `CRIMINAL` | C | yes | Art. 10 — criminal convictions and offences |
 | `DISABILITY` | C | **NEW** | **Art. 9** — health |
 | `ECONOMIC_STATUS` | C | yes |  |
@@ -117,15 +121,14 @@ Do not train one flat 59-way model. Split by how the type is actually decided:
 | `FINANCIAL` | C | yes |  |
 | `GENETIC_DATA` | C | **NEW** | **Art. 9** — genetic data |
 | `HEALTH` | C | yes | **Art. 9** — health |
-| `IDENTIFIABLE_IMAGE` | C | **NEW** |  |
 | `IMMIGRATION_STATUS` | C | **NEW** |  |
 | `MEDICATION` | C | **NEW** | **Art. 9** — health |
 | `POLITICAL` | C | yes | **Art. 9** — political opinions |
-| `RELIGIOUS_BELIEF` | C | **NEW** | **Art. 9** — religious or philosophical beliefs |
+| `RELIGIOUS_BELIEF` | C | yes | **Art. 9** — religious or philosophical beliefs |
 | `SEXUAL_ORIENTATION` | C | yes | **Art. 9** — sex life / sexual orientation |
 | `TRADE_UNION` | C | **NEW** | **Art. 9** — trade union membership |
 
-**Totals: 59 types — Tier A 28, Tier B 13, Tier C 18. 43 new. 10 are Article 9 categories.**
+**Totals: 57 types — Tier A 28, Tier B 13, Tier C 16. 40 new. 10 are Article 9 categories.**
 
 Note `CRIMINAL` is **Article 10** (criminal convictions and offences), not Article 9. The
 research proposal conflates the two; keep them distinct in any writing.

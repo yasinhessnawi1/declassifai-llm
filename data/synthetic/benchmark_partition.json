@@ -1,0 +1,631 @@
+{
+ "version": 1,
+ "salt": "gendoc-benchmark-partition-v1",
+ "holdout_ratio": 0.25,
+ "note": "Benchmark share only. Anything not listed here is training, so an entry added to the bank later can never appear in a benchmark already published.",
+ "clauses": {
+  "ACADEMIC_RECORD": [
+   "fikk toppkarakter på avsluttende eksamen i medisin",
+   "mista studieretten etter gjentatt strykprosent",
+   "tatt opp på doktorgradsprogram ved NTNU"
+  ],
+  "AGE_INFO": [
+   "alderen gjer at han ikkje lenger vert rekna som samtykkekompetent",
+   "er under den kriminelle lavalder og kan ikke siktes",
+   "mindreårig og difor særleg sårbar i saka",
+   "mindreårig på gjerningstidspunktet, noe som er tillagt vekt"
+  ],
+  "BEHAVIORAL_PATTERN": [
+   "Har sett eieren bli sint på hunden ved flere anledninger",
+   "aggressiv og lite samarbeidsvillig overfor kontrolletatene",
+   "har fleire gonger møtt for seint utan gyldig grunn",
+   "har fleire gonger oppsøkt bustaden til den fornærma om natta",
+   "har fleire gonger vore borte frå jobb utan å melde frå",
+   "har gjentatte ganger unnlatt å møte til avtalte samtaler",
+   "har ved flere anledninger oppsøkt fornærmedes bolig om natten",
+   "kasta tomflasker og stein etter hundane",
+   "rope på hunden aggressivt flere ganger",
+   "utagerende oppførsel, spesielt etter inntak av alkohol"
+  ],
+  "BIOMETRIC_DATA": [
+   "avga fingeravtrykk i forbindelse med saken",
+   "ganganalyse brukt til å identifisere personen på video",
+   "irisskanning benyttet for adgangskontroll",
+   "irisskanning nytta for adgangskontroll"
+  ],
+  "CRIMINAL": [
+   "besøksforbud ilagt etter en episode med trusler mot en nabo",
+   "domfellelse for bedrageri i 2018",
+   "dømd for vald i 2011",
+   "dømt for bedrageri i sak 12345/2018",
+   "melde til politiet for truslar med kniv",
+   "mistenker at hundene brukes i ulovlige kampaktiviteter",
+   "pågående etterforskning knyttet til seksuelle overgrep mot mindreårige"
+  ],
+  "DISABILITY": [
+   "fødd med cerebral parese",
+   "har Downs syndrom",
+   "har ein medfødd hjerneskade som påverkar taleevna",
+   "mistet førligheten i høyre arm etter et illebefinnende",
+   "registrert som uføretrygdet på grunn av en varig funksjonsnedsettelse",
+   "sterkt svekket syn som krever hjelpemidler i hverdagen"
+  ],
+  "ECONOMIC_STATUS": [
+   "antatt god økonomi trass i enkel levestandard",
+   "bekymring for økonomisk bærekraft hos senteret",
+   "har hatt vedvarende økonomiske problemer de siste årene",
+   "har vanskar med å få endane til å møtast",
+   "pågående økonomisk søksmål",
+   "tilsynelatende høy inntekt uten synlig kilde"
+  ],
+  "EMPLOYMENT": [
+   "daglig leder og eier av {SURNAME_ORG} Sjømat AS",
+   "eigar og dagleg leiar",
+   "sykepleier på Haukeland Universitetssjukehus",
+   "ufør og ikke i arbeid"
+  ],
+  "ETHNICITY": [
+   "har afghansk-hazara bakgrunn",
+   "har romani bakgrunn ifølge egne opplysninger",
+   "har vietnamesisk opphav på farssida",
+   "hevder selv å ha assyrisk/syrisk-ortodoks bakgrunn",
+   "identifiserer seg som etnisk somalisk",
+   "opplyser å ha samisk bakgrunn"
+  ],
+  "FAMILY_RELATION": [
+   "ektefellen {PERSON_F}",
+   "skild frå sin tidlegare ektefelle",
+   "to barn på 15 og 12 år"
+  ],
+  "FINANCIAL": [
+   "gjeld på over 700 000 NOK, medrekna misleghaldne lån til DNB",
+   "innskot på 250 000 NOK i Sparebanken Vest",
+   "over 1,5 millioner NOK",
+   "pant i eiendommen registrert hos Sparebanken Vest",
+   "ubetalte skatter på 520 000 NOK",
+   "utestående gjeld på over 700 000 NOK"
+  ],
+  "GENETIC_DATA": [
+   "DNA-test stadfesta farskap",
+   "genetisk screening avdekket bærerstatus for en arvelig sykdom",
+   "genetisk test viste disposisjon for Huntingtons sykdom",
+   "gentest stadfesta berar av ein arveleg sjukdom"
+  ],
+  "HEALTH": [
+   "diagnostisert med kronisk utmattelsessyndrom",
+   "ikke har råd til nødvendig veterinærbehandling",
+   "matt og flokut pels over heile kroppen",
+   "mistenkt tuberkulose hos flere av dyrene i besetningen",
+   "paratuberkulose (Johne's sykdom)",
+   "posttraumatisk stresslidelse etter krigsopplevelser",
+   "posttraumatisk stressliding etter krigsopplevingar",
+   "sjukmeld på grunn av utbrenttheit",
+   "synlige sår og betente sår på bakbeina",
+   "ustabil mental helse over lengre tid"
+  ],
+  "IMMIGRATION_STATUS": [
+   "registrert som EØS-borgar med registreringsbevis",
+   "registrert som papirlaus migrant",
+   "registrert som papirløs migrant",
+   "under utvisningssak på grunn av utløpt visum"
+  ],
+  "MEDICATION": [
+   "behandles med Sertralin",
+   "får dagleg medisin mot epilepsi",
+   "mistenkes å ha sluttet å ta sine foreskrevne medisiner",
+   "tar smertestillende opioider foreskrevet av fastlegen",
+   "tar veterinærforeskrevet smertestillende til hunden daglig",
+   "vert behandla med Sertralin"
+  ],
+  "POLITICAL": [
+   "anti-immigrant holdninger uttrykt ved flere anledninger",
+   "anti-immigrant-haldningar uttrykt ved fleire høve",
+   "antisemittiske synspunkter fremsatt i sosiale medier",
+   "donerte betydelige summer til et høyreradikalt parti",
+   "kandidat for et lokalt parti ved forrige kommunevalg",
+   "motstand mot regjeringa sin innvandringspolitikk"
+  ],
+  "RELIGIOUS_BELIEF": [
+   "aktiv i den lokale pinsemenigheten",
+   "bekjennende kristen og ber daglig",
+   "hevder selv å ha forlatt trossamfunnet Jehovas Vitner",
+   "mistenkes for å tilhøre en ekstrem religiøs sekt",
+   "mistenkjast for å tilhøyre ein ekstrem religiøs sekt",
+   "tilhører Den norske kirke",
+   "tilhøyrer Den norske kyrkja"
+  ],
+  "SEXUAL_ORIENTATION": [
+   "biseksuell",
+   "mistenkes å skjule sin biseksualitet for familien",
+   "polyamorøst forhold med to partnere",
+   "transperson og har vore det sidan ungdomsåra"
+  ],
+  "TRADE_UNION": [
+   "innmeldt i Parat som følge av omorganiseringen",
+   "medlem av Landsorganisasjonen i Norge",
+   "medlem av Norsk Arbeidsmandsforbund",
+   "meldte seg inn i fagforeningen etter en konflikt med arbeidsgiver",
+   "mistenkjast for å ha organisert ein ulovleg streik gjennom fagforeininga",
+   "tillitsvald i Fagforbundet"
+  ]
+ },
+ "negatives": {
+  "ACADEMIC_RECORD": [
+   "dyktig og lærevillig"
+  ],
+  "AGE_INFO": [
+   "10 år"
+  ],
+  "BEHAVIORAL_PATTERN": [
+   "Eg går tur forbi eigedomen jamleg",
+   "Schæferen virker undervektig og har matt pels.",
+   "går tur med hunden min forbi eiendommen hver dag"
+  ],
+  "BIOMETRIC_DATA": [
+   "hadde på seg briller og lue under hendinga",
+   "høy og mørkhåret"
+  ],
+  "CRIMINAL": [
+   "aggressiv atferd overfor dyr og kolleger",
+   "eier en registrert rifle",
+   "eig ei registrert rifle"
+  ],
+  "DISABILITY": [
+   "arbeidsledig"
+  ],
+  "ECONOMIC_STATUS": [
+   "mistet jobben",
+   "ville ikkje oppgi inntekta si"
+  ],
+  "EMPLOYMENT": [
+   "Dr. {PERSON_F}"
+  ],
+  "ETHNICITY": [
+   "bosatt i Norge siden barndommen",
+   "har utenlandsk klingende navn",
+   "snakkar flytande somali og norsk"
+  ],
+  "FAMILY_RELATION": [
+   "nestlederen"
+  ],
+  "FINANCIAL": [
+   "sliter økonomisk"
+  ],
+  "GENETIC_DATA": [
+   "arvelig i familien, ifølge eieren"
+  ],
+  "HEALTH": [
+   "Innhegningene er små og virker skitne",
+   "aggressiv atferd",
+   "ingen synlege skadar"
+  ],
+  "IMMIGRATION_STATUS": [
+   "Visumnummer: UDI-2023-004521"
+  ],
+  "MEDICATION": [
+   "nektet å ta imot medisiner fra hjemmesykepleien"
+  ],
+  "POLITICAL": [
+   "aktiv i lokalpolitikken",
+   "lokal politiker",
+   "var til stades på eit ope folkemøte om vegprosjektet"
+  ],
+  "RELIGIOUS_BELIEF": [
+   "tok fri på langfredag, slik som mange andre",
+   "ønsket ikke å svare på spørsmål om livssyn"
+  ],
+  "SEXUAL_ORIENTATION": [
+   "min seksuelle legning er privat og irrelevant",
+   "nektet å oppgi sin seksuelle orientering",
+   "ville ikkje oppgi seksuell orientering"
+  ],
+  "TRADE_UNION": [
+   "har lese ein artikkel om tariffoppgjeret",
+   "nektet å oppgi om han er fagorganisert",
+   "saksnummer 2019/LO-4521"
+  ]
+ },
+ "names": {
+  "first_male": [
+   "Are",
+   "Arne",
+   "Asbjørn",
+   "Bjarne",
+   "Bjarte",
+   "Bjørn",
+   "Bård",
+   "Dag",
+   "Daniel",
+   "Egil",
+   "Einar",
+   "Erik",
+   "Espen",
+   "Filip",
+   "Finn",
+   "Gustav",
+   "Harald",
+   "Helge",
+   "Herman",
+   "Ingvar",
+   "Kjell",
+   "Kristen",
+   "Lars",
+   "Leiv",
+   "Ola",
+   "Ronny",
+   "Terje",
+   "Torstein",
+   "Trond",
+   "Trygve"
+  ],
+  "first_female": [
+   "Agnes",
+   "Amalie",
+   "Aurora",
+   "Bente",
+   "Camilla",
+   "Cathrine",
+   "Dagny",
+   "Eldbjørg",
+   "Elisabeth",
+   "Ester",
+   "Gudrun",
+   "Gøril",
+   "Hanna",
+   "Julie",
+   "Leah",
+   "Marianne",
+   "Marte",
+   "Nina",
+   "Oda",
+   "Sandra",
+   "Sara",
+   "Signe",
+   "Solfrid",
+   "Sonja",
+   "Susanne",
+   "Tove",
+   "Trine",
+   "Åse"
+  ],
+  "surnames": [
+   "Aaberg",
+   "Aas",
+   "Amundsen",
+   "Andreassen",
+   "Berget",
+   "Brekke",
+   "Foss",
+   "Gulbrandsen",
+   "Hagen",
+   "Halvorsen",
+   "Halvorsrud",
+   "Henriksen",
+   "Hoel",
+   "Hovden",
+   "Husby",
+   "Jacobsen",
+   "Jørgensen",
+   "Kalvøy",
+   "Kolstad",
+   "Lorentzen",
+   "Nilsen",
+   "Olsen",
+   "Osmundsen",
+   "Ottesen",
+   "Pedersen",
+   "Rognes",
+   "Rudi",
+   "Ruud",
+   "Rørvik",
+   "Skare",
+   "Skogen",
+   "Sørensen",
+   "Vaage",
+   "Vatne",
+   "Vik",
+   "Ødegård"
+  ],
+  "street_names": [
+   "Eikeveien",
+   "Elveveien",
+   "Granveien",
+   "Heggeveien",
+   "Industriveien",
+   "Mølleveien",
+   "Parkveien",
+   "Sjøgata",
+   "Stasjonsveien",
+   "Strandveien",
+   "Torvet",
+   "Åsveien"
+  ],
+  "org_prefixes": [
+   "Fjellrev",
+   "Havørn",
+   "Midtnorsk",
+   "Nordvind",
+   "Polaris",
+   "Skogly",
+   "Storelva",
+   "Toppen"
+  ],
+  "foreign:somalisk:first_male": [
+   "Abdirahman",
+   "Liban"
+  ],
+  "foreign:somalisk:first_female": [
+   "Ladan",
+   "Muna"
+  ],
+  "foreign:somalisk:surnames": [
+   "Abdullahi",
+   "Jama"
+  ],
+  "foreign:syrisk:first_male": [
+   "Bashar",
+   "Khaled"
+  ],
+  "foreign:syrisk:first_female": [
+   "Dalia",
+   "Rana"
+  ],
+  "foreign:syrisk:surnames": [
+   "Darwish",
+   "Khalil"
+  ],
+  "foreign:polsk:first_male": [
+   "Jakub",
+   "Łukasz"
+  ],
+  "foreign:polsk:first_female": [
+   "Barbara",
+   "Magdalena"
+  ],
+  "foreign:polsk:surnames": [
+   "Nowak",
+   "Zieliński"
+  ],
+  "foreign:litauisk:first_male": [
+   "Andrius",
+   "Darius"
+  ],
+  "foreign:litauisk:first_female": [
+   "Aistė",
+   "Dalia"
+  ],
+  "foreign:litauisk:surnames": [
+   "Navickas",
+   "Petrauskas"
+  ],
+  "foreign:eritreisk:first_male": [
+   "Abel",
+   "Michael"
+  ],
+  "foreign:eritreisk:first_female": [
+   "Kisanet",
+   "Selam"
+  ],
+  "foreign:eritreisk:surnames": [
+   "Kidane",
+   "Woldu"
+  ],
+  "foreign:afghansk:first_male": [
+   "Ahmad",
+   "Reza"
+  ],
+  "foreign:afghansk:first_female": [
+   "Fatima",
+   "Zahra"
+  ],
+  "foreign:afghansk:surnames": [
+   "Ahmadi",
+   "Rahimi"
+  ],
+  "foreign:irakisk:first_male": [
+   "Haider",
+   "Saif"
+  ],
+  "foreign:irakisk:first_female": [
+   "Noor",
+   "Sara"
+  ],
+  "foreign:irakisk:surnames": [
+   "Abbas",
+   "Al-Jabouri"
+  ],
+  "foreign:ukrainsk:first_male": [
+   "Taras",
+   "Volodymyr"
+  ],
+  "foreign:ukrainsk:first_female": [
+   "Halyna",
+   "Iryna"
+  ],
+  "foreign:ukrainsk:surnames": [
+   "Lysenko",
+   "Melnyk"
+  ],
+  "foreign:iransk:first_male": [
+   "Kaveh",
+   "Reza"
+  ],
+  "foreign:iransk:first_female": [
+   "Niloufar",
+   "Shirin"
+  ],
+  "foreign:iransk:surnames": [
+   "Mohammadi",
+   "Moradi"
+  ],
+  "foreign:svensk:first_male": [
+   "Lennart",
+   "Mikael"
+  ],
+  "foreign:svensk:first_female": [
+   "Anna",
+   "Sara"
+  ],
+  "foreign:svensk:surnames": [
+   "Eriksson",
+   "Gustafsson"
+  ]
+ },
+ "counts": {
+  "clause_texts": {
+   "total": 411,
+   "benchmark": 106,
+   "share": 0.258
+  },
+  "negative_texts": {
+   "total": 104,
+   "benchmark": 36
+  },
+  "plantable_negative_texts": {
+   "total": 39,
+   "benchmark": 18
+  },
+  "name_pools": {
+   "first_male": {
+    "total": 120,
+    "benchmark": 30
+   },
+   "first_female": {
+    "total": 112,
+    "benchmark": 28
+   },
+   "surnames": {
+    "total": 144,
+    "benchmark": 36
+   },
+   "street_names": {
+    "total": 48,
+    "benchmark": 12
+   },
+   "org_prefixes": {
+    "total": 30,
+    "benchmark": 8
+   },
+   "foreign:somalisk:first_male": {
+    "total": 9,
+    "benchmark": 2
+   },
+   "foreign:somalisk:first_female": {
+    "total": 9,
+    "benchmark": 2
+   },
+   "foreign:somalisk:surnames": {
+    "total": 9,
+    "benchmark": 2
+   },
+   "foreign:syrisk:first_male": {
+    "total": 9,
+    "benchmark": 2
+   },
+   "foreign:syrisk:first_female": {
+    "total": 9,
+    "benchmark": 2
+   },
+   "foreign:syrisk:surnames": {
+    "total": 9,
+    "benchmark": 2
+   },
+   "foreign:polsk:first_male": {
+    "total": 9,
+    "benchmark": 2
+   },
+   "foreign:polsk:first_female": {
+    "total": 9,
+    "benchmark": 2
+   },
+   "foreign:polsk:surnames": {
+    "total": 9,
+    "benchmark": 2
+   },
+   "foreign:litauisk:first_male": {
+    "total": 8,
+    "benchmark": 2
+   },
+   "foreign:litauisk:first_female": {
+    "total": 8,
+    "benchmark": 2
+   },
+   "foreign:litauisk:surnames": {
+    "total": 8,
+    "benchmark": 2
+   },
+   "foreign:eritreisk:first_male": {
+    "total": 9,
+    "benchmark": 2
+   },
+   "foreign:eritreisk:first_female": {
+    "total": 9,
+    "benchmark": 2
+   },
+   "foreign:eritreisk:surnames": {
+    "total": 9,
+    "benchmark": 2
+   },
+   "foreign:afghansk:first_male": {
+    "total": 9,
+    "benchmark": 2
+   },
+   "foreign:afghansk:first_female": {
+    "total": 9,
+    "benchmark": 2
+   },
+   "foreign:afghansk:surnames": {
+    "total": 9,
+    "benchmark": 2
+   },
+   "foreign:irakisk:first_male": {
+    "total": 9,
+    "benchmark": 2
+   },
+   "foreign:irakisk:first_female": {
+    "total": 9,
+    "benchmark": 2
+   },
+   "foreign:irakisk:surnames": {
+    "total": 9,
+    "benchmark": 2
+   },
+   "foreign:ukrainsk:first_male": {
+    "total": 9,
+    "benchmark": 2
+   },
+   "foreign:ukrainsk:first_female": {
+    "total": 9,
+    "benchmark": 2
+   },
+   "foreign:ukrainsk:surnames": {
+    "total": 9,
+    "benchmark": 2
+   },
+   "foreign:iransk:first_male": {
+    "total": 9,
+    "benchmark": 2
+   },
+   "foreign:iransk:first_female": {
+    "total": 9,
+    "benchmark": 2
+   },
+   "foreign:iransk:surnames": {
+    "total": 9,
+    "benchmark": 2
+   },
+   "foreign:svensk:first_male": {
+    "total": 8,
+    "benchmark": 2
+   },
+   "foreign:svensk:first_female": {
+    "total": 8,
+    "benchmark": 2
+   },
+   "foreign:svensk:surnames": {
+    "total": 8,
+    "benchmark": 2
+   }
+  }
+ }
+}

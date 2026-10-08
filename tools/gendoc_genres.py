@@ -34,7 +34,7 @@ re-annotating every entry.
 from __future__ import annotations
 
 import random
-from typing import Dict, List, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 VARIANTS = ["field_header", "prose_letter", "numbered_findings", "table_summary", "minutes"]
 
@@ -222,7 +222,7 @@ GENRES: Dict[str, dict] = {
         "judgement": {"MEDICATION": 3.0, "DISABILITY": 1.6, "FAMILY_RELATION": 1.2,
                       "BEHAVIORAL_PATTERN": 0.9, "GENETIC_DATA": 0.8, "EMPLOYMENT": 0.8,
                       "AGE_INFO": 0.4, "BIOMETRIC_DATA": 0.4, "ECONOMIC_STATUS": 0.4,
-                      "RELIGIOUS_BELIEF": 0.3},
+                      "RELIGIOUS_BELIEF": 0.3, "ETHNICITY": 0.3},
         "cast_roles": ["physician", "spouse", "child", "psychologist"],
         "age_profile": "health", "density_factor": 0.95,
         "foreign_subject_p": 0.1,
@@ -261,7 +261,7 @@ GENRES: Dict[str, dict] = {
         "judgement": {"MEDICATION": 2.0, "BEHAVIORAL_PATTERN": 2.0, "FAMILY_RELATION": 1.6,
                       "DISABILITY": 1.2, "SEXUAL_ORIENTATION": 0.8, "EMPLOYMENT": 0.8,
                       "ECONOMIC_STATUS": 0.6, "RELIGIOUS_BELIEF": 0.5, "AGE_INFO": 0.4,
-                      "ACADEMIC_RECORD": 0.4},
+                      "ACADEMIC_RECORD": 0.4, "ETHNICITY": 0.3},
         "cast_roles": ["psychologist", "spouse", "parent", "physician"],
         "age_profile": "adult", "density_factor": 0.8,
         "foreign_subject_p": 0.1,
@@ -300,7 +300,7 @@ GENRES: Dict[str, dict] = {
         "values": {"ADDRESS": 1.4, "AGE": 0.6, "GENDER": 0.5, "LICENSE_PLATE": 0.7,
                    "PHONE": 0.6, "DRIVER_LICENSE": 0.6, "LOCATION": 0.6,
                    "DATE_OF_BIRTH": 0.5, "ORGANIZATION": 0.4, "FAX_NUMBER": 0.4,
-                   "PASSPORT": 0.3, "ORG_NUMBER": 0.3},
+                   "PASSPORT": 0.3, "ORG_NUMBER": 0.3, "CREDIT_CARD": 0.3, "CRYPTO": 0.25},
         "judgement": {"BEHAVIORAL_PATTERN": 2.0, "ECONOMIC_STATUS": 1.0, "HEALTH": 0.9,
                       "FAMILY_RELATION": 0.9, "EMPLOYMENT": 0.9, "FINANCIAL": 0.8,
                       "IMMIGRATION_STATUS": 0.6, "MEDICATION": 0.5, "AGE_INFO": 0.4,
@@ -320,7 +320,8 @@ GENRES: Dict[str, dict] = {
         "values": {"NATIONAL_ID": 1.2, "ADDRESS": 1.0, "AGE": 0.7, "GENDER": 0.5,
                    "ORGANIZATION": 0.8, "LOCATION": 0.7, "ORG_NUMBER": 0.5,
                    "LICENSE_PLATE": 0.5, "DRIVER_LICENSE": 0.4, "FAX_NUMBER": 0.4,
-                   "DATE_OF_BIRTH": 0.4, "BANK_ACCOUNT": 0.3, "PHONE": 0.3},
+                   "DATE_OF_BIRTH": 0.4, "BANK_ACCOUNT": 0.3, "PHONE": 0.3, "CREDIT_CARD": 0.25,
+                   "CRYPTO": 0.2},
         "judgement": {"CRIMINAL": 2.4, "BEHAVIORAL_PATTERN": 1.6, "FINANCIAL": 1.2,
                       "ECONOMIC_STATUS": 1.0, "FAMILY_RELATION": 1.0, "EMPLOYMENT": 1.0,
                       "HEALTH": 0.8, "TRADE_UNION": 0.4, "AGE_INFO": 0.4,
@@ -543,7 +544,7 @@ GENRES: Dict[str, dict] = {
         "values": {"NATIONAL_ID": 1.2, "STUDENT_ID": 1.8, "ADDRESS": 1.2, "EMAIL": 1.2,
                    "PHONE": 0.9, "CASE_NUMBER": 0.8, "ORGANIZATION": 1.0, "AGE": 0.5,
                    "GENDER": 0.4, "URL": 0.7, "USERNAME": 0.6, "DATE_OF_BIRTH": 0.5,
-                   "NATIONALITY": 0.6, "LOCATION": 0.3, "BANK_ACCOUNT": 0.3},
+                   "NATIONALITY": 0.6, "LOCATION": 0.3, "BANK_ACCOUNT": 0.3, "VISA_NUMBER": 0.4},
         "judgement": {"DISABILITY": 1.2, "HEALTH": 0.8, "EMPLOYMENT": 0.8,
                       "ECONOMIC_STATUS": 0.6, "IMMIGRATION_STATUS": 0.8,
                       "FAMILY_RELATION": 0.6, "AGE_INFO": 0.3, "ETHNICITY": 0.2},
@@ -605,7 +606,7 @@ GENRES: Dict[str, dict] = {
                    "BANK_ACCOUNT": 1.4, "PHONE": 1.0, "EMAIL": 1.0, "TAX_ID": 0.7,
                    "AGE": 0.3, "GENDER": 0.3, "DATE_OF_BIRTH": 0.5, "LOCATION": 0.4,
                    "INSURANCE_NUMBER": 0.6, "CASE_NUMBER": 0.3, "IBAN": 0.4,
-                   "URL": 0.4, "USERNAME": 0.3},
+                   "URL": 0.4, "USERNAME": 0.3, "VISA_NUMBER": 0.3},
         "judgement": {"TRADE_UNION": 1.2, "FAMILY_RELATION": 0.5, "ACADEMIC_RECORD": 0.8,
                       "ECONOMIC_STATUS": 0.6, "HEALTH": 0.4, "DISABILITY": 0.4,
                       "IMMIGRATION_STATUS": 0.6},
@@ -872,6 +873,12 @@ SPECIAL_CATEGORIES = {
 HEALTH_FAMILY = {"HEALTH", "DISABILITY", "MEDICATION", "GENETIC_DATA", "BIOMETRIC_DATA"}
 
 
+# Types that only a non-Norwegian subject can coherently carry. Coverage
+# scheduling forces them, so the sampler makes the subject foreign rather than
+# dropping the type when the genre's `foreign_subject_p` comes up short.
+FOREIGN_SUBJECT_TYPES = {"IMMIGRATION_STATUS", "VISA_NUMBER"}
+
+
 def health_family_cap(profile: str) -> int:
     """Return how many health-family types one document of this profile may carry."""
     return 3 if profile == "case_file" else (2 if profile == "dense" else 1)
@@ -894,13 +901,6 @@ RARE_TYPES = [
     "SEXUAL_ORIENTATION", "POLITICAL", "ECONOMIC_STATUS", "BEHAVIORAL_PATTERN",
     "GENETIC_DATA", "BIOMETRIC_DATA", "TRADE_UNION", "RELIGIOUS_BELIEF", "ETHNICITY",
 ]
-
-# Types deliberately left uncovered. `docs/ANNOTATION_SPEC.md` cut both with
-# documented reasoning and `docs/PROJECT_SPEC_V2.md` reinstates them without
-# defining either; inventing a definition here would put guessed semantics into
-# a dataset whose whole claim is that its labels are correct by construction.
-# The run report lists them so the owner decides, not this generator.
-UNCOVERED_TYPES = ["CONTEXT_SENSITIVE", "IDENTIFIABLE_IMAGE"]
 
 FIELD_LABELS: Dict[str, str] = {
     "PERSON": "Navn", "NATIONAL_ID": "Fødselsnummer", "ADDRESS": "Adresse",
@@ -943,15 +943,24 @@ def genre_names() -> List[str]:
     return list(GENRES.keys())
 
 
-def genres_hosting(etype: str) -> List[str]:
+def genres_hosting(etype: str, clause_bank: Optional[dict] = None) -> List[str]:
     """Return every genre whose core, optional values or judgement mix may carry a type.
 
     This is what batch-level coverage scheduling schedules against: a type is
     only ever forced into a document whose genre a real Norwegian equivalent
     would plausibly carry it in.
 
+    A genre that lists a clause type is not enough on its own. Pilot v3 listed
+    BIOMETRIC_DATA under `hospital_discharge`, whose clause genre is
+    `gp_referral`, and the bank held no BIOMETRIC_DATA clause for `gp_referral`
+    at all: the scheduler forced the type into that genre and the sampler dropped
+    it silently. With a `clause_bank`, a clause type is hosted only where the bank
+    holds at least one entry in each written form.
+
     Args:
         etype: Entity type name.
+        clause_bank: The flat clause bank (or one dataset's share of it) to check
+            clause types against; None skips the check.
 
     Returns:
         Genre ids, in catalogue order.
@@ -961,6 +970,23 @@ def genres_hosting(etype: str) -> List[str]:
         if etype in spec["core"] or etype in spec["values"] or etype in spec["judgement"]:
             if etype == "ETHNICITY" and name not in ETHNICITY_ALLOWED_GENRES:
                 continue
+            if clause_bank is not None and etype in clause_bank and etype != "negatives":
+                genres = set(spec["clause_genres"])
+                # A clause defaults to adult subjects (`age_range` [18, 120]), so a
+                # genre whose subject is a child hosts only clauses that name a
+                # younger range, and a genre that clamps its subject to working
+                # age hosts none that need 75+. Without this the scheduler forced
+                # ETHNICITY, GENETIC_DATA and ACADEMIC_RECORD into school
+                # assessments and the sampler found nothing that fitted a
+                # twelve-year-old.
+                band_lo, band_hi = (0, 17) if spec.get("age_profile") == "youth" else spec.get(
+                    "subject_age", (18, 120))
+                forms = {e["form"] for e in clause_bank[etype]
+                         if genres & set(e.get("genres", []))
+                         and e.get("age_range", [18, 120])[0] <= band_hi
+                         and e.get("age_range", [18, 120])[1] >= band_lo}
+                if not {"nb", "nn"} <= forms:
+                    continue
             hosts.append(name)
     return hosts
 
@@ -968,7 +994,7 @@ def genres_hosting(etype: str) -> List[str]:
 def coverage_types(taxonomy_types: Sequence[str]) -> List[str]:
     """Return the types coverage scheduling should aim to cover, in scheduling order.
 
-    Excludes `UNCOVERED_TYPES` and anything no genre hosts, and puts the
+    Excludes anything no genre hosts, and puts the
     hardest-to-place types first so they get the documents they need before the
     easy ones use the budget up.
 
@@ -979,5 +1005,5 @@ def coverage_types(taxonomy_types: Sequence[str]) -> List[str]:
         Schedulable type names, rarest host set first.
     """
     schedulable = [t for t in taxonomy_types
-                   if t not in UNCOVERED_TYPES and genres_hosting(t)]
+                   if genres_hosting(t)]
     return sorted(schedulable, key=lambda t: (len(genres_hosting(t)), t))
