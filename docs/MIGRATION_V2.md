@@ -56,7 +56,12 @@ amended so the next labeller does not hit them.
    `f. 1972` states a birth unambiguously; DATE_TIME would lose that. Migrated to
    DATE_OF_BIRTH. The definition should read "date or year".
 
-## 3. Identifiers v2 has no type for — 22 spans parked
+## 3. Identifiers v2 had no type for — resolved 2026-10-08
+
+The owner added FIREARMS_LICENSE and VESSEL_REGISTRATION to the taxonomy (59 types). All 24
+parked spans are now placed (18 firearms, 6 vessel) and `data/migration_v2_pending.jsonl` is
+empty. The original note follows.
+
 
 `data/migration_v2_pending.jsonl` holds these with context. They are not lost and not forced
 into the nearest-looking type.

@@ -70,14 +70,16 @@ def _digits(span: str) -> str:
 # Førerkortnummer can be 11 digits exactly like a fødselsnummer. Shape is only the
 # fallback when no label is present.
 
-# Identifiers B20 makes GOV_ID but v2 has no type for. They are held back under a
-# named sentinel rather than forced into the nearest-looking type, so the gap reads
-# as a taxonomy decision to make, not a rule that failed.
+# Identifiers v2 has no type for are held back under a named sentinel rather than
+# forced into the nearest-looking type, so the gap reads as a taxonomy decision to
+# make, not a rule that failed. (Firearms licences and vessel registrations were the
+# first such gap; the owner added FIREARMS_LICENSE and VESSEL_REGISTRATION on
+# 2026-10-08.)
 NO_V2_HOME = "NO_V2_HOME"
 
 GOV_LABELS: List[Tuple[str, str]] = [
-    (r"våpen\w*\s*nr|våpenkort\w*|lisensnummer|license number|permit number", NO_V2_HOME + ":firearms_licence"),
-    (r"fiskebåt|fiskefartøy\w*|fishing vessel|vessel", NO_V2_HOME + ":vessel_registration"),
+    (r"våpen\w*\s*nr|våpenkort\w*|lisensnummer|license number|permit number", "FIREARMS_LICENSE"),
+    (r"fiskebåt|fiskefartøy\w*|fishing vessel|vessel", "VESSEL_REGISTRATION"),
     (r"førerkort", "DRIVER_LICENSE"),
     (r"pass\s*nr|passnummer|pass\s*nummer", "PASSPORT"),
     (r"id-kort|nasjonalt id", "IDENTITY_CARD"),
@@ -111,9 +113,9 @@ def gov_id(span: str, text: str) -> str:
     if best == "LICENSE_PLATE":
         obj = _context(text, span, 90).lower()
         if re.search(r"rifle|hagle|haglegevær|haglgevær|gevær|våpen|pistol|revolver", obj):
-            return NO_V2_HOME + ":firearms_licence"
+            return "FIREARMS_LICENSE"
         if re.search(r"fiskefartøy|fiskebåt|fartøy|vessel|\bms\b", obj):
-            return NO_V2_HOME + ":vessel_registration"
+            return "VESSEL_REGISTRATION"
     if best:
         return best
     d = _digits(span)

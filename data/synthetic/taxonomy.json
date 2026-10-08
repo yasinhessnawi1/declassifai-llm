@@ -198,6 +198,27 @@
       "value_kind": "value"
     },
     {
+      "name": "FIREARMS_LICENSE",
+      "tier": "A",
+      "gdpr": null,
+      "legacy_type": "GOV_ID",
+      "definition": "A firearms card or weapon licence number issued by the police, identifying the licence holder.",
+      "include": [
+        "The value after `Våpenkortnummer` / `våpenkort nr.`: `HG12345`, `W0987654`",
+        "A weapon's `Lisensnummer` or its `registreringsnummer` in the state firearms register: `registreringsnummer: AB1234` on a rifle",
+        "A permit ID for a firearm: `Permit ID: HR-2024-4321`"
+      ],
+      "exclude": [
+        "A weapon's `serienummer` / `våpennummer`, the manufacturer's mark on the weapon itself: untagged (B20)",
+        "A road vehicle's registration: LICENSE_PLATE"
+      ],
+      "boundary": "The number alone, as printed, never the label word or the weapon description (B20).",
+      "spec_rules": [
+        "B20"
+      ],
+      "value_kind": "value"
+    },
+    {
       "name": "IBAN",
       "tier": "A",
       "gdpr": null,
@@ -285,7 +306,7 @@
         "The plate after registreringsnummer / reg.nr. / kjennemerke / skiltnummer on a car: `DK 45778`, `OS78945`, `BT 12345`"
       ],
       "exclude": [
-        "A rifle's registreringsnummer or Lisensnummer, a Våpenkortnummer, a fishing vessel's reg.nr.: untagged, no v2 type yet; never LICENSE_PLATE (B20)",
+        "A rifle's registreringsnummer or Lisensnummer, or a Våpenkortnummer: FIREARMS_LICENSE; a fishing vessel's reg.nr.: VESSEL_REGISTRATION; never LICENSE_PLATE (B20)",
         "A private serial such as a weapon's serienummer: untagged"
       ],
       "boundary": "The plate alone, never absorbed into the surrounding vehicle description and never extended over the label word. The registered object decides: a car's is LICENSE_PLATE (B20).",
@@ -543,6 +564,25 @@
       ],
       "boundary": "The username alone, never the label word.",
       "spec_rules": [],
+      "value_kind": "value"
+    },
+    {
+      "name": "VESSEL_REGISTRATION",
+      "tier": "A",
+      "gdpr": null,
+      "legacy_type": "GOV_ID",
+      "definition": "A fishing vessel's or boat's registration mark, identifying the registered owner.",
+      "include": [
+        "The mark after `reg.nr.` / `registrert som` on a fiskefartøy or fiskebåt: `ST-476`, `SF-4278`, `N54321`"
+      ],
+      "exclude": [
+        "The vessel's name (`\"Havbris\"`): ORGANIZATION if it is the subject business, otherwise untagged",
+        "A road vehicle's registration: LICENSE_PLATE"
+      ],
+      "boundary": "The mark alone, as printed, never the label word or the vessel name (B20).",
+      "spec_rules": [
+        "B20"
+      ],
       "value_kind": "value"
     },
     {
@@ -1362,7 +1402,9 @@
     "POLITICAL": "POLITICAL_CASE",
     "RELIGIOUS_BELIEF": "RELIGIOUS_BELIEF",
     "SEXUAL_ORIENTATION": "SEXUAL_ORIENTATION",
-    "TRADE_UNION": null
+    "TRADE_UNION": null,
+    "FIREARMS_LICENSE": "GOV_ID",
+    "VESSEL_REGISTRATION": "GOV_ID"
   },
   "legacy_map_note": "Gold and slice have been migrated to v2 names (commit 87cfb30; data/gold_v2/, data/slice_v2/), so scoring against gold_v2 uses the v2 type names directly. legacy_map and each type's legacy_type are kept only for tools that emit the 17 legacy names (the old detector), mapping a v2 type to the legacy name it was scored under."
 }

@@ -2,7 +2,7 @@
 
 This is the single authoritative annotation specification for the PII/sensitive-information labeling schema used on `combined_data.jsonl` (32,439 documents). It supersedes the four cluster-level drafts written in parallel (identifier types, economic/work types, personal-sensitive types, conduct/belief types) and incorporates the project owner's final decisions on every point where those drafts disagreed or where a draft's own supporting numbers were wrong. Where a rule below differs from what an earlier draft argued, that difference is a deliberate, final decision — it is not open for re-litigation during re-labeling.
 
-**Version 2 (2026-10-08): the 57-type taxonomy.** The type inventory is now the one in `data/synthetic/taxonomy.json` (57 types, three tiers), owned by the synthetic-generation workstream; this document is the annotation rulebook for it and wins wherever the taxonomy's own one-line entries disagree with it (the disagreements are listed in Open questions). The 17-type version of this spec, which `data/gold/` and `data/slice/` were annotated under, is at commit `87cfb30`. Its rules carry over unchanged unless a section below says otherwise; the type names changed (`HEALTH_INFO` → `HEALTH`, `NO_ADDRESS` → `ADDRESS`, `NO_PHONE_NUMBER` → `PHONE`, `EMAIL_ADDRESS` → `EMAIL`, `CRIMINAL_RECORD` → `CRIMINAL`, `POLITICAL_CASE` → `POLITICAL`, `FINANCIAL_INFO` → `FINANCIAL`, `EMPLOYMENT_INFO` → `EMPLOYMENT`), six types were split (GOV_ID into the identifier types; HEALTH, DATE_TIME, EMPLOYMENT, FAMILY_RELATION and FINANCIAL each lost a narrower child type), and new types were added. `tools/migrate_to_v2.py` applies the renames and splits to the annotated sets and writes `data/gold_v2/` and `data/slice_v2/`.
+**Version 2 (2026-10-08): the 59-type taxonomy.** The type inventory is now the one in `data/synthetic/taxonomy.json` (59 types, three tiers: 57, plus FIREARMS_LICENSE and VESSEL_REGISTRATION added by the owner the same day), owned by the synthetic-generation workstream; this document is the annotation rulebook for it and wins wherever the taxonomy's own one-line entries disagree with it (the disagreements are listed in Open questions). The 17-type version of this spec, which `data/gold/` and `data/slice/` were annotated under, is at commit `87cfb30`. Its rules carry over unchanged unless a section below says otherwise; the type names changed (`HEALTH_INFO` → `HEALTH`, `NO_ADDRESS` → `ADDRESS`, `NO_PHONE_NUMBER` → `PHONE`, `EMAIL_ADDRESS` → `EMAIL`, `CRIMINAL_RECORD` → `CRIMINAL`, `POLITICAL_CASE` → `POLITICAL`, `FINANCIAL_INFO` → `FINANCIAL`, `EMPLOYMENT_INFO` → `EMPLOYMENT`), six types were split (GOV_ID into the identifier types; HEALTH, DATE_TIME, EMPLOYMENT, FAMILY_RELATION and FINANCIAL each lost a narrower child type), and new types were added. `tools/migrate_to_v2.py` applies the renames and splits to the annotated sets and writes `data/gold_v2/` and `data/slice_v2/`.
 
 All counts in this document were computed directly against `/home/coder/llm_finetune/data/combined_data.jsonl` and the evidence files under `scratchpad/evidence/`, except where a figure has been corrected below against the owner's own verification pass.
 
@@ -402,7 +402,7 @@ nobody, and its allegations stay untagged.
   rediscover it.
 
 **B20 — An identifier is typed by what it identifies and who issued it, not by its shape.**
-The 17-type spec had one GOV_ID type; v2 splits it into eleven, and adds identifier types
+The 17-type spec had one GOV_ID type; v2 splits it into thirteen, and adds identifier types
 for private issuers that used to have no home. Read the label in front of the value first —
 the shapes collide (a `Førerkortnummer` can be 11 digits, exactly like a fødselsnummer) —
 and fall back to shape only when there is no label. The full label-to-type table is in the
@@ -419,21 +419,21 @@ and fall back to shape only when there is no label. The full label-to-type table
   serial on the weapon itself). The test is whether v2 has a type for the identifier, not
   whether it identifies a person — a hospital record number does identify someone, and is
   still untagged.
-- **Firearms-card numbers and fishing-vessel registrations have no v2 type.** B20 used to
-  make both GOV_ID (`Våpenkortnummer`, a rifle's `registreringsnummer` in the state firearms
-  register, `Lisensnummer` for a weapon, a vessel's `reg.nr.`). v2 has no home for either, so
-  they are left untagged until the taxonomy owner adds one; the 22 such spans from gold and
-  the slice are held in `data/migration_v2_pending.jsonl` rather than forced into a
-  nearest-looking type. Do not put them in LICENSE_PLATE.
+- **A firearms card or weapon licence is FIREARMS_LICENSE; a fishing vessel's registration
+  mark is VESSEL_REGISTRATION.** Both are state-issued and identify the holder or owner:
+  `Våpenkortnummer HG12345`, a weapon's `Lisensnummer`, a rifle's `registreringsnummer` in
+  the state firearms register, a fiskefartøy's `reg.nr. SF-4278`. Tag the number alone. B20
+  used to make both GOV_ID; v2 first had no home for them, and the owner added the two types
+  on 2026-10-08 (24 spans in gold and the slice). Never LICENSE_PLATE.
 - **A vehicle registration number is LICENSE_PLATE and is tagged as its own span.** The
   state assigns it and it identifies the registered keeper: `registreringsnummer DK 45778`,
   `Registreringsnummer: OS78945`, `reg.nr. BT 12345`. Tag the plate alone — never absorb it
   into the surrounding vehicle description, and never extend the span to cover the label
   word. `registreringsnummer` is generic, so the registered *object* decides: a car's is
-  LICENSE_PLATE, a rifle's or a fishing vessel's is untagged per the bullet above.
+  LICENSE_PLATE, a rifle's is FIREARMS_LICENSE and a fishing vessel's is VESSEL_REGISTRATION.
 - Shape alone does not decide it. `AB12345` is a rifle serial and `HG12345` a firearms card
-  number; both share the two-letters-five-digits form, and both are now untagged for
-  different reasons (a private serial; a public card with no v2 type).
+  number; both share the two-letters-five-digits form and go opposite ways: the serial is a
+  private mark and untagged, the card is FIREARMS_LICENSE.
 - `Referanse:` remains untagged regardless: it is the agency's own intake routing, not an
   identifier of a person.
 
@@ -477,14 +477,14 @@ the end of the authority name. **A comma counts as a connector too** — `2010-1
 
 ## Taxonomy
 
-57 types in three tiers, from `data/synthetic/taxonomy.json` (version 2). Tier A is
+59 types in three tiers, from `data/synthetic/taxonomy.json` (version 2). Tier A is
 mechanical — an identifier recognisable by label and shape. Tier B is a contextual value —
 a name, place or demographic value read from context. Tier C is a judgement clause, most of
 them GDPR Art. 9 or 10 special categories. The last column counts spans in `data/gold_v2/`
 and `data/slice_v2/` (1,400 documents) after migration; a zero means the type has not yet
 been annotated on this corpus or does not occur in it (see Open questions).
 
-**Tier A — mechanical identifiers (28)**
+**Tier A — mechanical identifiers (30)**
 
 | Type | GDPR | One-line definition | Spans in gold+slice v2 |
 |---|---|---|---|
@@ -497,6 +497,7 @@ been annotated on this corpus or does not occur in it (see Open questions).
 | DRIVER_LICENSE | — | A driver's licence number (Førerkortnummer), a public-authority-issued identifier per B20. | 9 |
 | EMAIL | — | A complete local-part@domain email address. | 1,316 |
 | FAX_NUMBER | — | A fax number under a "Faks:"/"Fax:" label. | 0 |
+| FIREARMS_LICENSE | — | A firearms card or weapon licence number issued by the police, identifying the licence holder. | 18 |
 | IBAN | — | An International Bank Account Number for a named person or organisation's account. | 0 |
 | IDENTITY_CARD | — | A national identity card number issued by a public authority (politiet), per B20's issuer test. | 1 |
 | INSURANCE_NUMBER | — | An insurance policy/claim number issued by a private insurer. | 0 |
@@ -515,6 +516,7 @@ been annotated on this corpus or does not occur in it (see Open questions).
 | TAX_ID | — | A taxpayer identification number issued by Skatteetaten (a public tax authority), per B20. | 3 |
 | URL | — | A web address tied to a named person, organisation, or piece of evidence (e.g. a linked video/report). | 0 |
 | USERNAME | — | A login/account username distinct from a full email address, tied to a named person. | 0 |
+| VESSEL_REGISTRATION | — | A fishing vessel's or boat's registration mark, identifying the registered owner. | 6 |
 | VISA_NUMBER | — | An immigration visa/residence-permit number issued by UDI (a public authority), per B20. | 0 |
 
 **Tier B — contextual values (13)**
@@ -910,7 +912,7 @@ HEALTH (a): [affliction verb or phrase] + [condition], stopping at a conjunction
 
 ### Identifier types (NATIONAL_ID, ORG_NUMBER, CASE_NUMBER and the rest of Tier A)
 
-The 17-type spec's GOV_ID is split into eleven v2 types, and v2 adds identifier types that
+The 17-type spec's GOV_ID is split into thirteen v2 types, and v2 adds identifier types that
 had no home before. They share one set of mechanics — field-label authority, verbatim
 digits, no splitting of a date-shaped prefix — so they are specified together here.
 
@@ -944,7 +946,8 @@ the bottom of the table.
 | `https://…`, `www.…` | URL |
 | dotted-quad or colon-separated address | IP_ADDRESS |
 | a wallet address under `Lommebok`/`Krypto` | CRYPTO |
-| `Våpenkortnummer`, a weapon's `Lisensnummer` or `registreringsnummer`, a fishing vessel's `reg.nr.` | **untagged** — no v2 type yet (B20) |
+| `Våpenkortnummer`, `våpenkort nr.`, a weapon's `Lisensnummer` or firearms-register `registreringsnummer`, a firearm permit ID | FIREARMS_LICENSE |
+| `reg.nr.` / `registrert som` on a fiskefartøy or fiskebåt | VESSEL_REGISTRATION |
 | `Referanse:` | **untagged** — intake routing, not an identifier |
 | *No label:* 11 digits (optionally one dash or space after digit 6) | NATIONAL_ID |
 | *No label:* 9 digits, solid or grouped in threes | ORG_NUMBER |
@@ -973,7 +976,6 @@ label-first rule.
 - A bare 4-digit year or a full calendar date (`2018`, `2023-10-26`) used **on its own**, with no attached ID suffix — DATE_TIME.
 - The date-shaped **prefix** of a case number or the birth-date digits of a fødselsnummer — never additionally DATE_TIME or DATE_OF_BIRTH (see Boundary rule).
 - **`Referanse: NNNNNN`** — the agency's own complaint-intake reference, present in 51% of the corpus (16,537 documents). It is administrative routing metadata, not an identifier of a person, and the corpus leaves it untagged in 16,309 of 16,537 cases (98.6%). Never tagged, by any type. `Vår ref:` and `Deres ref:` *are* CASE_NUMBER.
-- Firearms-card numbers and fishing-vessel registrations — no v2 type yet (B20).
 - Private serials and record numbers v2 has no type for: `journalnummer` of a hospital, `medlemsnummer`, a weapon's `serienummer`.
 - A NOK amount — FINANCIAL, never an identifier, however many digits it has.
 
@@ -1002,13 +1004,13 @@ label-first rule.
 2. `9876543210` under a "Kontonummer:" label — BANK_ACCOUNT, not ORG_NUMBER, though the identical digit shape under "Org.nr.:" would be ORG_NUMBER.
 3. `98765432` (8 digits) under a "Telefon:" label — PHONE, not an identifier.
 4. `121270` (bare 6 digits, date-shaped) — not NATIONAL_ID unless contiguously followed by 5 more digits forming the full 11-digit ID.
-5. `HG12345` after `våpenkortnummer` — untagged; a firearms card has no v2 type.
+5. `HG12345` after `våpenkortnummer` — FIREARMS_LICENSE, not an identity number.
 
 #### Resolved conflicts
 - DATE_TIME × GOV_ID migration (202 total in the original corpus): a full 11-digit fødselsnummer/D-nummer string, or a date-shaped case-number prefix glued to a reference suffix, is tagged as the identifier **in its entirety**; the leading 6 digits or leading date are never separately DATE_TIME. `010175-54321` → NATIONAL_ID only; `2018/45678` → CASE_NUMBER only.
 - Presence conflicts (1,485+/1,787 evidenced): resolved by the label table plus field-label authority — every value following a trigger label must be tagged, with no exceptions for unusual length or format.
 - PHONE migration (6): a number under "Telefon:"/"Tlf:" is PHONE even if its digit count matches a fødselsnummer or org.nr shape.
-- GOV_ID → v2 split, 2026-10-08: of 3,390 GOV_ID spans in gold and the slice, 1,586 became CASE_NUMBER, 1,069 NATIONAL_ID, 679 ORG_NUMBER, 14 LICENSE_PLATE (all road vehicles), 9 DRIVER_LICENSE, 7 PASSPORT, 3 TAX_ID, 1 IDENTITY_CARD, and 22 firearms/vessel numbers were parked (`tools/migrate_to_v2.py`).
+- GOV_ID → v2 split, 2026-10-08: of 3,390 GOV_ID spans in gold and the slice, 1,586 became CASE_NUMBER, 1,069 NATIONAL_ID, 679 ORG_NUMBER, 14 LICENSE_PLATE (all road vehicles), 9 DRIVER_LICENSE, 7 PASSPORT, 3 TAX_ID, 1 IDENTITY_CARD, and 24 firearms/vessel numbers were parked until FIREARMS_LICENSE (18) and VESSEL_REGISTRATION (6) were added (`tools/migrate_to_v2.py`).
 
 #### Tier A types with no corpus instances
 These have no examples in gold or the slice; they come from generated documents. Their
@@ -1994,7 +1996,7 @@ Each item below is marked **OPEN** (no override addresses it — needs a project
 18. **Hobby/social club affiliations with no political, religious or extremist character** (`aktiv i den lokale skytterklubben`, `medlem av Norges Jeger- og Fiskerforbund`). OPEN. Previously tagged BEHAVIORAL_PATTERN or the now-cut CONTEXT_SENSITIVE type; this spec recommends leaving them untagged as not sensitive personal data under the taxonomy's GDPR Art. 9-style logic, which is a measurable drop in total labeled spans versus the old (over-)labeled corpus and needs sign-off. **Narrowed 2026-09-26:** this question previously cited `medlem av den lokale pinsemenigheten` as an example, which was wrong once RELIGIOUS_BELIEF existed — a congregation membership is a belief disclosure and is tagged. Only secular clubs remain in scope here.
 19. **Fictional/synthetic party and organisation names** (`Norges Renhet`, `Norges Fremtid`, `Nordens Lys`, etc.). OPEN. These are consistently-reused, obviously LLM-generated placeholders for real-world extremist groups. Confirm whether annotators should keep tagging these as this spec assumes (they function exactly like real party names within the synthetic corpus), or whether their fictional/repeated nature should down-weight or exclude the political-affiliation scenario type as low-value synthetic filler — this affects a meaningful fraction of POLITICAL's spans.
 20. **Cross-document identity / deduplication before re-labeling.** OPEN. 2,548 documents appear more than once in the corpus with contradictory labels. This spec fixes the annotation *rules*, but the re-labeling pass should deduplicate documents before annotation (label each unique document once) rather than re-annotating every duplicate independently, or the same near-100% contradiction problem will regenerate under the new rules by chance variation between annotators/sessions.
-21. **Firearms-card numbers and fishing-vessel registrations have no v2 type.** OPEN — taxonomy owner. B20 made both GOV_ID; v2 has neither a FIREARMS_LICENSE type nor a vessel type, and LICENSE_PLATE is defined for road vehicles. The 22 such spans in gold and the slice are parked in `data/migration_v2_pending.jsonl`, and `tools/migrate_to_v2.py --overrides` will place them once a type exists. Until then they are untagged.
+21. **Firearms-card numbers and fishing-vessel registrations have no v2 type.** RESOLVED 2026-10-08 — the project owner had FIREARMS_LICENSE and VESSEL_REGISTRATION added to `taxonomy.json` (Tier A); the 24 parked spans are placed and the pending file is empty. Kept for the record: B20 made both GOV_ID; v2 has neither a FIREARMS_LICENSE type nor a vessel type, and LICENSE_PLATE is defined for road vehicles. The 22 such spans in gold and the slice are parked in `data/migration_v2_pending.jsonl`, and `tools/migrate_to_v2.py --overrides` will place them once a type exists. Until then they are untagged.
 22. **v2 taxonomy entries this spec overrides.** RESOLVED 2026-10-08 — the taxonomy owner re-derived entries (a)–(f) from this spec in commit `19132ba`. Kept for the record: (a) FAMILY_RELATION's include list still has "marital/partnership status with named spouse/partner", which MARITAL_STATUS also claims; this spec gives it to MARITAL_STATUS by a lexical test. (b) EMPLOYMENT's include list still has "a bare company/employer name", which ORGANIZATION claims; this spec gives it to ORGANIZATION. (c) HEALTH's definition still lists disability and medication. (d) AGE's boundary says a detached age numeral "is DATE_TIME, not its own type", and DATE_OF_BIRTH's says the birth date "stays its own DATE_TIME span" — both written against the 17-type spec. (e) Several Tier A entries say an identifier "maps to GOV_ID" or "has no home in the 16-type schema". (f) LOCATION's boundary is justified by the 16-type ADDRESS exclude list rather than stated.
 23. **Generated documents that disagree with this spec.** RESOLVED 2026-10-08 — all four fixed in the generator, commit `19132ba`. Kept for the record: Seen in `data/synthetic/pilot_v3/`: ANIMAL_INFO keeps a leading determiner (`en besetning på 114 høner`; B2 drops it); LOCATION is labelled inside an organisation's name (`Fredrikstad` in `Fredrikstad Sjømat AS`); one age is labelled twice (`13` and `13 år`); MARITAL_STATUS is always the bare status word, which is right for a `Sivilstand:` field but short of the boundary when the text names the partner (`gift med Kari Hansen`). Training on both sources needs these to agree.
 24. **Evaluating types the corpus does not contain.** OPEN. Gold has no CREDIT_CARD, CRYPTO, DEVICE_ID, FAX_NUMBER, IBAN, INSURANCE_NUMBER, IP_ADDRESS, MEDICAL_LICENSE, MILITARY_ID, PASSWORD, SOCIAL_MEDIA, STUDENT_ID, URL, USERNAME, VISA_NUMBER, and almost no BIOMETRIC_DATA, GENETIC_DATA, ETHNICITY, IMMIGRATION_STATUS or TRADE_UNION. Gold cannot measure them. A held-out slice of generated documents, adjudicated separately from the generator's own labels, is needed for those.
