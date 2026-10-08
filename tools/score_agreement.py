@@ -32,8 +32,10 @@ from typing import Dict, List, Set, Tuple
 
 Span = Tuple[str, str]  # (entity type, span text)
 
-# Types cut from the taxonomy; excluded so a legacy file with 18 types can be
-# compared fairly against a spec-conformant file with 16.
+# Types cut from the taxonomy; excluded so a raw Gemini file can be compared fairly
+# against a spec-conformant one. The scorer is otherwise schema-agnostic: compare two
+# v2 files (data/gold_v2, data/slice_v2) or two legacy files, never one of each --
+# convert a legacy file with v2_schema.legacy_to_v2 first.
 DROPPED = {"CONTEXT_SENSITIVE", "IDENTIFIABLE_IMAGE"}
 
 

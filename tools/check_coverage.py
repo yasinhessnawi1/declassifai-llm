@@ -13,8 +13,8 @@ mention of a bank is a legitimate non-match. It prints candidates for a human or
 an agent to rule on, and never edits a label file.
 
 Usage:
-    python tools/check_coverage.py data/gold/batch_a_gold.jsonl
-    python tools/check_coverage.py data/gold/*_gold.jsonl --quiet
+    python tools/check_coverage.py data/gold_v2/batch_a_gold.jsonl
+    python tools/check_coverage.py data/gold_v2/*_gold.jsonl --quiet
 """
 
 from __future__ import annotations

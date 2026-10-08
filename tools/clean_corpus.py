@@ -3,10 +3,10 @@
 `data/combined_data.jsonl` is 32,439 Gemini-labeled documents with four mechanical
 defects, all fixable without judgement:
 
-1. **Out-of-schema types.** 21 distinct keys appear where the spec defines 16.
-   `CONTEXT_SENSITIVE` and `IDENTIFIABLE_IMAGE` were cut from the taxonomy -- neither
-   identifies a natural person under GDPR Art. 4(1) -- and `ANIMAL_INFO`, `AGE` and
-   `AGE_INFO` are stray keys the labeler invented, 11 spans between them.
+1. **Out-of-schema types.** 21 distinct keys appear where the 17-type legacy schema
+   defines 17. `CONTEXT_SENSITIVE` and `IDENTIFIABLE_IMAGE` were cut from the taxonomy --
+   neither identifies a natural person under GDPR Art. 4(1) -- and `ANIMAL_INFO`, `AGE`
+   and `AGE_INFO` are stray keys the labeler invented, 11 spans between them.
 2. **Non-verbatim spans.** 0.57% of spans are not substrings of their document. An
    extractive model cannot learn a target it cannot point at.
 3. **Contradictory duplicates.** 2,548 texts appear more than once and 2,531 of those
@@ -21,10 +21,16 @@ beats keeping the first copy on both metrics (relaxed F1 0.9663 vs 0.9652, recal
 vs 0.9791) because 65% of duplicate disagreements are one copy simply missing spans the
 other found.
 
+Output is in **v2 type names** (the 57-type taxonomy): after cleaning, each record's
+legacy labels go through `v2_schema.legacy_to_v2`, the same renames and splits that
+`tools/migrate_to_v2.py` applied to gold and the slice. Spans v2 has no type for are
+dropped and counted.
+
 What this script does **not** do is fix the labels. Against the gold set the corpus scores
 0.966 relaxed F1 on seven types and 0.26-0.55 on five others, and no deterministic pass
-can close that gap -- see `docs/DATA_QUALITY.md`. `--reliable-only` emits just the seven
-types worth keeping, for a training set whose remaining types come from re-annotation.
+can close that gap -- see `docs/DATA_QUALITY.md`. `--reliable-only` emits just the v2
+images of the seven types worth keeping (`v2_schema.CORPUS_TRUSTED`), for a training set
+whose remaining types come from re-annotation.
 
 Usage:
     python tools/clean_corpus.py data/combined_data.jsonl -o data/processed/corpus_clean.jsonl
@@ -40,23 +46,16 @@ import json
 import re
 from typing import Dict, List, Optional, Set
 
-# The taxonomy in docs/ANNOTATION_SPEC.md.
-SCHEMA_TYPES = {
-    "PERSON", "NO_ADDRESS", "POSTAL_CODE", "NO_PHONE_NUMBER", "EMAIL_ADDRESS",
-    "DATE_TIME", "HEALTH_INFO", "EMPLOYMENT_INFO", "CRIMINAL_RECORD",
-    "FINANCIAL_INFO", "ECONOMIC_STATUS", "GOV_ID", "FAMILY_RELATION",
-    "POLITICAL_CASE", "SEXUAL_ORIENTATION", "BEHAVIORAL_PATTERN",
-    "RELIGIOUS_BELIEF",
-}
+from v2_schema import CORPUS_TRUSTED, LEGACY_TYPES, legacy_to_v2
 
-# Types where the corpus scores >=0.91 relaxed F1 against the gold set. The other
-# nine are kept by default but should be treated as suspect; the five below 0.60
-# (BEHAVIORAL_PATTERN, ECONOMIC_STATUS, HEALTH_INFO, CRIMINAL_RECORD,
-# EMPLOYMENT_INFO) are not usable as training targets.
-RELIABLE_TYPES = {
-    "EMAIL_ADDRESS", "NO_PHONE_NUMBER", "PERSON", "POSTAL_CODE",
-    "DATE_TIME", "SEXUAL_ORIENTATION", "NO_ADDRESS",
-}
+# The corpus is keyed by the 17 legacy names; these are the keys read from it.
+SCHEMA_TYPES = LEGACY_TYPES
+
+# v2 types the corpus is trusted for: the v2 images of the seven legacy types that
+# score >=0.91 relaxed F1 against the gold set. The rest are kept by default but are
+# suspect; HEALTH, CRIMINAL, EMPLOYMENT, ECONOMIC_STATUS and BEHAVIORAL_PATTERN score
+# below 0.60 and are not usable as training targets.
+RELIABLE_TYPES = CORPUS_TRUSTED
 
 
 def repair(span: str, text: str) -> Optional[str]:
@@ -102,12 +101,12 @@ def collapse(spans: Set[str]) -> List[str]:
     return kept
 
 
-def clean(path: str, types: Set[str]) -> tuple:
+def clean(path: str, types: Optional[Set[str]] = None) -> tuple:
     """Merge duplicate copies of each document and drop unusable spans.
 
     Args:
         path: Path to the raw JSONL corpus.
-        types: Entity types to keep; everything else is dropped.
+        types: v2 entity types to keep, or None for every v2 type the corpus maps to.
 
     Returns:
         Tuple of (cleaned records, statistics counter).
@@ -138,9 +137,6 @@ def clean(path: str, types: Set[str]) -> tuple:
             if etype not in SCHEMA_TYPES:
                 stats["spans_dropped_out_of_schema"] += len(spans)
                 continue
-            if etype not in types:
-                stats["spans_dropped_unreliable_type"] += len(spans)
-                continue
             for span in spans:
                 if not isinstance(span, str) or not span.strip():
                     stats["spans_dropped_empty"] += 1
@@ -155,8 +151,16 @@ def clean(path: str, types: Set[str]) -> tuple:
 
     records = []
     for digest in order:
-        output = {t: collapse(s) for t, s in merged[digest].items() if s}
-        before = sum(len(s) for s in merged[digest].values())
+        legacy = {t: sorted(s) for t, s in merged[digest].items() if s}
+        v2 = legacy_to_v2(legacy, texts[digest], stats)
+        kept = {}
+        for t, spans in v2.items():
+            if types is not None and t not in types:
+                stats["spans_dropped_unreliable_type"] += len(spans)
+            else:
+                kept[t] = spans
+        output = {t: collapse(set(s)) for t, s in kept.items() if s}
+        before = sum(len(s) for s in kept.values())
         stats["spans_dropped_nested_duplicate"] += before - sum(
             len(v) for v in output.values()
         )
@@ -182,14 +186,14 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    types = RELIABLE_TYPES if args.reliable_only else SCHEMA_TYPES
+    types = RELIABLE_TYPES if args.reliable_only else None
     records, stats = clean(args.path, types)
 
     with open(args.out, "w", encoding="utf-8") as out:
         for record in records:
             out.write(json.dumps(record, ensure_ascii=False) + "\n")
 
-    print(f"types kept              : {len(types)}")
+    print(f"types kept              : {len(types) if types else 'all v2 images of the legacy schema'}")
     print(f"records in              : {stats['records_in']:,}")
     print(f"  duplicate copies merged : {stats['duplicate_copies_merged']:,}")
     print(f"  dropped, no spans left  : {stats['records_dropped_empty']:,}")
@@ -199,6 +203,7 @@ def main() -> None:
         "spans_dropped_out_of_schema", "spans_dropped_unreliable_type",
         "spans_dropped_non_verbatim", "spans_dropped_empty",
         "spans_dropped_nested_duplicate", "spans_repaired_case_or_space",
+        "spans_dropped_no_v2_home", "spans_dropped_unresolved",
     ):
         if stats[reason]:
             print(f"  {reason[14:]:24}: {stats[reason]:,}")

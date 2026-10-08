@@ -30,13 +30,11 @@ import random
 import re
 from typing import Dict, List, Tuple
 
-# The 16 types that survive the taxonomy decisions in docs/DATA_QUALITY.md.
-GOLD_TYPES = [
-    "PERSON", "DATE_TIME", "HEALTH_INFO", "GOV_ID", "NO_ADDRESS",
-    "CRIMINAL_RECORD", "POSTAL_CODE", "NO_PHONE_NUMBER", "EMAIL_ADDRESS",
-    "FAMILY_RELATION", "FINANCIAL_INFO", "EMPLOYMENT_INFO", "POLITICAL_CASE",
-    "BEHAVIORAL_PATTERN", "ECONOMIC_STATUS", "SEXUAL_ORIENTATION",
-]
+from v2_schema import CORPUS_ANNOTATED, legacy_to_v2
+
+# Stratify on the v2 types the corpus can carry. The corpus is keyed by the legacy
+# names, so each kept record's labels are converted to v2 on load.
+GOLD_TYPES = sorted(CORPUS_ANNOTATED)
 
 INTERVIEW = re.compile(r"Hvilket dyr er du bekymret for|-- Hvordan ser dyrene ut")
 
@@ -69,7 +67,10 @@ def load(path: str) -> Tuple[List[dict], Dict[str, bool]]:
                 sort_keys=True, ensure_ascii=False,
             )
         )
-        seen.setdefault(digest, record)
+        if digest not in seen:
+            record = dict(record)
+            record["output"] = legacy_to_v2(output, text)
+            seen[digest] = record
 
     conflicted = {d: len(v) > 1 for d, v in variants.items()}
     return list(seen.values()), conflicted
