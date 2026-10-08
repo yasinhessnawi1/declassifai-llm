@@ -38,3 +38,6 @@
 {"id": "B001", "type": "FINANCIAL", "old": "L7890123", "new": null, "why": "the span is the loan-account number itself: BANK_ACCOUNT wins"}
 {"id": "C002", "type": "HEALTH", "old": "ufør", "new": null, "why": "a named person's disability: DISABILITY wins over HEALTH"}
 {"id": "X0011", "type": "HEALTH", "old": "begrenset mobilitet", "new": null, "why": "a named person's functional limitation is DISABILITY, which wins over HEALTH"}
+{"id": "X0319", "type": "FAMILY_RELATION", "old": "nylig gjennomgikk et turbulent samlivsbrudd med partner Per Arne Nilsen", "new": null, "why": "B31: the openly gay male subject's male partner; SEXUAL_ORIENTATION, not FAMILY_RELATION"}
+{"id": "X0353", "type": "MARITAL_STATUS", "old": "Hans samboer, Kristian Bjørnstad", "new": null, "why": "B31: openly gay male subject, male partner; SEXUAL_ORIENTATION wins"}
+{"id": "X0360", "type": "FAMILY_RELATION", "old": "nylig skilsmisse fra ektefellen, Lars Olsen", "new": null, "why": "B31: openly gay male subject, male partner; SEXUAL_ORIENTATION wins"}
