@@ -1,0 +1,61 @@
+L001	LOCATION	Oslo
+L001	ORGANIZATION	Rema 1000
+L002	LOCATION	Svolvær
+L002	RELIGIOUS_BELIEF	ateist
+L003	LOCATION	Bergen
+L003	RELIGIOUS_BELIEF	medlem av Den norske kirke
+L004	LOCATION	Ålesund
+L004	RELIGIOUS_BELIEF	registrert medlem av Sjømannskirken
+L005	LOCATION	Viken
+L005	LOCATION	Bærum
+L005	LOCATION	Bekkestua
+L005	ANIMAL_INFO	kaniner (minst 5)
+L005	ANIMAL_INFO	geiter (3)
+L005	ANIMAL_INFO	ponni
+L005	ANIMAL_INFO	noen høns (ca. 7)
+L006	LOCATION	Bergen
+L006	RELIGIOUS_BELIEF	tilhenger av Ásatru
+L007	LOCATION	Bergen
+L007	LOCATION	Haukeland Universitetssykehus
+L007	RELIGIOUS_BELIEF	medlem av Den norske kirke
+L007	ANIMAL_INFO	Flere hunder
+L008	LOCATION	Bergen
+L008	RELIGIOUS_BELIEF	Jehovas vitne
+L009	LOCATION	Viken
+L009	LOCATION	Halden
+L009	ANIMAL_INFO	kyr
+L009	ANIMAL_INFO	griser
+L009	ANIMAL_INFO	høner
+L009	ANIMAL_INFO	ca. 15-20 kyr
+L009	ANIMAL_INFO	30-40 griser
+L009	ANIMAL_INFO	100 høner
+L010	LOCATION	Oslo
+L010	ANIMAL_INFO	musene
+L010	ANIMAL_INFO	over tusen individer
+L011	LOCATION	Bergen
+L011	LOCATION	Brasil
+L011	ORGANIZATION	Halvorsen Gartneri
+L012	LOCATION	Nesbyen
+L012	LOCATION	Viken
+L012	LOCATION	Nes
+L012	ANIMAL_INFO	rekke eksotiske dyr, inkludert minst tre rev, to vaskebjørner, en sibirsk husky (potensielt ulovlig avl), og flere fugler av ubestemt art
+L013	LOCATION	Viken
+L013	LOCATION	Bærum
+L013	LOCATION	Haslum
+L013	ANIMAL_INFO	mellomstor hund
+L013	ANIMAL_INFO	blandingshund
+L014	LOCATION	Viken
+L014	LOCATION	Bærum
+L014	LOCATION	Gjettum
+L014	ANIMAL_INFO	hund
+L014	ANIMAL_INFO	Golden Retriever
+L015	LOCATION	Bergen
+L015	RELIGIOUS_BELIEF	ateist
+L016	LOCATION	Svolvær
+L016	RELIGIOUS_BELIEF	medlem av Den norske kirke
+L016	BANK_ACCOUNT	1234567890
+L016	ANIMAL_INFO	Flere sauer
+L016	ANIMAL_INFO	sau
+L017	LOCATION	Skedsmokorset
+L018	LOCATION	Oslo
+L018	RELIGIOUS_BELIEF	av katolsk tro

@@ -205,7 +205,8 @@ ROLE = re.compile(
     r"\b(jobber|jobbet|ansatt|arbeider|arbeidet|eier|eid av|eiet|driver|drives av|"
     r"driftet|daglig leder|leder|sjef|styreleder|innehaver|utdannet|student|pensjonist|"
     r"pensjonert|frivillig|lærer|lege|sykepleier|veterinær\w*|bonde|gårdbruker|"
-    r"selvstendig|ufør|arbeidsledig|kokk|sjåfør|tømrer|elektriker|"
+    r"selvstendig|ufør|arbeidsledig|kokk|sjåfør|tømrer|elektriker|eieren|\w*direktør|inspektør|"
+    r"\w*medhjelper|"
     r"\w*(?:medarbeider|assistent|pleier|ingeniør|konsulent|rådgiver|mekaniker))\b", re.I)
 ORGSHAPE = re.compile(r"\b(AS|ASA|ANS|DA|SA|BA|ENK)\b|^[\"«]|kommune\b|stiftelse", re.I)
 

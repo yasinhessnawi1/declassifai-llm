@@ -82,6 +82,10 @@ identifier. There the span stops before the `(` and the identifier is tagged on 
 
 **B5 — Never end a span mid-token or mid-parenthetical.** A span that opens a bracket or
 quote must close it, or stop before it entirely.
+- Where the source prints punctuation inside the closing quote (`partiet "Norges
+  Fremtid," som`), the span runs through the quote and keeps that punctuation:
+  `partiet "Norges Fremtid,"`. B5 outranks B9 here. Gold and the slice did this 15 times
+  and left the quote open 11 times; the 11 are closed in `data/v2_corrections.jsonl`.
 
 **B6 — Agency findings are taggable; boilerplate is not.** Case-specific factual findings
 in an inspection or observation list (`Vi har observert:`) are tagged under whichever type

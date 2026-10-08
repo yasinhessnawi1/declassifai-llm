@@ -1,0 +1,64 @@
+M001	LOCATION	Trøndelag
+M001	LOCATION	Trondheim
+M001	ANIMAL_INFO	flere hunder
+M001	ANIMAL_INFO	tre engelsk settere
+M001	ANIMAL_INFO	to beagler
+M002	LOCATION	Trøndelag
+M002	LOCATION	Trondheim
+M002	ANIMAL_INFO	hund
+M002	ANIMAL_INFO	schäfer
+M003	LOCATION	Oslo
+M003	RELIGIOUS_BELIEF	tilhørighet til den Jehovas vitner
+M004	LOCATION	Bergen
+M004	RELIGIOUS_BELIEF	bekjente seg til Den Evangelisk Lutherske Frikirke
+M005	LOCATION	Vestland
+M005	LOCATION	Bergen
+M005	ANIMAL_INFO	Tre hunder
+M005	ANIMAL_INFO	blandingsrase som ligner på en schæfer
+M005	ANIMAL_INFO	liten hvit terrier
+M005	ANIMAL_INFO	eldre golden retriever
+M006	LOCATION	Vestland
+M006	LOCATION	Bergen
+M006	ANIMAL_INFO	Tre hester
+M007	LOCATION	Vestfold og Telemark
+M007	LOCATION	Tønsberg
+M007	ANIMAL_INFO	hund
+M007	ANIMAL_INFO	hann av rasen Golden Retriever
+M007	ANIMAL_INFO	Simba
+M008	LOCATION	Bergen
+M008	LOCATION	Sogn og Fjordane
+M008	LOCATION	Hordaland
+M008	RELIGIOUS_BELIEF	ateist
+M009	LOCATION	Bergen
+M009	RELIGIOUS_BELIEF	Human-Etisk Forbund
+M009	ORGANIZATION	Vestlandet Dyretransport AS
+M010	LOCATION	Leknes
+M010	BANK_ACCOUNT	9988776655
+M011	LOCATION	Oslo
+M011	RELIGIOUS_BELIEF	av kristen tro
+M012	LOCATION	Svolvær
+M012	LOCATION	Kabelvåg
+M012	RELIGIOUS_BELIEF	ateist
+M012	ANIMAL_INFO	Flere sauer
+M012	ANIMAL_INFO	sau
+M013	LOCATION	Oslo
+M013	ANIMAL_INFO	hund
+M013	ANIMAL_INFO	voksen hann av rasen Amstaff
+M013	ANIMAL_INFO	Thor
+M014	LOCATION	Akershus
+M014	LOCATION	Nittedal
+M014	ANIMAL_INFO	arbeidshester
+M014	ANIMAL_INFO	fire dølahester
+M014	ANIMAL_INFO	to fjordinger
+M014	ANIMAL_INFO	seks hester
+M015	LOCATION	Svolvær
+M015	RELIGIOUS_BELIEF	registert hos Frelsesarmeen
+M016	LOCATION	Bergen
+M016	RELIGIOUS_BELIEF	medlem av Den norske kirke
+M017	LOCATION	Bergen
+M017	RELIGIOUS_BELIEF	medlem av Jehovas Vitner
+M017	ANIMAL_INFO	Flere hester
+M017	ANIMAL_INFO	To hopper
+M017	ANIMAL_INFO	Frøya
+M017	ANIMAL_INFO	Dis
+M018	LOCATION	Lørenskog
