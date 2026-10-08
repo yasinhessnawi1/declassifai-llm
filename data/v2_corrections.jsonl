@@ -41,3 +41,4 @@
 {"id": "X0319", "type": "FAMILY_RELATION", "old": "nylig gjennomgikk et turbulent samlivsbrudd med partner Per Arne Nilsen", "new": null, "why": "B31: the openly gay male subject's male partner; SEXUAL_ORIENTATION, not FAMILY_RELATION"}
 {"id": "X0353", "type": "MARITAL_STATUS", "old": "Hans samboer, Kristian Bjørnstad", "new": null, "why": "B31: openly gay male subject, male partner; SEXUAL_ORIENTATION wins"}
 {"id": "X0360", "type": "FAMILY_RELATION", "old": "nylig skilsmisse fra ektefellen, Lars Olsen", "new": null, "why": "B31: openly gay male subject, male partner; SEXUAL_ORIENTATION wins"}
+{"id": "X0516", "type": "POLITICAL", "old": "er aktiv i den høyreekstreme organisasjonen \"Norges Renhet\"", "new": "aktiv i den høyreekstreme organisasjonen \"Norges Renhet\"", "why": "B1: drop the leading copula"}
