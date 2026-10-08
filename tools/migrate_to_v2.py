@@ -301,6 +301,37 @@ def load_overrides(path: str) -> Dict[Tuple[str, str, str], str]:
     return o
 
 
+def load_additions(directory: str) -> Dict[str, List[Tuple[str, str]]]:
+    """Read the v2 sweep's additions: `id<TAB>TYPE<TAB>span` lines in *.tsv files.
+
+    The sweep adds spans for types the 17-type annotation never asked for. They live
+    in their own layer, applied after the migration, so re-running the migration from
+    `data/gold/` and `data/slice/` reproduces them instead of wiping them.
+    """
+    adds: Dict[str, List[Tuple[str, str]]] = collections.defaultdict(list)
+    for path in sorted(glob.glob(os.path.join(directory, "*.tsv"))):
+        for n, line in enumerate(open(path, encoding="utf-8"), 1):
+            if not line.strip():
+                continue
+            rid, typ, span = line.rstrip("\n").split("\t")
+            adds[rid].append((typ, span))
+    return adds
+
+
+def apply_additions(rec: dict, adds: List[Tuple[str, str]], v2_types: set) -> int:
+    n = 0
+    for typ, span in adds:
+        if typ not in v2_types:
+            raise SystemExit(f"{rec['id']}: addition type {typ} is not in the v2 taxonomy")
+        if span not in rec["text_input"]:
+            raise SystemExit(f"{rec['id']}: addition is not verbatim: {span!r}")
+        spans = rec["output"].setdefault(typ, [])
+        if span not in spans:
+            spans.append(span)
+            n += 1
+    return n
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     g = ap.add_mutually_exclusive_group(required=True)
@@ -310,6 +341,8 @@ def main() -> int:
     ap.add_argument("--show", type=int, default=0, help="print N samples per bucket")
     ap.add_argument("--pending", default="data/migration_v2_pending.jsonl",
                     help="where spans with no v2 home are parked rather than dropped")
+    ap.add_argument("--additions", default="data/v2_additions",
+                    help="directory of v2-sweep addition files, applied after migration")
     args = ap.parse_args()
 
     v2_types = {t["name"] for t in json.load(open(TAXONOMY, encoding="utf-8"))["types"]}
@@ -317,6 +350,8 @@ def main() -> int:
     for fn in SPLIT.values():
         pass
     overrides = load_overrides(args.overrides)
+    additions = load_additions(args.additions)
+    added = 0
     stats: collections.Counter = collections.Counter()
     unresolved: List[tuple] = []
     samples = collections.defaultdict(list)
@@ -325,6 +360,8 @@ def main() -> int:
         for path in sorted(glob.glob(pattern)):
             recs = [json.loads(l) for l in open(path, encoding="utf-8") if l.strip()]
             migrated = [migrate_record(r, overrides, stats, unresolved) for r in recs]
+            for r_new in migrated:
+                added += apply_additions(r_new, additions.get(r_new["id"], []), v2_types)
             for r_old, r_new in zip(recs, migrated):
                 for t, spans in r_new["output"].items():
                     for s in spans:
@@ -337,6 +374,7 @@ def main() -> int:
     print("legacy -> v2 relabel counts")
     for (legacy, new), n in sorted(stats.items()):
         print(f"  {legacy:18} -> {new:18} {n:6,}")
+    print(f"\nv2-sweep additions applied: {added:,}")
     print(f"\nunresolved: {len(unresolved)}")
     for u in unresolved[:40]:
         print(f"  {u[0]:6} [{u[1]}] {u[2]!r:32} ...{u[3][-48:]!r}")

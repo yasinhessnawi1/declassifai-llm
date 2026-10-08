@@ -1,0 +1,69 @@
+D001	LOCATION	Bergen
+D001	LOCATION	Voss
+D001	LOCATION	Sogndal
+D001	RELIGIOUS_BELIEF	Aktivt medlem av Jehovas Vitner
+D002	LOCATION	Ålesund
+D002	LOCATION	Ålesund Sykehus
+D002	RELIGIOUS_BELIEF	active member of "Den Norske Kirke"
+D003	LOCATION	Ålesund
+D003	LOCATION	Møre og Romsdal
+D003	ANIMAL_INFO	hund
+D003	ANIMAL_INFO	Border Collie
+D003	ANIMAL_INFO	hannhund
+D004	LOCATION	Førde
+D004	RELIGIOUS_BELIEF	Kristendommen
+D004	POLITICAL	Høyre
+D004	ANIMAL_INFO	besetning på 25 sauer
+D005	LOCATION	Bergen
+D005	RELIGIOUS_BELIEF	katolikk
+D006	LOCATION	Bergen
+D006	RELIGIOUS_BELIEF	tilhører en fundamentalistisk gren av kristendommen
+D007	LOCATION	Leknes
+D007	RELIGIOUS_BELIEF	medlem av Den norske kirke
+D007	ANIMAL_INFO	sau
+D007	ANIMAL_INFO	Flere sauer
+D008	LOCATION	Vestland
+D008	LOCATION	Bergen
+D008	ANIMAL_INFO	flokk geiter
+D008	ANIMAL_INFO	rundt 8-10 stykker
+D009	LOCATION	Bergen
+D009	RELIGIOUS_BELIEF	medlem av den lokale pinsemenigheten
+D009	BANK_ACCOUNT	1234567890
+D009	ANIMAL_INFO	Flere kyr
+D010	LOCATION	Bergen
+D010	RELIGIOUS_BELIEF	ateist
+D011	LOCATION	Innlandet
+D011	LOCATION	Lom
+D011	ANIMAL_INFO	gjeterhundene
+D011	ANIMAL_INFO	rundt 50 sauer
+D011	ANIMAL_INFO	3 border collier
+D012	LOCATION	Vestland
+D012	LOCATION	Bergen
+D012	ANIMAL_INFO	flokk sauer
+D012	ANIMAL_INFO	20-25 dyr
+D013	LOCATION	Oppegård
+D013	LOCATION	Viken
+D013	LOCATION	Nordre Follo
+D013	ANIMAL_INFO	to hunder
+D013	ANIMAL_INFO	eldre Berner Sennenhund
+D013	ANIMAL_INFO	yngre Border Collie
+D013	ANIMAL_INFO	tre katter
+D013	ANIMAL_INFO	huskatter av forskjellige farger
+D013	ANIMAL_INFO	kanin
+D014	LOCATION	Vestland
+D014	LOCATION	Bergen
+D014	ANIMAL_INFO	mellom 15-20 hunder
+D015	LOCATION	Fredrikstad
+D015	LOCATION	Viken
+D015	ANIMAL_INFO	fire jakthundvalper av rasen Gråhund
+D016	LOCATION	Leknes
+D016	RELIGIOUS_BELIEF	tilknyttet en kontroversiell religiøs sekt
+D016	ANIMAL_INFO	sau
+D016	ANIMAL_INFO	Flere sauer
+D017	LOCATION	Hamar
+D017	LOCATION	Innlandet
+D017	ANIMAL_INFO	25 sauer
+D017	ORGANIZATION	Lars Olsen AS
+D018	LOCATION	Bergen
+D018	RELIGIOUS_BELIEF	hans religiøse overbevisning (hedensk åsatru)
+D002	ORGANIZATION	Fjordens Delikatesser AS
