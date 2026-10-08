@@ -50,6 +50,14 @@ class DatasetConfig:
     test_split: float = 0.02
     seed: int = 42
     max_samples: Optional[int] = None
+    # When set, `prepare` reads the train/val/test files written by
+    # tools/build_training_set.py from this directory instead of splitting `source`
+    # at random. Those records carry a `types` list: the types each document was
+    # annotated for, which becomes that example's prompt scope.
+    prebuilt_dir: Optional[str] = None
+    # Repeat each non-corpus training example this many times. The fully annotated
+    # slice is ~3% of the documents but the only source for most v2 types.
+    upsample_annotated: int = 1
 
 
 @dataclass
@@ -82,6 +90,12 @@ class PromptConfig:
     system_instruction: str = ""
     user_template: str = ""
     assistant_prefix: str = ""
+    # List each type with its description (True) or by name only (False). With 57
+    # types the descriptions cost ~1,000 prompt tokens.
+    describe_types: bool = True
+    # Emit `"TYPE": []` for in-scope types with no spans (True), or only the types
+    # that occur (False).
+    emit_empty: bool = True
 
 
 @dataclass
@@ -109,6 +123,9 @@ class Config:
     export: ExportConfig = field(default_factory=ExportConfig)
     evaluation: EvaluationConfig = field(default_factory=EvaluationConfig)
     entity_types: Dict[str, str] = field(default_factory=dict)
+    # Path to a taxonomy.json; when set and `entity_types` is empty, the type list and
+    # descriptions are read from it (taxonomy order, first sentence of each definition).
+    taxonomy_file: Optional[str] = None
     project_root: Path = field(default_factory=lambda: Path("."))
 
 
@@ -157,11 +174,28 @@ def load_config(config_path: Optional[str] = None) -> Config:
         prompt=_dict_to_dataclass(PromptConfig, raw.get("prompt", {})),
         export=_dict_to_dataclass(ExportConfig, raw.get("export", {})),
         evaluation=_dict_to_dataclass(EvaluationConfig, raw.get("evaluation", {})),
-        entity_types=raw.get("entity_types", {}),
+        entity_types=raw.get("entity_types") or {},
+        taxonomy_file=raw.get("taxonomy_file"),
         project_root=project_root,
     )
 
+    if cfg.taxonomy_file and not cfg.entity_types:
+        cfg.entity_types = load_taxonomy_types(project_root / cfg.taxonomy_file)
+
     return cfg
+
+
+def load_taxonomy_types(path: Path) -> Dict[str, str]:
+    """Read `{type name: short description}` from a taxonomy.json, in taxonomy order."""
+    import json
+    with open(path, "r", encoding="utf-8") as f:
+        types = json.load(f)["types"]
+    out = {}
+    for t in types:
+        definition = t.get("definition", "").strip()
+        first = definition.split(". ")[0].rstrip(".")
+        out[t["name"]] = first
+    return out
 
 
 def resolve_path(cfg: Config, relative_path: str) -> Path:

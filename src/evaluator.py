@@ -92,6 +92,7 @@ def generate_prediction(
     text: str,
     cfg: Config,
     max_new_tokens: int = 2048,
+    types=None,
 ) -> Dict[str, List[str]]:
     """Run inference on a single text and parse the JSON output.
 
@@ -105,7 +106,7 @@ def generate_prediction(
     Returns:
         Dict mapping entity types to lists of extracted strings.
     """
-    messages = build_inference_messages(text, cfg)
+    messages = build_inference_messages(text, cfg, types)
 
     formatted = tokenizer.apply_chat_template(
         messages,
@@ -127,10 +128,10 @@ def generate_prediction(
     new_tokens = output_ids[0][input_len:]
     raw_output = tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
 
-    return _parse_output(raw_output, cfg)
+    return _parse_output(raw_output, cfg, types)
 
 
-def _parse_output(raw: str, cfg: Config) -> Dict[str, List[str]]:
+def _parse_output(raw: str, cfg: Config, types=None) -> Dict[str, List[str]]:
     """Parse model output JSON into entity dict.
 
     Args:
@@ -148,12 +149,13 @@ def _parse_output(raw: str, cfg: Config) -> Dict[str, List[str]]:
         cleaned = re.sub(r"\s*```$", "", cleaned)
         cleaned = cleaned.strip()
 
-    result = {etype: [] for etype in cfg.entity_types}
+    scope = list(types) if types else list(cfg.entity_types)
+    result = {etype: [] for etype in scope}
 
     try:
         parsed = json.loads(cleaned)
         if isinstance(parsed, dict):
-            for etype in cfg.entity_types:
+            for etype in scope:
                 val = parsed.get(etype, [])
                 if isinstance(val, list):
                     result[etype] = [str(v) for v in val]
@@ -206,6 +208,7 @@ def compute_metrics(
         tp = len(matched_exp)
         fp = len(pred_list) - tp
         fn = len(exp_list) - tp
+        strict_tp = len(set(exp_list) & set(pred_list))
 
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
@@ -218,6 +221,9 @@ def compute_metrics(
             "tp": tp,
             "fp": fp,
             "fn": fn,
+            "strict_tp": strict_tp,
+            "n_pred": len(pred_list),
+            "n_exp": len(exp_list),
         }
 
     return metrics
@@ -268,32 +274,31 @@ def evaluate(cfg: Config):
 
     # Run evaluation
     print("[3/3] Running inference...")
-    all_metrics = defaultdict(lambda: {"tp": 0, "fp": 0, "fn": 0})
+    all_metrics = defaultdict(lambda: {"tp": 0, "fp": 0, "fn": 0, "strict_tp": 0,
+                                       "n_pred": 0, "n_exp": 0})
     total_time = 0
     valid_json_count = 0
 
     for i, entry in enumerate(test_data):
-        messages = entry["messages"]
-        text = messages[1]["content"]  # user message contains the text
-        expected_raw = messages[2]["content"]  # assistant message is the expected JSON
-
-        # Parse expected output
-        try:
-            expected = json.loads(expected_raw)
-        except json.JSONDecodeError:
-            continue
-
-        # Extract just the text portion (remove the prompt wrapper)
-        # The user message contains "Text:\n{actual_text}" at the end
-        text_marker = "Text:\n"
-        text_idx = text.rfind(text_marker)
-        if text_idx >= 0:
-            actual_text = text[text_idx + len(text_marker):]
+        types = entry.get("types")
+        if "text_input" in entry:
+            # Prebuilt splits carry the raw text, expected spans and scope.
+            actual_text = entry["text_input"]
+            scope = types or list(cfg.entity_types)
+            expected = {t: entry["output"].get(t, []) for t in scope}
         else:
-            actual_text = text
+            messages = entry["messages"]
+            text = messages[1]["content"]  # user message contains the text
+            try:
+                expected = json.loads(messages[2]["content"])
+            except json.JSONDecodeError:
+                continue
+            text_marker = "Text:\n"
+            text_idx = text.rfind(text_marker)
+            actual_text = text[text_idx + len(text_marker):] if text_idx >= 0 else text
 
         start = time.time()
-        predicted = generate_prediction(model, tokenizer, actual_text, cfg)
+        predicted = generate_prediction(model, tokenizer, actual_text, cfg, types=types)
         elapsed = time.time() - start
         total_time += elapsed
 
@@ -304,9 +309,8 @@ def evaluate(cfg: Config):
         # Aggregate metrics per entity type
         sample_metrics = compute_metrics(predicted, expected)
         for etype, m in sample_metrics.items():
-            all_metrics[etype]["tp"] += m["tp"]
-            all_metrics[etype]["fp"] += m["fp"]
-            all_metrics[etype]["fn"] += m["fn"]
+            for k in ("tp", "fp", "fn", "strict_tp", "n_pred", "n_exp"):
+                all_metrics[etype][k] += m[k]
 
         if (i + 1) % 10 == 0 or i == 0:
             print(f"  [{i+1}/{num_samples}] {elapsed:.1f}s/sample")
@@ -319,6 +323,7 @@ def evaluate(cfg: Config):
     print(f"{'=' * 60}")
 
     total_tp = total_fp = total_fn = 0
+    total_strict = total_pred = total_exp = 0
     results = {}
 
     if cfg.evaluation.per_type_metrics:
@@ -336,10 +341,15 @@ def evaluate(cfg: Config):
         rec = tp / (tp + fn) if (tp + fn) > 0 else 0.0
         f1 = 2 * prec * rec / (prec + rec) if (prec + rec) > 0 else 0.0
 
-        results[etype] = {"precision": prec, "recall": rec, "f1": f1}
+        sp = m["strict_tp"] / m["n_pred"] if m["n_pred"] else 0.0
+        sr = m["strict_tp"] / m["n_exp"] if m["n_exp"] else 0.0
+        sf1 = 2 * sp * sr / (sp + sr) if (sp + sr) else 0.0
+        total_strict += m["strict_tp"]; total_pred += m["n_pred"]; total_exp += m["n_exp"]
+        results[etype] = {"precision": prec, "recall": rec, "f1": f1, "strict_f1": sf1,
+                          "support": m["n_exp"]}
 
         if cfg.evaluation.per_type_metrics:
-            print(f"  {etype:<25} {prec:>5.1%} {rec:>5.1%} {f1:>5.1%} {tp:>5} {fp:>5} {fn:>5}")
+            print(f"  {etype:<25} {prec:>5.1%} {rec:>5.1%} {f1:>5.1%} {tp:>5} {fp:>5} {fn:>5}  strict F1 {sf1:>5.1%}")
 
     # Overall
     overall_prec = total_tp / (total_tp + total_fp) if (total_tp + total_fp) > 0 else 0.0
@@ -347,7 +357,12 @@ def evaluate(cfg: Config):
     overall_f1 = 2 * overall_prec * overall_rec / (overall_prec + overall_rec) if (overall_prec + overall_rec) > 0 else 0.0
 
     print(f"\n  {'OVERALL':<25} {overall_prec:>5.1%} {overall_rec:>5.1%} {overall_f1:>5.1%} {total_tp:>5} {total_fp:>5} {total_fn:>5}")
-    results["OVERALL"] = {"precision": overall_prec, "recall": overall_rec, "f1": overall_f1}
+    sp = total_strict / total_pred if total_pred else 0.0
+    sr = total_strict / total_exp if total_exp else 0.0
+    strict_f1 = 2 * sp * sr / (sp + sr) if (sp + sr) else 0.0
+    print(f"  {'OVERALL strict (exact span)':<25} P {sp:.1%}  R {sr:.1%}  F1 {strict_f1:.1%}")
+    results["OVERALL"] = {"precision": overall_prec, "recall": overall_rec, "f1": overall_f1,
+                          "strict_precision": sp, "strict_recall": sr, "strict_f1": strict_f1}
 
     # Save results
     output_dir = resolve_path(cfg, cfg.evaluation.output_dir)

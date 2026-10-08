@@ -1,0 +1,100 @@
+# =============================================================================
+# v2 training config: 57-type taxonomy, prebuilt splits, per-example type scope.
+#
+# Data: run `python tools/build_training_set.py --out-dir data/processed_v2/raw`
+# first. Gold (data/gold_v2) becomes test and only test; the slice and the cleaned
+# corpus become train/val. Each record lists the types it was annotated for, and the
+# prompt names exactly those, so a corpus example trusted for 8 types never teaches
+# the model that the other 49 are absent.
+#
+# configs/config.yaml (the 17-type config) is left untouched.
+# =============================================================================
+
+model:
+  name: "Qwen/Qwen3.5-9B"
+  max_seq_length: 3072                     # measured: 99th pct of v2 examples is under this
+  load_in_4bit: true
+  bnb_4bit_compute_dtype: "float16"        # V100 (sm70): fp16, not bf16
+  bnb_4bit_quant_type: "nf4"
+  bnb_4bit_use_double_quant: true
+  trust_remote_code: true
+
+lora:
+  r: 64
+  lora_alpha: 128
+  lora_dropout: 0.05
+  target_modules: ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
+  task_type: "CAUSAL_LM"
+  bias: "none"
+
+dataset:
+  prebuilt_dir: "data/processed_v2/raw"    # written by tools/build_training_set.py
+  upsample_annotated: 6                    # slice docs are the only source for most v2 types
+  processed_dir: "data/processed_v2"
+  train_file: "data/processed_v2/train.jsonl"
+  val_file: "data/processed_v2/val.jsonl"
+  test_file: "data/processed_v2/test.jsonl"
+  seed: 42
+  max_samples: null
+
+# Type list and descriptions come from the taxonomy (57 types, taxonomy order).
+taxonomy_file: "data/synthetic/taxonomy.json"
+
+training:
+  output_dir: "models/qlora_adapter_v2"
+  num_train_epochs: 1
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 32
+  learning_rate: 1.0e-4
+  weight_decay: 0.01
+  warmup_ratio: 0.03
+  lr_scheduler_type: "cosine"
+  logging_steps: 25
+  save_steps: 250
+  eval_steps: 250
+  save_total_limit: 3
+  fp16: true
+  bf16: false
+  gradient_checkpointing: true
+  optim: "paged_adamw_8bit"
+  max_grad_norm: 0.3
+  group_by_length: true
+  report_to: "none"
+  dataloader_num_workers: 4
+
+prompt:
+  describe_types: false                    # names only; descriptions would cost ~1k tokens
+  emit_empty: false                        # output only the types that occur
+  system_instruction: |
+    You are a precise Named Entity Recognition (NER) system for Norwegian texts (Bokmal/Nynorsk).
+    Extract personally identifiable information and sensitive data of the requested types.
+
+    RULES:
+    1. Extract only the entity types listed in the request
+    2. Copy each span exactly as it appears in the text (verbatim)
+    3. Include only types that occur; omit types with no matches
+    4. Do NOT hallucinate or invent entities
+    5. Output ONLY valid JSON mapping each type to a list of distinct strings
+
+  user_template: |
+    Extract entities from this Norwegian text. Return JSON with entity types as keys and arrays of extracted strings as values.
+
+    Entity types to extract:
+    {entity_types}
+
+    Text:
+    {text}
+
+  assistant_prefix: ""
+
+export:
+  merged_dir: "models/merged_v2"
+  push_to_hub: false
+  hub_model_id: ""
+
+evaluation:
+  output_dir: "evaluation/v2"
+  num_samples: 400                         # the whole gold set
+  threshold: 0.5
+  per_type_metrics: true

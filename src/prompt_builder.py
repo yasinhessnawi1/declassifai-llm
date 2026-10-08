@@ -5,12 +5,35 @@ that match the format the model will see at inference time.
 """
 
 import json
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional, Sequence
 
 from .config_loader import Config
 
 
-def build_entity_type_list(entity_types: Dict[str, str]) -> str:
+def scope_types(cfg: Config, types: Optional[Sequence[str]] = None) -> List[str]:
+    """Return the types an example is prompted for, in config order.
+
+    An example annotated for only some types (a corpus record trusted for eight) must
+    be prompted for exactly those: listing a type it was never annotated for, then
+    showing no spans for it, teaches the model that the type does not occur.
+
+    Args:
+        cfg: Config whose `entity_types` fixes the order and the descriptions.
+        types: The example's annotation scope, or None for every configured type.
+
+    Returns:
+        Type names in config order.
+    """
+    if types is None:
+        return list(cfg.entity_types)
+    unknown = set(types) - set(cfg.entity_types)
+    if unknown:
+        raise ValueError(f"example scope has types the config does not define: {sorted(unknown)}")
+    wanted = set(types)
+    return [t for t in cfg.entity_types if t in wanted]
+
+
+def build_entity_type_list(entity_types: Dict[str, str], describe: bool = True) -> str:
     """Build a formatted entity type list for the user prompt.
 
     Args:
@@ -21,6 +44,8 @@ def build_entity_type_list(entity_types: Dict[str, str]) -> str:
         - PERSON: Full names of individuals
         - EMAIL_ADDRESS: Email addresses
     """
+    if not describe:
+        return ", ".join(entity_types)
     lines = []
     for name, description in entity_types.items():
         lines.append(f"- {name}: {description}")
@@ -43,6 +68,7 @@ def build_chat_messages(
     text: str,
     entities: Dict[str, List[str]],
     cfg: Config,
+    types: Optional[Sequence[str]] = None,
 ) -> List[Dict[str, str]]:
     """Build a complete chat message sequence for one training sample.
 
@@ -50,21 +76,26 @@ def build_chat_messages(
         text: The Norwegian input text.
         entities: Ground truth entity dict from the dataset.
         cfg: Config object with prompt templates and entity types.
+        types: The example's annotation scope; None means every configured type.
 
     Returns:
         List of message dicts: [system, user, assistant].
     """
-    entity_type_list = build_entity_type_list(cfg.entity_types)
+    scope = scope_types(cfg, types)
+    entity_type_list = build_entity_type_list(
+        {t: cfg.entity_types[t] for t in scope}, cfg.prompt.describe_types)
 
     user_content = cfg.prompt.user_template.format(
         entity_types=entity_type_list,
         text=text,
     )
 
-    # Filter output to only include entity types from config
+    # Only in-scope types appear in the target; out-of-scope spans are dropped.
     filtered_output = {}
-    for etype in cfg.entity_types:
-        filtered_output[etype] = entities.get(etype, [])
+    for etype in scope:
+        spans = entities.get(etype, [])
+        if spans or cfg.prompt.emit_empty:
+            filtered_output[etype] = spans
 
     assistant_content = format_output(filtered_output)
 
@@ -80,17 +111,21 @@ def build_chat_messages(
 def build_inference_messages(
     text: str,
     cfg: Config,
+    types: Optional[Sequence[str]] = None,
 ) -> List[Dict[str, str]]:
     """Build chat messages for inference (no assistant response).
 
     Args:
         text: The Norwegian input text.
         cfg: Config object.
+        types: Types to ask for; None means every configured type.
 
     Returns:
         List of message dicts: [system, user] (no assistant).
     """
-    entity_type_list = build_entity_type_list(cfg.entity_types)
+    scope = scope_types(cfg, types)
+    entity_type_list = build_entity_type_list(
+        {t: cfg.entity_types[t] for t in scope}, cfg.prompt.describe_types)
 
     user_content = cfg.prompt.user_template.format(
         entity_types=entity_type_list,

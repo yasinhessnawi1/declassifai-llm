@@ -1,7 +1,13 @@
 """Dataset processor: converts raw JSONL to chat fine-tuning format.
 
-Reads the Gemini-labeled combined_data.jsonl and produces train/val/test
-splits in chat message format, ready for the Hugging Face Trainer.
+Two modes:
+
+* **prebuilt** (`dataset.prebuilt_dir` set) -- reads the train/val/test files that
+  `tools/build_training_set.py` wrote. The split is already fixed (gold is test and
+  only test, enforced there by text digest), and each record carries its annotation
+  scope in `types`, which becomes that example's prompt. This is the v2 path.
+* **legacy** -- reads `dataset.source` and splits it at random. Kept for old configs;
+  it cannot keep a gold set out of training.
 """
 
 import json
@@ -101,6 +107,63 @@ def split_dataset(data: list, cfg: Config) -> tuple:
     return train, val, test
 
 
+def load_prebuilt_split(path: Path) -> list:
+    """Read one split written by tools/build_training_set.py."""
+    if not path.exists():
+        raise FileNotFoundError(
+            f"Prebuilt split not found: {path}\n"
+            "Run 'python tools/build_training_set.py --out-dir <dir>' first."
+        )
+    with open(path, "r", encoding="utf-8") as f:
+        return [json.loads(line) for line in f if line.strip()]
+
+
+def to_chat(records: list, cfg: Config) -> list:
+    """Convert prebuilt records to chat format, keeping what evaluation needs.
+
+    The raw text, the expected output and the scope ride along with the messages so
+    the evaluator never has to recover them by parsing the prompt.
+    """
+    out = []
+    for r in records:
+        messages = build_chat_messages(r["text_input"], r["output"], cfg, r.get("types"))
+        out.append({"messages": messages, "text_input": r["text_input"],
+                    "output": r["output"], "types": r.get("types"),
+                    "source": r.get("source")})
+    return out
+
+
+def process_prebuilt(cfg: Config):
+    """Prepare chat-format splits from tools/build_training_set.py output."""
+    base = resolve_path(cfg, cfg.dataset.prebuilt_dir)
+    splits = {name: load_prebuilt_split(base / f"{name}.jsonl") for name in ("train", "val", "test")}
+
+    factor = max(1, cfg.dataset.upsample_annotated)
+    train = splits["train"]
+    if factor > 1:
+        annotated = [r for r in train if r.get("source") != "corpus"]
+        train = train + annotated * (factor - 1)
+        random.Random(cfg.dataset.seed).shuffle(train)
+    if cfg.dataset.max_samples:
+        train = train[: cfg.dataset.max_samples]
+
+    chat = {"train": to_chat(train, cfg), "val": to_chat(splits["val"], cfg),
+            "test": to_chat(splits["test"], cfg)}
+    save_jsonl(chat["train"], resolve_path(cfg, cfg.dataset.train_file))
+    save_jsonl(chat["val"], resolve_path(cfg, cfg.dataset.val_file))
+    save_jsonl(chat["test"], resolve_path(cfg, cfg.dataset.test_file))
+
+    n_annot = sum(1 for r in train if r.get("source") != "corpus")
+    print(f"\nDataset Processing Complete (prebuilt: {cfg.dataset.prebuilt_dir})")
+    print(f"  Train: {len(train)} examples ({n_annot} fully annotated, upsampled x{factor})")
+    print(f"  Val:   {len(splits['val'])}   Test: {len(splits['test'])} (gold only)")
+    print(f"  Entity types configured: {len(cfg.entity_types)}")
+    if chat["train"]:
+        sample = chat["train"][0]["messages"]
+        print(f"\n  Sample user prompt head: {sample[1]['content'][:160]!r}")
+        print(f"  Sample target head:      {sample[2]['content'][:160]!r}")
+
+
 def save_jsonl(data: list, path: Path):
     """Save list of dicts as JSONL file."""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -117,6 +180,8 @@ def process_dataset(cfg: Config, config_path: Optional[str] = None):
         cfg: Config object.
         config_path: Optional path override (unused, kept for CLI compat).
     """
+    if cfg.dataset.prebuilt_dir:
+        return process_prebuilt(cfg)
     logger.info("Loading raw dataset from %s", cfg.dataset.source)
     raw_data = load_raw_dataset(cfg)
 

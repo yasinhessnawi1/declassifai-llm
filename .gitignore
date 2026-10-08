@@ -8,6 +8,7 @@ models/
 
 # Processed data
 data/processed/
+data/processed_v2/
 
 # Evaluation results
 evaluation/

@@ -82,6 +82,33 @@ def repair(span: str, text: str) -> Optional[str]:
     return match.group(0) if match else None
 
 
+def conform(etype: str, spans: List[str], stats: collections.Counter) -> List[str]:
+    """Bring corpus spans to the spec's boundaries where a rule settles it mechanically.
+
+    * POSTAL_CODE is exactly 4 digits. Gemini often took the `Poststed:` value whole
+      (`5055 Bergen`, 3,863 spans); the 4-digit prefix is the spec's span. Anything that
+      is not 4 digits at all (`00-123`) is dropped.
+    * ADDRESS needs a street. A bare `NNNN City` is a Poststed value, which the spec
+      excludes from ADDRESS (5,769 spans); it is dropped.
+    """
+    if etype == "POSTAL_CODE":
+        out = []
+        for s in spans:
+            m = re.match(r"(\d{4})(?:\s+\S.*)?$", s)
+            if not m:
+                stats["spans_dropped_postal_not_4_digits"] += 1
+            else:
+                if m.group(1) != s:
+                    stats["spans_trimmed_postal_to_4_digits"] += 1
+                out.append(m.group(1))
+        return out
+    if etype == "ADDRESS":
+        kept = [s for s in spans if not re.fullmatch(r"\d{4}\s+[^\d,]+", s)]
+        stats["spans_dropped_address_without_street"] += len(spans) - len(kept)
+        return kept
+    return spans
+
+
 def collapse(spans: Set[str]) -> List[str]:
     """Drop spans wholly contained in a longer span of the same type.
 
@@ -158,7 +185,7 @@ def clean(path: str, types: Optional[Set[str]] = None) -> tuple:
             if types is not None and t not in types:
                 stats["spans_dropped_unreliable_type"] += len(spans)
             else:
-                kept[t] = spans
+                kept[t] = conform(t, spans, stats)
         output = {t: collapse(set(s)) for t, s in kept.items() if s}
         before = sum(len(s) for s in kept.values())
         stats["spans_dropped_nested_duplicate"] += before - sum(
@@ -204,6 +231,8 @@ def main() -> None:
         "spans_dropped_non_verbatim", "spans_dropped_empty",
         "spans_dropped_nested_duplicate", "spans_repaired_case_or_space",
         "spans_dropped_no_v2_home", "spans_dropped_unresolved",
+        "spans_trimmed_postal_to_4_digits", "spans_dropped_postal_not_4_digits",
+        "spans_dropped_address_without_street",
     ):
         if stats[reason]:
             print(f"  {reason[14:]:24}: {stats[reason]:,}")
