@@ -1,0 +1,93 @@
+X0001	LOCATION	Oslo
+X0001	ANIMAL_INFO	To katter
+X0001	ANIMAL_INFO	korthåret huskatt
+X0001	ANIMAL_INFO	langhåret perser
+X0002	LOCATION	Vestland
+X0002	LOCATION	Bergen
+X0002	ANIMAL_INFO	flere kaniner
+X0003	LOCATION	Trøndelag
+X0003	LOCATION	Trondheim
+X0003	ANIMAL_INFO	flere hunder
+X0004	LOCATION	Viken
+X0004	LOCATION	Hole
+X0004	LOCATION	Røyse
+X0004	ANIMAL_INFO	gruppe på minst fem jakthunder
+X0004	ANIMAL_INFO	minst to gråhunder
+X0005	LOCATION	Viken
+X0005	LOCATION	Bærum
+X0005	LOCATION	Jar
+X0005	ANIMAL_INFO	Tre hunder
+X0005	ANIMAL_INFO	labrador
+X0005	ANIMAL_INFO	schäfer
+X0006	LOCATION	Vestfold og Telemark
+X0006	LOCATION	Sandefjord
+X0006	ANIMAL_INFO	elefantene (2)
+X0006	ANIMAL_INFO	tigrene (3)
+X0006	ANIMAL_INFO	hestene (4)
+X0007	LOCATION	Innlandet
+X0007	LOCATION	Ringsaker
+X0007	LOCATION	Nes
+X0007	ANIMAL_INFO	kyrne
+X0007	ANIMAL_INFO	minst fem kyr
+X0007	ANIMAL_INFO	melkekyr
+X0008	LOCATION	Viken
+X0008	LOCATION	Asker
+X0008	ANIMAL_INFO	tre hester
+X0008	ANIMAL_INFO	fjordhest hoppe
+X0008	ANIMAL_INFO	Frida
+X0008	ANIMAL_INFO	islandshest vallak
+X0008	ANIMAL_INFO	Snorre
+X0008	ANIMAL_INFO	norsk varmblod hoppe
+X0008	ANIMAL_INFO	Luna
+X0009	LOCATION	Viken
+X0009	LOCATION	Bærum
+X0009	LOCATION	Fornebu
+X0009	ANIMAL_INFO	Staffordshire Bull Terrier
+X0009	ANIMAL_INFO	hannhund
+X0009	ANIMAL_INFO	Rocky
+X0010	LOCATION	Vestland
+X0010	LOCATION	Bergen
+X0010	ANIMAL_INFO	ung, mellomstor hund
+X0011	LOCATION	Vestland
+X0011	LOCATION	Bergen
+X0011	ANIMAL_INFO	eldre hunnkatt
+X0011	AGE	15 år gammel
+X0011	ANIMAL_INFO	to undulater
+X0011	DISABILITY	begrenset mobilitet
+X0012	LOCATION	Mjøndalen
+X0012	RELIGIOUS_BELIEF	foreldrenes religiøse overbevisning, som tilhører en fundamentalistisk kristen sekt
+X0012	IMMIGRATION_STATUS	oppholder seg ulovlig i landet etter å ha mistet sitt oppholdstillatelse
+X0013	LOCATION	Oslo
+X0013	ANIMAL_INFO	to hunder
+X0013	ANIMAL_INFO	Jack Russel terrier
+X0013	ANIMAL_INFO	Golden Retriever
+X0014	LOCATION	Vestland
+X0014	LOCATION	Alver
+X0014	LOCATION	Isdalstø
+X0014	ANIMAL_INFO	hund
+X0015	LOCATION	Oslo
+X0015	ANIMAL_INFO	liten hund
+X0016	LOCATION	Viken
+X0016	LOCATION	Bærum
+X0016	LOCATION	Lommedalen
+X0016	ANIMAL_INFO	hund
+X0016	ANIMAL_INFO	blandingshund av rasen Border Collie og Schæfer
+X0017	LOCATION	Viken
+X0017	LOCATION	Halden
+X0017	ANIMAL_INFO	syv katter
+X0017	ANIMAL_INFO	tre hunder
+X0017	ANIMAL_INFO	eldre schæferhund
+X0018	LOCATION	Trøndelag
+X0018	LOCATION	Trondheim
+X0018	ANIMAL_INFO	Griser
+X0018	ANIMAL_INFO	anslagsvis 20-25 stykker
+X0019	LOCATION	Oslo
+X0019	ANIMAL_INFO	mellomstor, brun hund
+X0003	ANIMAL_INFO	haner
+X0004	ANIMAL_INFO	beagle
+X0010	ANIMAL_INFO	blandingsrase
+X0010	ANIMAL_INFO	border collie
+X0014	ANIMAL_INFO	schäfer
+X0015	ANIMAL_INFO	Chihuahua
+X0019	ANIMAL_INFO	blandingshund
+X0019	ANIMAL_INFO	labrador

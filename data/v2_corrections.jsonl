@@ -37,3 +37,4 @@
 {"id": "R009", "type": "HEALTH", "old": "begrenset mobilitet", "new": null, "why": "a named person's functional limitation is DISABILITY, which wins over HEALTH"}
 {"id": "B001", "type": "FINANCIAL", "old": "L7890123", "new": null, "why": "the span is the loan-account number itself: BANK_ACCOUNT wins"}
 {"id": "C002", "type": "HEALTH", "old": "ufør", "new": null, "why": "a named person's disability: DISABILITY wins over HEALTH"}
+{"id": "X0011", "type": "HEALTH", "old": "begrenset mobilitet", "new": null, "why": "a named person's functional limitation is DISABILITY, which wins over HEALTH"}
