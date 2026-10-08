@@ -396,6 +396,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("path", help="JSONL dataset to validate")
     parser.add_argument("--config", help="config.yaml to read entity_types from")
+    parser.add_argument("--taxonomy", help="taxonomy.json to read the v2 type names from")
     parser.add_argument("--fix", metavar="OUT", help="write a repaired copy here")
     parser.add_argument(
         "--all-types", action="store_true",
@@ -403,7 +404,11 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    types = ALL_TYPES if args.all_types else load_types(args.config)
+    if args.taxonomy:
+        with open(args.taxonomy, encoding="utf-8") as fh:
+            types = [t["name"] for t in json.load(fh)["types"]]
+    else:
+        types = ALL_TYPES if args.all_types else load_types(args.config)
     report = scan(args.path, types)
     _print_report(report, types)
 
