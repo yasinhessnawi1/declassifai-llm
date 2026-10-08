@@ -55,8 +55,14 @@ UNRESOLVED = "UNRESOLVED"
 
 
 def _context(text: str, span: str, width: int = 60) -> str:
-    """Return the text immediately before the first occurrence of `span`."""
-    i = text.find(span)
+    """Return the text immediately before the first standalone occurrence of `span`.
+
+    "Standalone" means not glued to a letter or digit on either side, so `987654`
+    resolves to `(lisensnummer 987654)` rather than to the inside of
+    `Org.nr: 987654321`. Falls back to the first occurrence of any kind.
+    """
+    m = re.search(r"(?<![0-9A-Za-zÆØÅæøå])" + re.escape(span) + r"(?![0-9A-Za-zÆØÅæøå])", text)
+    i = m.start() if m else text.find(span)
     return text[max(0, i - width):i] if i >= 0 else ""
 
 
