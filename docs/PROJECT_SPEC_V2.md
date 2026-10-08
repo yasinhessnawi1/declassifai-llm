@@ -42,22 +42,27 @@ generating them, which is the strongest argument for this whole effort.
 
 ---
 
-## 2. The taxonomy — 57 types in three tiers
+## 2. The taxonomy — 59 types in three tiers
 
 > **Revised 2026-10-08.** The owner dropped `CONTEXT_SENSITIVE` and `IDENTIFIABLE_IMAGE`,
 > which ANNOTATION_SPEC.md had already cut with documented reasoning, so the taxonomy is
 > 57 types, not 59. `RELIGIOUS_BELIEF` has since been added to ANNOTATION_SPEC.md as its
-> 17th type (commit aef6e15), so it is no longer new. Counts below reflect both changes.
+> 17th type (commit aef6e15), so it is no longer new. Later the same day the owner added
+> `FIREARMS_LICENSE` and `VESSEL_REGISTRATION` (Tier A; commit ba8c977): real
+> identifiers found in gold and the slice (våpenkortnummer, fiskefartøy reg.nr.) that had
+> no v2 type, and which LICENSE_PLATE, being for road vehicles, must not absorb. The
+> taxonomy is therefore 59 types again, a different 59. "In spec?" below means "in the
+> 17-type annotation spec"; the v2 ANNOTATION_SPEC.md (27ddd2e) now covers all 59.
 
 The product's entity list carries 116 tiered entries (`_F` / `_A` / `_S` suffixes plus a
 lowercase set). Collapsing the tier suffixes gives 78 stems; merging synonyms across tiers
 (`NO_PHONE_NUMBER`/`PHONE`, `GOV_ID`/`NATIONAL_ID`/`NO_FODSELSNUMMER`, `VEHICLE_REG`/
-`LICENSE_PLATE`, and so on) gave 59 distinct concepts; with the two types above dropped, **57**: 17 already in the
-annotation spec, **40 new**.
+`LICENSE_PLATE`, and so on) gave 59 distinct concepts; with two dropped and two added as above, **59**: 17 already in
+the 17-type annotation spec, **42 new**.
 
-Do not train one flat 57-way model. Split by how the type is actually decided:
+Do not train one flat 59-way model. Split by how the type is actually decided:
 
-- **Tier A — mechanical (28 types).** Decided by surface form and a field label. A regex or
+- **Tier A — mechanical (30 types).** Decided by surface form and a field label. A regex or
   a checksum settles them; Presidio already does most. A model adds nothing and each extra
   class costs the judgement types capacity. Generate them, validate them, but resolve them
   deterministically at inference.
@@ -79,6 +84,7 @@ Do not train one flat 57-way model. Split by how the type is actually decided:
 | `DRIVER_LICENSE` | A | **NEW** |  |
 | `EMAIL` | A | yes |  |
 | `FAX_NUMBER` | A | **NEW** |  |
+| `FIREARMS_LICENSE` | A | **NEW** |  |
 | `IBAN` | A | **NEW** |  |
 | `IDENTITY_CARD` | A | **NEW** |  |
 | `INSURANCE_NUMBER` | A | **NEW** |  |
@@ -97,6 +103,7 @@ Do not train one flat 57-way model. Split by how the type is actually decided:
 | `TAX_ID` | A | **NEW** |  |
 | `URL` | A | **NEW** |  |
 | `USERNAME` | A | **NEW** |  |
+| `VESSEL_REGISTRATION` | A | **NEW** |  |
 | `VISA_NUMBER` | A | **NEW** |  |
 | `ACADEMIC_RECORD` | B | **NEW** |  |
 | `ADDRESS` | B | yes |  |
@@ -128,7 +135,7 @@ Do not train one flat 57-way model. Split by how the type is actually decided:
 | `SEXUAL_ORIENTATION` | C | yes | **Art. 9** — sex life / sexual orientation |
 | `TRADE_UNION` | C | **NEW** | **Art. 9** — trade union membership |
 
-**Totals: 57 types — Tier A 28, Tier B 13, Tier C 16. 40 new. 10 are Article 9 categories.**
+**Totals: 59 types — Tier A 30, Tier B 13, Tier C 16. 42 new. 10 are Article 9 categories.**
 
 Note `CRIMINAL` is **Article 10** (criminal convictions and offences), not Article 9. The
 research proposal conflates the two; keep them distinct in any writing.

@@ -303,7 +303,7 @@ _VALUE_KIND_TYPES = {
     "INSURANCE_NUMBER", "TAX_ID", "STUDENT_ID", "DEVICE_ID", "CRYPTO",
     "PASSWORD", "LICENSE_PLATE", "POSTAL_CODE", "ADDRESS", "AGE", "GENDER",
     "MARITAL_STATUS", "NATIONALITY", "LOCATION", "ORGANIZATION", "DATE_TIME",
-    "ANIMAL_INFO",
+    "ANIMAL_INFO", "FIREARMS_LICENSE", "VESSEL_REGISTRATION",
 }
 
 def _generate_value_kind(
@@ -396,6 +396,10 @@ def _generate_value_kind(
         return ident.password_value(rng), None
     if etype == "LICENSE_PLATE":
         return ident.vehicle_reg(rng), None
+    if etype == "FIREARMS_LICENSE":
+        return ident.firearms_license_number(rng), None
+    if etype == "VESSEL_REGISTRATION":
+        return ident.vessel_registration_mark(rng), None
     if etype == "POSTAL_CODE":
         postal, _place = rng.choice(data.POSTAL_PAIRS)
         return postal, None
@@ -869,6 +873,9 @@ def sample_record(
     foreign = rng.random() < spec.get("foreign_subject_p", 0.0)
     foreign = foreign or bool(set(plan.forced_types) & genres_mod.FOREIGN_SUBJECT_TYPES)
     minor = rng.random() < spec.get("minor_subject_p", 0.0)
+    # A scheduled firearms licence outranks the genre's chance of a child subject:
+    # dropping the forced type would only cost the batch its coverage of it.
+    minor = minor and not set(plan.forced_types) & genres_mod.ADULT_ONLY_TYPES
     nationality = "norsk"
     if foreign:
         compatible = _nationalities_hosting(
@@ -914,6 +921,8 @@ def sample_record(
         return any(_clause_fits(e, subject) for e in clause_bank.get(etype, []))
 
     def _value_fits(etype: str) -> bool:
+        if etype in genres_mod.ADULT_ONLY_TYPES and person.age() < 18:
+            return False
         return not (etype == "VISA_NUMBER" and not subject.foreign)
 
     special_used = [t for t in spec["core"] if t in genres_mod.SPECIAL_CATEGORIES]
@@ -1122,11 +1131,20 @@ def sample_record(
         except KeyError:
             continue
         hint = None
+        field = label(etype)
         if etype == "MEDICAL_LICENSE" and signatory:
             hint = f"HPR-nummeret til {signatory.full_name}"
         elif etype == "ORG_NUMBER" and employer:
             hint = f"organisasjonsnummeret til {employer}"
-        planned.append(PlannedValue(etype, tier(etype), "value", value, None, label(etype),
+        elif etype == "FIREARMS_LICENSE":
+            field = genres_mod.field_label_variant(rng, etype, form)
+            hint = (f"hovedpersonens våpenkort- eller lisensnummer for {ident.firearm_description(rng, form)}; "
+                    "våpenet kan beskrives i teksten, men beskrivelsen er ikke en del av nummeret")
+        elif etype == "VESSEL_REGISTRATION":
+            field = genres_mod.field_label_variant(rng, etype, form)
+            hint = (f"registreringsmerket til {ident.vessel_description(rng, form)}, som hovedpersonen eier; "
+                    "fartøyets navn kan nevnes i teksten, men er ikke en del av merket")
+        planned.append(PlannedValue(etype, tier(etype), "value", value, None, field,
                                     checksum_valid, hint=hint))
 
     if "MARITAL_STATUS" in chosen and not any(pv.type == "MARITAL_STATUS" for pv in planned):
@@ -1379,6 +1397,14 @@ def build_prompt(record: Record, rng: Optional[random.Random] = None) -> str:
         if etype in planned_types:
             rules.append(f"Verdien oppgitt som {word} skal alltid omtales som {word} og aldri som "
                          "saksnummer, referanse eller noe annet nummer.")
+    if "FIREARMS_LICENSE" in planned_types:
+        rules.append("Nummeret oppgitt for våpenet (våpenkortnummer, lisensnummer eller registreringsnummer "
+                     "i våpenregisteret) skal stå alene som nummer, med våpenet beskrevet utenfor nummeret, "
+                     "og omtales aldri som saksnummer, referanse eller bilens registreringsnummer.")
+    if "VESSEL_REGISTRATION" in planned_types:
+        rules.append("Registreringsmerket oppgitt for fiskefartøyet skal stå alene, med fartøyets navn "
+                     "utenfor merket, og omtales aldri som saksnummer, referanse eller bilens "
+                     "registreringsnummer.")
     if marked:
         rules.append("For markerte setninger: skriv ⟦TYPE: setning⟧ nøyaktig én gang per type, "
                      "uten andre ⟦ ⟧ tegn i teksten for øvrig.")
@@ -1570,11 +1596,25 @@ _TIER_A_VALIDATORS = {
     "DEVICE_ID": ident.is_valid_luhn,
 }
 
+# Identifiers with no checksum but a closed set of generated shapes. The record
+# declares them valid, so G4 fails a value that no longer matches any shape
+# (a mangled planned string) the way it fails a broken check digit.
+_TIER_A_FORMAT_VALIDATORS = {
+    "FIREARMS_LICENSE": ident.is_valid_firearms_license,
+    "VESSEL_REGISTRATION": ident.is_valid_vessel_registration,
+}
+
 
 def build_tier_a_findings(record: Record) -> List[dict]:
     """Build G4 findings: declared vs. actual checksum validity for Tier A values."""
     findings = []
     for pv in record.planned:
+        if pv.tier == "A" and pv.type in _TIER_A_FORMAT_VALIDATORS:
+            findings.append({
+                "type": pv.type, "value": pv.value, "declared_valid": True,
+                "actual_valid": _TIER_A_FORMAT_VALIDATORS[pv.type](pv.value),
+            })
+            continue
         if pv.tier != "A" or pv.checksum_valid is None:
             continue
         validator = _TIER_A_VALIDATORS.get(pv.type)

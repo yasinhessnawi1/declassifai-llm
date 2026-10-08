@@ -92,6 +92,12 @@ CASES: Dict[int, Tuple[str, Optional[str]]] = {
     32: ("negative_elaboration", None),
     33: ("wrong_role", "G14_roles"),
     34: ("unplanned_reference", "G14_roles"),
+    35: ("firearms_valid", None),
+    36: ("firearms_invented", "G7_unplanned_pii"),
+    37: ("vessel_valid", None),
+    38: ("vessel_invented", "G7_unplanned_pii"),
+    39: ("firearms_as_case_number", "G14_roles"),
+    40: ("vessel_as_firearms", "G14_roles"),
 }
 
 # Cases that plan hard negatives, as the benchmark does. They need a plan with
@@ -109,7 +115,13 @@ _GENRE_FOR = {
     25: "gp_referral", 26: "nav_decision", 27: "nav_decision", 28: "nav_decision",
     29: "nav_decision", 30: "police_report", 31: "police_report", 32: "police_report",
     33: "nav_decision", 34: "nav_decision",
+    35: "police_report", 36: "police_report", 37: "mattilsynet_inspection",
+    38: "mattilsynet_inspection", 39: "police_report", 40: "mattilsynet_inspection",
 }
+
+# Types a case forces into its record so the injection has a planned value to work on.
+_FORCED_FOR = {35: ["FIREARMS_LICENSE"], 36: ["FIREARMS_LICENSE"], 37: ["VESSEL_REGISTRATION"],
+               38: ["VESSEL_REGISTRATION"], 39: ["FIREARMS_LICENSE"], 40: ["VESSEL_REGISTRATION"]}
 _DEFAULT_GENRES = ["gp_referral", "police_report", "nav_decision", "dismissal_letter",
                    "udi_decision"]
 
@@ -208,6 +220,21 @@ class InjectingMock(MockBackend):
             return text + f" Saksnummeret er {fnr}.", True
         if name == "unplanned_reference":
             return text + " Vår ref: 2024/05891.", True
+        if name == "firearms_invented":
+            return text + " Naboen har også våpenkortnummer HG987654.", True
+        if name == "vessel_invented":
+            planned = {line.split("|", 2)[2] for line in _manifest(prompt).splitlines()
+                       if line.startswith("VALUE|VESSEL_REGISTRATION|")}
+            other = next(v for v in ("ST-9917", "M-318-GR", "SF-6021") if v not in planned)
+            return text + f" Båten til broren hans har reg.nr. {other}.", True
+        if name == "firearms_as_case_number":
+            value = next(line.split("|", 2)[2] for line in _manifest(prompt).splitlines()
+                         if line.startswith("VALUE|FIREARMS_LICENSE|"))
+            return text + f" Saksnummeret er {value}.", True
+        if name == "vessel_as_firearms":
+            value = next(line.split("|", 2)[2] for line in _manifest(prompt).splitlines()
+                         if line.startswith("VALUE|VESSEL_REGISTRATION|"))
+            return text + f" Våpenkortnummeret er {value}.", True
         if name == "negative_elaboration":
             negative = self.states[idx].record.planted_negatives[0].text
             return text + f" Det ble notert at vedkommende {negative} {MOCK_ELABORATION_CUE}.", True
@@ -260,7 +287,7 @@ def build_plans() -> List[gen.DocPlan]:
     for idx, (name, _expected) in sorted(CASES.items()):
         genre = _GENRE_FOR.get(idx, _DEFAULT_GENRES[idx % len(_DEFAULT_GENRES)])
         pii_free = name.startswith("pii_free")
-        forced = ["HEALTH"] if idx in (5, 6, 18, 21, 25) else []
+        forced = ["HEALTH"] if idx in (5, 6, 18, 21, 25) else list(_FORCED_FOR.get(idx, []))
         plans.append(gen.DocPlan(
             n_negatives=2 if idx in _NEGATIVE_CASES else 0,
             idx=idx, genre=genre, variant="prose_letter", form="nb",
@@ -355,6 +382,17 @@ def _check(state: gen.DocState) -> Tuple[bool, str]:
                 f"kept={kept} overruled={overruled} audit_repairs={state.audit_repairs_total}"
         return (base and state.audit_repairs_total == 1 and MOCK_ELABORATION_CUE not in result["text"]), \
             f"audit_repairs={state.audit_repairs_total} cue_removed={MOCK_ELABORATION_CUE not in result['text']}"
+    if name in ("firearms_valid", "vessel_valid"):
+        etype = "FIREARMS_LICENSE" if name == "firearms_valid" else "VESSEL_REGISTRATION"
+        planned = [pv.value for pv in state.record.planned if pv.type == etype]
+        output = result.get("output", {})
+        # The label is the planned value alone, under its own type and never under
+        # LICENSE_PLATE, and the mark is nowhere read as a road plate by the sweep.
+        labelled = bool(planned) and all(v in output.get(etype, []) for v in planned)
+        not_plate = not any(v in output.get("LICENSE_PLATE", []) for v in planned)
+        sweep_plate = not any(gates.TIER_A_PATTERNS["plate_like"].search(v) for v in planned)
+        return (accepted and failure is None and state.attempt == 1 and labelled and not_plate
+                and sweep_plate), f"planned={planned} labelled={labelled} not_plate={not_plate}"
     if name == "pii_free_invented_date":
         # The attempt count is not asserted here: every PII-free mock document
         # is a permutation of the same eight boilerplate sentences, so a retry
@@ -513,6 +551,132 @@ def spec_alignment_checks(clause_bank: dict) -> bool:
     return ok
 
 
+def registry_identifier_checks(clause_bank: dict, gold_v2_glob: str) -> bool:
+    """Check the FIREARMS_LICENSE and VESSEL_REGISTRATION generators, gates and age rule.
+
+    The three registry identifiers (road plate, firearms licence, vessel mark)
+    look alike, and ANNOTATION_SPEC B20 says the registered object decides, so
+    the generators must not hand the detector the shape as the answer.
+    """
+    import random
+    import gendoc_identifiers as ident
+    ok = True
+
+    def report(name: str, passed: bool, detail: str) -> None:
+        nonlocal ok
+        ok &= passed
+        print(f"{'PASS' if passed else 'FAIL'} unit {name:<34} {detail}")
+
+    rng = random.Random(11)
+    firearms = [ident.firearms_license_number(rng) for _ in range(4000)]
+    vessels = [ident.vessel_registration_mark(rng) for _ in range(4000)]
+    plates = [ident.vehicle_reg(rng) for _ in range(4000)]
+    crossed = (
+        [v for v in firearms if ident.PLATE_RE.fullmatch(v) or ident.VESSEL_RE.fullmatch(v)]
+        + [v for v in vessels if ident.PLATE_RE.fullmatch(v) or ident.FIREARMS_RE.fullmatch(v)]
+        + [v for v in plates if ident.FIREARMS_RE.fullmatch(v) or ident.VESSEL_RE.fullmatch(v)])
+    report("registry_shapes_disjoint", not crossed and len(set(firearms)) > 1000 and len(set(vessels)) > 1000,
+           f"firearms={len(set(firearms))} vessels={len(set(vessels))} crossed={crossed[:3]} "
+           f"samples={firearms[:3]} {vessels[:3]}")
+    report("g4_format_check", all(ident.is_valid_firearms_license(v) for v in firearms)
+           and all(ident.is_valid_vessel_registration(v) for v in vessels)
+           and not ident.is_valid_firearms_license("DK 45778") and not ident.is_valid_vessel_registration("DK 45778")
+           and not ident.is_valid_vessel_registration("HG123456") and not ident.is_valid_firearms_license("N-123-BØ"),
+           "generated shapes accepted, plate/vessel/firearm cross-shapes rejected")
+
+    record = gen.Record(0, "mattilsynet_inspection", "prose_letter", "nb", (800, 1600), None, [], [
+        gen.PlannedValue("FIREARMS_LICENSE", "A", "value", "HG123456", None, "Våpenkortnummer", True),
+        gen.PlannedValue("VESSEL_REGISTRATION", "A", "value", "N-123-BØ", None, "Registreringsmerke", True),
+        gen.PlannedValue("VESSEL_REGISTRATION", "A", "value", "DK 45778", None, "Registreringsmerke", True)])
+    findings = gen.build_tier_a_findings(record)
+    report("g4_flags_malformed_value", [f["actual_valid"] for f in findings] == [True, True, False]
+           and not gates.gate_identifier_checksums(findings)[0]
+           and gates.gate_identifier_checksums(findings[:2])[0], f"findings={findings}")
+
+    covered = ["HG123456", "ST-476"]
+    planned_text = "Han har våpenkortnummer HG123456. Fiskebåten «Havbris» (registrert som ST-476) ligger i Bodø."
+    invented_text = ("Han har våpenkortnummer HG987654 og lisensnummer: 2018-475963. Fiskefartøy "
+                     "«Nordlys» (reg.nr. N-123-BØ), (reg.nr. SF-4278) og (reg.nr. N54321).")
+    plate_text = ("Bilen med registreringsnummer DK 45778 og reg.nr. BT 12345, Registreringsnummer: OS78945. "
+                  "Sak 2019/5678, 9008 Tromsø, saksnummer 24-123456. Våpenkort fra 2018.")
+    covered_ok = gates.sweep_tier_a(planned_text, gates._covered_intervals(planned_text, covered), set())
+    invented = gates.sweep_tier_a(invented_text, [], set())
+    plate_hits = [f for f in gates.sweep_tier_a(plate_text, gates._covered_intervals(
+        plate_text, ["DK 45778", "BT 12345", "OS78945", "9008"]), {"Tromsø"})]
+    report("g7_registry_patterns", not covered_ok and len(invented) == 5
+           and {f["pattern"] for f in invented} >= {"firearms_like", "vessel_like"} and not plate_hits,
+           f"planned_covered={not covered_ok} invented={[f['match'] for f in invented]} plate_text_hits={plate_hits}")
+
+    def roles(value_type: str, text: str, value: str) -> bool:
+        return gates.gate_identifier_roles(text, [(value_type, value)], [value])[0]
+    report("g14_registry_roles",
+           roles("FIREARMS_LICENSE", "Våpenkortnummer HG123456.", "HG123456")
+           and roles("FIREARMS_LICENSE", "Registreringsnummer: AB1234 på rifla.", "AB1234")
+           and roles("VESSEL_REGISTRATION", "Fartøyet (reg.nr. SF-4278)", "SF-4278")
+           and roles("LICENSE_PLATE", "Bilen, registreringsnummer DK 45778", "DK 45778")
+           and not roles("FIREARMS_LICENSE", "Saksnummer HG123456.", "HG123456")
+           and not roles("VESSEL_REGISTRATION", "Sak: SF-4278", "SF-4278")
+           and not roles("CASE_NUMBER", "Våpenkortnummer 2019/5678", "2019/5678")
+           and not roles("CASE_NUMBER", "Fiskefartøyets reg.nr. 2019/5678", "2019/5678")
+           and not roles("VESSEL_REGISTRATION", "Våpenkortnummeret er SF-4278", "SF-4278"),
+           "own and generic labels pass; case number, firearms and vessel labels crossed are rejected")
+
+    gold_files = sorted(glob.glob(gold_v2_glob))
+    if gold_files:
+        gold = _load_jsonl(gold_files)
+        hits = false_positives = 0
+        for doc in gold:
+            spans = [sp for vals in doc["output"].values() for sp in vals]
+            intervals = gates._covered_intervals(doc["text_input"], spans)
+            for pattern in gates.LABELLED_TIER_A_PATTERNS.values():
+                for m in pattern.finditer(doc["text_input"]):
+                    hits += 1
+                    value = m.group(1)
+                    if (value not in doc["output"].get("FIREARMS_LICENSE", [])
+                            and value not in doc["output"].get("VESSEL_REGISTRATION", [])
+                            or not gates._is_covered(m.start(1), m.end(1), intervals)):
+                        false_positives += 1
+        report("g7_registry_gold_false_positives", false_positives == 0,
+               f"{len(gold)} gold_v2 documents, {hits} labelled-pattern hits, "
+               f"{false_positives} not on a FIREARMS_LICENSE/VESSEL_REGISTRATION span")
+
+    taxonomy_index = data.taxonomy_index(data.load_taxonomy("data/synthetic/taxonomy.json"))
+    bank = {t: v for t, v in clause_bank.items() if t != "negatives"}
+    minor_spec = gen.genres_mod.GENRES["police_report"]
+    saved = minor_spec.get("minor_subject_p")
+    minor_spec["minor_subject_p"] = 1.0
+    try:
+        adult_forced = []
+        for seed in range(40):
+            plan = gen.DocPlan(idx=0, genre="police_report", variant="prose_letter", form="nb",
+                               length_band=(1600, 2800), forced_types=["FIREARMS_LICENSE"],
+                               profile="typical", type_target=8, art9_cap=1)
+            rec = gen.sample_record(random.Random(seed), seed, plan, "seeded", taxonomy_index, bank,
+                                    set(data.PUBLIC_FIGURES))
+            adult_forced.append((rec.person.age() >= 18, any(pv.type == "FIREARMS_LICENSE" for pv in rec.planned)))
+        child_dropped = []
+        for seed in range(40):
+            plan = gen.DocPlan(idx=0, genre="school_incident", variant="prose_letter", form="nb",
+                               length_band=(1600, 2800), forced_types=["FIREARMS_LICENSE"],
+                               profile="typical", type_target=8, art9_cap=1)
+            rec = gen.sample_record(random.Random(seed), seed, plan, "seeded", taxonomy_index, bank,
+                                    set(data.PUBLIC_FIGURES))
+            # The youth profile runs to 18, so the subject is sometimes of age; the
+            # rule is that the type is planned exactly when the subject is an adult.
+            planned_here = any(pv.type == "FIREARMS_LICENSE" for pv in rec.planned)
+            child_dropped.append((rec.person.age() < 18, planned_here == (rec.person.age() >= 18)))
+    finally:
+        minor_spec["minor_subject_p"] = saved if saved is not None else 0.0
+        if saved is None:
+            del minor_spec["minor_subject_p"]
+    minors = [c for c in child_dropped if c[0]]
+    report("firearms_blocked_for_minor",
+           all(a and b for a, b in adult_forced) and len(minors) >= 10 and all(c[1] for c in child_dropped),
+           f"minor-prone genre keeps the subject adult and plans it in {sum(a and b for a, b in adult_forced)}/40; "
+           f"{len(minors)} minor subjects in a youth genre, type planned for {sum(1 for c in minors if not c[1])} of them")
+    return ok
+
+
 def unit_checks(clause_bank: dict, partition: dict, gold_glob: str, pilot_dir: str) -> bool:
     """Run the checks that need no generation. Returns True when all pass."""
     ok = True
@@ -611,6 +775,7 @@ def main() -> int:
                         help="print the gold and pilot_v3 measurements G13's thresholds came from, "
                              "then exit")
     parser.add_argument("--gold-glob", default="data/gold/batch_*_gold.jsonl")
+    parser.add_argument("--gold-v2-glob", default="data/gold_v2/batch_*_gold.jsonl")
     parser.add_argument("--pilot-dir", default="data/synthetic/pilot_v3")
     parser.add_argument("--partition", default=dataset_mod.PARTITION_PATH)
     args = parser.parse_args()
@@ -666,6 +831,7 @@ def main() -> int:
     print(f"run stats: {stats}")
 
     all_passed &= unit_checks(clause_bank, partition, args.gold_glob, args.pilot_dir)
+    all_passed &= registry_identifier_checks(clause_bank, args.gold_v2_glob)
 
     similarity = gates.jaccard(
         gates.word_ngrams(states[0].result.get("text", "")),

@@ -26,7 +26,13 @@ Section 5 asks for one policy stated rather than a mixture left implicit:
   sticker number, driver's licence number, HPR number, Forsvaret service
   number, insurance policy number, student number, MAC address, phone and fax
   number, vehicle registration, postal code, case number, IP address, URL,
-  username, social-media handle, password.
+  username, social-media handle, password, firearms licence number
+  (`våpenkortnummer`, `lisensnummer`) and fishing-vessel registration mark
+  (fylkesbokstaver + number + kommunebokstaver). The police and the
+  Fiskeridirektoratet publish no check digit for either, and the gold
+  examples show no single shape, so both are format realism only. G4 still
+  checks that a planned value matches one of the generated shapes, so a
+  value that was mangled on its way into the record is caught.
 * Format only by deliberate choice: bitcoin-style wallet addresses carry a
   base58check or bech32 checksum in reality, but a checksum-valid address is a
   spendable-looking address, and putting one in a published dataset is a
@@ -315,6 +321,118 @@ def vehicle_reg(rng: random.Random) -> str:
 
 
 PLATE_RE = re.compile(r"\b[A-Z]{2}\s?\d{5}\b")
+
+
+# -- firearms licence and fishing-vessel registration -------------------------------
+#
+# Three registers issue look-alike marks and `docs/ANNOTATION_SPEC.md` B20 says the
+# registered object decides the type, not the shape. The generators therefore keep
+# the three shape families apart so that a detector trained on the output cannot
+# learn the shape as the answer: a road plate is always two letters, a space and
+# five digits; a firearms number is never that shape (the spec's own example,
+# `HG12345`, is a card number *and* plate-shaped, which is exactly the ambiguity to
+# keep out of generated data); a vessel mark always has a hyphen or is one letter
+# plus five digits.
+
+_FIREARM_LETTERS = "HWVRJBKLMNPSTU"
+
+FIREARMS_RE = re.compile(
+    r"[A-Z]\d{6,7}|[A-Z]{2}\d{6}|[A-Z]{2}\d{4}|\d{6,7}"
+    r"|(?:19|20)\d{2}-\d{6}|[A-Z]{2}-(?:19|20)\d{2}-\d{4}"
+)
+
+_COUNTY_MARKS = ["F", "T", "N", "NT", "ST", "M", "SF", "H", "R", "VA", "AA", "TE"]
+_MUNICIPALITY_LETTERS = "ABDEFGHKLMNOPRSTVYØÅ"
+
+VESSEL_RE = re.compile(
+    r"[A-ZÆØÅ]{1,2}-\d{1,3}-[A-ZÆØÅ]{1,2}|[A-ZÆØÅ]{1,2}-\d{1,4}|[A-Z]\d{5}"
+)
+
+_WEAPONS = [
+    ("en jaktrifle", "ein jaktrifle"), ("et haglegevær", "eit haglegevær"),
+    ("en rifle", "ein rifle"), ("en hagle", "ei hagle"),
+    ("et elggevær", "eit elggevær"), ("en pistol til sportsskyting", "ein pistol til sportsskyting"),
+    ("en kombinasjonsrifle", "ein kombinasjonsrifle"), ("en rifle i kaliber .308", "ein rifle i kaliber .308"),
+]
+_VESSEL_NAMES = [
+    "Havbris", "Havets Dronning", "Nordlys", "Sjøstjerna", "Ragnhild", "Svanen",
+    "Kystbris", "Havørn", "Fiskaren", "Polarfangst", "Nordkapp", "Liv",
+    "Havets Drøm", "Ålesundsbuen", "Sjøfuglen", "Vikingen",
+]
+_VESSEL_TYPES = [("fiskefartøyet", "fiskefartøyet"), ("fiskebåten", "fiskebåten"),
+                 ("kystfiskefartøyet", "kystfiskefartøyet")]
+
+
+def firearms_license_number(rng: random.Random) -> str:
+    """Generate a firearms card (`våpenkort`) or weapon licence number.
+
+    The gold set prints these as a letter and six or seven digits (`W0987654`,
+    `H123456`), two letters and six digits (`WA123456`), a bare six or seven
+    digit number (`123456`), a year and six digits (`2018-475963`), a permit ID
+    (`HR-2024-4321`), and two letters with four digits for a register entry
+    (`AB1234`). The two-letters-and-five-digits shape is left out on purpose,
+    see the block comment above.
+    """
+    roll = rng.random()
+    letter = lambda: rng.choice(_FIREARM_LETTERS)  # noqa: E731
+    digits = lambda n: "".join(str(rng.randint(0, 9)) for _ in range(n))  # noqa: E731
+    if roll < 0.22:
+        return letter() + str(rng.randint(1, 9)) + digits(5)
+    if roll < 0.36:
+        return letter() + digits(7)
+    if roll < 0.50:
+        return letter() + letter() + str(rng.randint(1, 9)) + digits(5)
+    if roll < 0.58:
+        return letter() + letter() + str(rng.randint(1, 9)) + digits(3)
+    if roll < 0.78:
+        return str(rng.randint(1, 9)) + digits(5)
+    if roll < 0.88:
+        return str(rng.randint(1, 9)) + digits(6)
+    if roll < 0.96:
+        return f"{rng.randint(2005, 2025)}-{rng.randint(1, 9)}{digits(5)}"
+    return f"{letter()}{rng.choice('RSTK')}-{rng.randint(2015, 2025)}-{rng.randint(1000, 9999)}"
+
+
+def is_valid_firearms_license(value: str) -> bool:
+    """Return whether a value is one of the shapes `firearms_license_number` generates."""
+    return FIREARMS_RE.fullmatch(value) is not None and PLATE_RE.fullmatch(value) is None
+
+
+def vessel_registration_mark(rng: random.Random) -> str:
+    """Generate a Norwegian fishing-vessel registration mark.
+
+    The official form is the county letters, the vessel's number in the county
+    and the municipality letters, hyphen-separated (`N-123-BØ`, `M-45-A`). The
+    gold documents also carry the shorter county-and-number form (`SF-4278`,
+    `ST-476`) and a single letter with five digits (`N54321`), so all three are
+    generated, the official one most often.
+    """
+    roll = rng.random()
+    county = rng.choice(_COUNTY_MARKS)
+    if roll < 0.45:
+        width = 1 if rng.random() < 0.35 else 2
+        town = "".join(rng.choice(_MUNICIPALITY_LETTERS) for _ in range(width))
+        return f"{county}-{rng.randint(1, 999)}-{town}"
+    if roll < 0.90:
+        return f"{county}-{rng.randint(1, 9999)}"
+    return f"{rng.choice('FTNMHRS')}{rng.randint(10000, 99999)}"
+
+
+def is_valid_vessel_registration(value: str) -> bool:
+    """Return whether a value is one of the shapes `vessel_registration_mark` generates."""
+    return VESSEL_RE.fullmatch(value) is not None
+
+
+def firearm_description(rng: random.Random, form: str) -> str:
+    """Return a weapon description for the prompt to print around the number, never part of the span."""
+    nb, nn = rng.choice(_WEAPONS)
+    return nb if form == "nb" else nn
+
+
+def vessel_description(rng: random.Random, form: str) -> str:
+    """Return the vessel-type word and quoted name the prompt prints around the mark."""
+    nb, nn = rng.choice(_VESSEL_TYPES)
+    return f"{nb if form == 'nb' else nn} «{rng.choice(_VESSEL_NAMES)}»"
 
 
 # -- misc Tier A -------------------------------------------------------------------

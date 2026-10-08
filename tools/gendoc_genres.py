@@ -279,7 +279,8 @@ GENRES: Dict[str, dict] = {
                    "LOCATION": 0.8, "AGE": 0.6, "DEVICE_ID": 0.5, "GENDER": 0.6,
                    "DRIVER_LICENSE": 0.7, "PASSPORT": 0.4, "SOCIAL_MEDIA": 0.6,
                    "IP_ADDRESS": 0.4, "EMAIL": 0.5, "CREDIT_CARD": 0.3, "CRYPTO": 0.2,
-                   "DATE_OF_BIRTH": 0.4, "ORGANIZATION": 0.4, "USERNAME": 0.3},
+                   "DATE_OF_BIRTH": 0.4, "ORGANIZATION": 0.4, "USERNAME": 0.3,
+                   "FIREARMS_LICENSE": 0.5},
         "judgement": {"BEHAVIORAL_PATTERN": 3.0, "FAMILY_RELATION": 1.2, "EMPLOYMENT": 1.0,
                       "HEALTH": 1.0, "BIOMETRIC_DATA": 1.0, "ECONOMIC_STATUS": 0.7,
                       "FINANCIAL": 0.6, "POLITICAL": 0.4, "IMMIGRATION_STATUS": 0.8,
@@ -300,7 +301,8 @@ GENRES: Dict[str, dict] = {
         "values": {"ADDRESS": 1.4, "AGE": 0.6, "GENDER": 0.5, "LICENSE_PLATE": 0.7,
                    "PHONE": 0.6, "DRIVER_LICENSE": 0.6, "LOCATION": 0.6,
                    "DATE_OF_BIRTH": 0.5, "ORGANIZATION": 0.4, "FAX_NUMBER": 0.4,
-                   "PASSPORT": 0.3, "ORG_NUMBER": 0.3, "CREDIT_CARD": 0.3, "CRYPTO": 0.25},
+                   "PASSPORT": 0.3, "ORG_NUMBER": 0.3, "CREDIT_CARD": 0.3, "CRYPTO": 0.25,
+                   "FIREARMS_LICENSE": 0.4},
         "judgement": {"BEHAVIORAL_PATTERN": 2.0, "ECONOMIC_STATUS": 1.0, "HEALTH": 0.9,
                       "FAMILY_RELATION": 0.9, "EMPLOYMENT": 0.9, "FINANCIAL": 0.8,
                       "IMMIGRATION_STATUS": 0.6, "MEDICATION": 0.5, "AGE_INFO": 0.4,
@@ -321,7 +323,9 @@ GENRES: Dict[str, dict] = {
                    "ORGANIZATION": 0.8, "LOCATION": 0.7, "ORG_NUMBER": 0.5,
                    "LICENSE_PLATE": 0.5, "DRIVER_LICENSE": 0.4, "FAX_NUMBER": 0.4,
                    "DATE_OF_BIRTH": 0.4, "BANK_ACCOUNT": 0.3, "PHONE": 0.3, "CREDIT_CARD": 0.25,
-                   "CRYPTO": 0.2},
+                   "CRYPTO": 0.2,
+                   "FIREARMS_LICENSE": 0.3,
+                   "VESSEL_REGISTRATION": 0.3},
         "judgement": {"CRIMINAL": 2.4, "BEHAVIORAL_PATTERN": 1.6, "FINANCIAL": 1.2,
                       "ECONOMIC_STATUS": 1.0, "FAMILY_RELATION": 1.0, "EMPLOYMENT": 1.0,
                       "HEALTH": 0.8, "TRADE_UNION": 0.4, "AGE_INFO": 0.4,
@@ -340,7 +344,8 @@ GENRES: Dict[str, dict] = {
         "core": ["PERSON", "NATIONAL_ID", "DATE_TIME", "CASE_NUMBER", "BEHAVIORAL_PATTERN"],
         "values": {"ADDRESS": 1.6, "PHONE": 0.8, "AGE": 0.5, "GENDER": 0.5,
                    "LOCATION": 0.8, "DATE_OF_BIRTH": 0.4, "SOCIAL_MEDIA": 0.5,
-                   "LICENSE_PLATE": 0.4, "EMAIL": 0.3, "USERNAME": 0.3},
+                   "LICENSE_PLATE": 0.4, "EMAIL": 0.3, "USERNAME": 0.3,
+                   "FIREARMS_LICENSE": 0.5},
         "judgement": {"FAMILY_RELATION": 2.0, "CRIMINAL": 1.8, "HEALTH": 0.8,
                       "EMPLOYMENT": 0.6, "ECONOMIC_STATUS": 0.5, "MEDICATION": 0.5,
                       "IMMIGRATION_STATUS": 0.4, "AGE_INFO": 0.3},
@@ -421,7 +426,8 @@ GENRES: Dict[str, dict] = {
                    "IBAN": 0.8, "CREDIT_CARD": 0.7, "TAX_ID": 0.6, "EMAIL": 0.6,
                    "MARITAL_STATUS": 0.6, "ORGANIZATION": 0.8, "ORG_NUMBER": 0.5,
                    "AGE": 0.4, "GENDER": 0.4, "CRYPTO": 0.3, "LOCATION": 0.3,
-                   "INSURANCE_NUMBER": 0.3},
+                   "INSURANCE_NUMBER": 0.3,
+                   "VESSEL_REGISTRATION": 0.3},
         "judgement": {"FINANCIAL": 2.6, "EMPLOYMENT": 1.4, "FAMILY_RELATION": 1.2,
                       "HEALTH": 1.0, "BEHAVIORAL_PATTERN": 0.9, "DISABILITY": 0.7,
                       "MEDICATION": 0.4, "AGE_INFO": 0.3, "TRADE_UNION": 0.3},
@@ -442,7 +448,8 @@ GENRES: Dict[str, dict] = {
                    "ORG_NUMBER": 1.0, "ORGANIZATION": 0.9, "IBAN": 0.8, "PHONE": 0.6,
                    "EMAIL": 0.5, "FAX_NUMBER": 0.6, "MARITAL_STATUS": 0.4,
                    "AGE": 0.3, "GENDER": 0.3, "DATE_OF_BIRTH": 0.3, "LOCATION": 0.3,
-                   "CREDIT_CARD": 0.2, "CRYPTO": 0.3},
+                   "CREDIT_CARD": 0.2, "CRYPTO": 0.3,
+                   "VESSEL_REGISTRATION": 0.4},
         "judgement": {"ECONOMIC_STATUS": 2.0, "EMPLOYMENT": 1.6, "FAMILY_RELATION": 0.9,
                       "BEHAVIORAL_PATTERN": 0.6, "CRIMINAL": 0.5, "HEALTH": 0.4,
                       "IMMIGRATION_STATUS": 0.4, "AGE_INFO": 0.3},
@@ -462,7 +469,8 @@ GENRES: Dict[str, dict] = {
         "values": {"NATIONAL_ID": 1.0, "BANK_ACCOUNT": 1.8, "ORGANIZATION": 1.4,
                    "ORG_NUMBER": 1.0, "IBAN": 0.9, "PHONE": 0.8, "EMAIL": 0.7,
                    "TAX_ID": 0.5, "CREDIT_CARD": 0.5, "FAX_NUMBER": 0.5,
-                   "AGE": 0.2, "DATE_OF_BIRTH": 0.4, "LOCATION": 0.3, "URL": 0.4},
+                   "AGE": 0.2, "DATE_OF_BIRTH": 0.4, "LOCATION": 0.3, "URL": 0.4,
+                   "VESSEL_REGISTRATION": 0.3},
         "judgement": {"ECONOMIC_STATUS": 2.0, "EMPLOYMENT": 0.9, "HEALTH": 0.5,
                       "FAMILY_RELATION": 0.6, "BEHAVIORAL_PATTERN": 0.4, "DISABILITY": 0.4,
                       "AGE_INFO": 0.3},
@@ -483,7 +491,8 @@ GENRES: Dict[str, dict] = {
                    "CRYPTO": 1.2, "TAX_ID": 1.0, "ORG_NUMBER": 0.9, "ORGANIZATION": 0.9,
                    "IDENTITY_CARD": 1.0, "PASSPORT": 0.7, "PHONE": 0.7, "EMAIL": 0.6,
                    "IP_ADDRESS": 0.8, "DEVICE_ID": 0.5, "FAX_NUMBER": 0.4,
-                   "LOCATION": 0.3, "NATIONALITY": 0.6, "GENDER": 0.3},
+                   "LOCATION": 0.3, "NATIONALITY": 0.6, "GENDER": 0.3,
+                   "VESSEL_REGISTRATION": 0.3},
         "judgement": {"FINANCIAL": 2.4, "ECONOMIC_STATUS": 1.4, "EMPLOYMENT": 1.2,
                       "CRIMINAL": 1.0, "IMMIGRATION_STATUS": 0.7, "BEHAVIORAL_PATTERN": 0.7,
                       "FAMILY_RELATION": 0.7, "POLITICAL": 0.4},
@@ -776,7 +785,8 @@ GENRES: Dict[str, dict] = {
         "values": {"ADDRESS": 1.4, "PHONE": 1.4, "EMAIL": 0.9, "MEDICAL_LICENSE": 1.2,
                    "NATIONAL_ID": 0.6, "INSURANCE_NUMBER": 1.2, "ORGANIZATION": 0.8,
                    "CASE_NUMBER": 0.7, "BANK_ACCOUNT": 0.6, "LOCATION": 0.4,
-                   "ORG_NUMBER": 0.4, "AGE": 0.2, "GENDER": 0.2, "LICENSE_PLATE": 0.2},
+                   "ORG_NUMBER": 0.4, "AGE": 0.2, "GENDER": 0.2, "LICENSE_PLATE": 0.2,
+                   "FIREARMS_LICENSE": 0.2},
         "judgement": {"ECONOMIC_STATUS": 0.5, "EMPLOYMENT": 0.6, "FAMILY_RELATION": 0.6,
                       "BEHAVIORAL_PATTERN": 0.4, "AGE_INFO": 0.3},
         "cast_roles": ["veterinarian", "spouse"],
@@ -795,7 +805,9 @@ GENRES: Dict[str, dict] = {
                    "ORGANIZATION": 0.9, "LICENSE_PLATE": 0.8, "FAX_NUMBER": 0.6,
                    "URL": 0.7, "LOCATION": 0.6, "MEDICAL_LICENSE": 0.6,
                    "INSURANCE_NUMBER": 0.4, "AGE": 0.2, "GENDER": 0.2,
-                   "BANK_ACCOUNT": 0.3},
+                   "BANK_ACCOUNT": 0.3,
+                   "FIREARMS_LICENSE": 0.3,
+                   "VESSEL_REGISTRATION": 0.6},
         "judgement": {"EMPLOYMENT": 1.0, "ECONOMIC_STATUS": 1.0, "CRIMINAL": 1.0,
                       "HEALTH": 0.8, "BEHAVIORAL_PATTERN": 0.8, "FAMILY_RELATION": 0.6,
                       "DISABILITY": 0.4, "AGE_INFO": 0.3, "FINANCIAL": 0.6},
@@ -816,7 +828,8 @@ GENRES: Dict[str, dict] = {
                    "PASSPORT": 0.8, "PHONE": 0.8, "EMAIL": 0.7, "IDENTITY_CARD": 0.6,
                    "ORGANIZATION": 0.7, "DATE_OF_BIRTH": 0.6, "MARITAL_STATUS": 0.6,
                    "AGE": 0.4, "GENDER": 0.4, "BANK_ACCOUNT": 0.5, "FAX_NUMBER": 0.5,
-                   "LOCATION": 0.4, "DRIVER_LICENSE": 0.4},
+                   "LOCATION": 0.4, "DRIVER_LICENSE": 0.4,
+                   "FIREARMS_LICENSE": 0.3},
         "judgement": {"ECONOMIC_STATUS": 1.6, "CRIMINAL": 1.4, "FAMILY_RELATION": 1.2,
                       "EMPLOYMENT": 1.2, "FINANCIAL": 1.0, "HEALTH": 0.8,
                       "BEHAVIORAL_PATTERN": 0.8, "MEDICATION": 0.5, "TRADE_UNION": 0.4,
@@ -878,6 +891,12 @@ HEALTH_FAMILY = {"HEALTH", "DISABILITY", "MEDICATION", "GENETIC_DATA", "BIOMETRI
 # dropping the type when the genre's `foreign_subject_p` comes up short.
 FOREIGN_SUBJECT_TYPES = {"IMMIGRATION_STATUS", "VISA_NUMBER"}
 
+# Types a minor cannot coherently carry: a firearms licence is issued from age 18
+# (a hunter's course at 16 gives no licence of its own). The sampler keeps the
+# subject an adult when one is scheduled, and refuses the type for a minor
+# otherwise; no youth-profile genre hosts it.
+ADULT_ONLY_TYPES = {"FIREARMS_LICENSE"}
+
 
 def health_family_cap(profile: str) -> int:
     """Return how many health-family types one document of this profile may carry."""
@@ -918,6 +937,7 @@ FIELD_LABELS: Dict[str, str] = {
     "DEVICE_ID": "Enhetsidentifikator", "CREDIT_CARD": "Kortnummer",
     "CRYPTO": "Kryptolommebok", "PASSWORD": "Passord", "DATE_OF_BIRTH": "Fødselsdato",
     "ANIMAL_INFO": "Dyrehold", "LOCATION": "Sted",
+    "FIREARMS_LICENSE": "Våpenkortnummer", "VESSEL_REGISTRATION": "Registreringsmerke",
 }
 
 # Nynorsk spellings that differ. The label is a prompt hint, not a value that
@@ -929,6 +949,34 @@ FIELD_LABELS_NN: Dict[str, str] = {
     "NATIONALITY": "Statsborgarskap", "URL": "Nettstad", "MILITARY_ID": "Tenestenummer",
     "ANIMAL_INFO": "Dyrehald", "LOCATION": "Stad", "DEVICE_ID": "Eininga sin identifikator",
 }
+
+
+# Several names exist for the same number in real documents, and the prompt's label
+# word steers which one the model writes. Both forms spell these alike
+# (`våpenkortnummer`, `lisensnummer`, `reg.nr.`, `registreringsmerke` are the same
+# word in nynorsk); the table is per form anyway so a spelling that diverges has a
+# place to go. `registreringsnummer` is generic, so its entry carries the register
+# in the label itself.
+FIELD_LABEL_VARIANTS: Dict[str, Dict[str, List[str]]] = {
+    "FIREARMS_LICENSE": {
+        "nb": ["Våpenkortnummer", "Våpenkortnummer", "Lisensnummer",
+               "Registreringsnummer i våpenregisteret"],
+        "nn": ["Våpenkortnummer", "Våpenkortnummer", "Lisensnummer",
+               "Registreringsnummer i våpenregisteret"],
+    },
+    "VESSEL_REGISTRATION": {
+        "nb": ["Reg.nr. (fiskefartøy)", "Registreringsmerke", "Registreringsmerke (fiskefartøy)"],
+        "nn": ["Reg.nr. (fiskefartøy)", "Registreringsmerke", "Registreringsmerke (fiskefartøy)"],
+    },
+}
+
+
+def field_label_variant(rng: random.Random, etype: str, form: str) -> str:
+    """Return a field label for a type, drawn from its variants when it has any."""
+    variants = FIELD_LABEL_VARIANTS.get(etype)
+    if variants:
+        return rng.choice(variants[form])
+    return field_label(etype, form)
 
 
 def field_label(etype: str, form: str) -> str:

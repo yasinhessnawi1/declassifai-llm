@@ -7,6 +7,16 @@ and `docs/DATA_QUALITY.md`. Nothing under `data/gold/`, `data/slice/`, or
 `docs/ANNOTATION_SPEC.md` was modified.
 
 
+
+## Owner decision, 2026-10-08 (later): FIREARMS_LICENSE and VESSEL_REGISTRATION added
+
+ANNOTATION_SPEC open question 21. Firearms-card numbers (våpenkortnummer, a weapon's
+lisensnummer or registreringsnummer) and fishing-vessel registration marks had no v2
+type; 24 spans in gold and the slice (18 firearms, 6 vessel) were parked untagged. The
+owner added both as Tier A value types. The annotation session added the entries to
+`taxonomy.json` (commit ba8c977, legacy_type GOV_ID per B20); `types_config.yaml` now
+lists all 59. The taxonomy is **59 types** (A 30, B 13, C 16).
+
 ## Owner decision, 2026-10-08: CONTEXT_SENSITIVE and IDENTIFIABLE_IMAGE dropped
 
 The project owner ruled both types out ("no need"). This resolves contradiction 1 below

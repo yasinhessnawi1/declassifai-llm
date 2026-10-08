@@ -293,6 +293,32 @@ TIER_A_PATTERNS: Dict[str, re.Pattern] = {
                               r"|[13][1-9A-HJ-NP-Za-km-z]{25,34})\b"),
 }
 
+# A firearms number or a vessel mark has no shape of its own that the sweep can trust:
+# `HG12345` is plate-shaped, `123456` is any number, and the registered object decides
+# the type (docs/ANNOTATION_SPEC.md B20). So these two are recognised by the label
+# words the document prints in front of the value, the same cue the annotators use,
+# and the finding is the value alone. An invented one is rejected like any
+# unplanned identifier; a planned one is covered by its own span. The vessel shapes
+# always carry a hyphen or a single letter, so a road plate (`DK 45778`) never matches.
+_FIREARMS_LABEL = (
+    r"(?i:våpenkort(?:nummer(?:et)?|[ \t]+nr\.?)?|lisens(?:nummer(?:et)?|[ \t]?nr\.?)"
+    r"|våpenlisens(?:nummer(?:et)?)?|registreringsnummer(?:et)?[ \t]+i[ \t]+våpenregisteret"
+    r"|permit[ \t]+ID|(?:licen[sc]e|permit)[ \t]+number)"
+)
+_VESSEL_LABEL = (
+    r"(?i:reg(?:istrerings)?\.?[ \t]?nr\.?|registreringsnummer(?:et)?|registreringsmerke(?:t)?"
+    r"|registrert(?:[ \t]+som)?|kjennemerke(?:t)?|fiskerimerke(?:t)?)"
+)
+_LABEL_TO_VALUE = r"(?:[ \t]*[:=][ \t]*|[ \t]+(?:er|var|på)[ \t]+|[ \t]+)"
+
+LABELLED_TIER_A_PATTERNS: Dict[str, re.Pattern] = {
+    "firearms_like": re.compile(
+        _FIREARMS_LABEL + _LABEL_TO_VALUE + r"((?:[A-Z]{1,2}-)?[A-Z]{0,2}\d[\d\-]{2,}\d)(?![\w\-])"),
+    "vessel_like": re.compile(
+        _VESSEL_LABEL + _LABEL_TO_VALUE
+        + r"([A-ZÆØÅ]{1,2}-\d{1,4}(?:-[A-ZÆØÅ]{1,2})?|[A-Z]\d{5})(?![\w\-])"),
+}
+
 DATE_PATTERNS: List[re.Pattern] = [
     re.compile(r"(?<![\d.])\d{1,2}\.[ \t]?\d{1,2}\.[ \t]?(?:\d{4}|\d{2})(?!\d)(?!\.\d)"),
     re.compile(rf"(?<!\d)\d{{1,2}}\.[ \t]?(?:{_MONTHS}|(?:{_MONTH_ABBR})\.?)[ \t]+\d{{4}}\b", re.IGNORECASE),
@@ -386,6 +412,15 @@ def sweep_tier_a(text: str, covered: List[Tuple[int, int]], place_names: Set[str
     so it cannot be labelled safely.
     """
     findings = []
+    # Before the shape patterns: where both describe the same characters the
+    # dedup below keeps the first, and the labelled name says more.
+    for name, pattern in LABELLED_TIER_A_PATTERNS.items():
+        for m in pattern.finditer(text):
+            value = m.group(1)
+            if _is_covered(m.start(1), m.end(1), covered) or _YEAR_RE.fullmatch(value):
+                continue
+            findings.append({"pattern": name, "match": value, "start": m.start(1),
+                             "end": m.end(1), "action": "reject"})
     for name, pattern in TIER_A_PATTERNS.items():
         for m in pattern.finditer(text):
             if _is_covered(m.start(), m.end(), covered):
@@ -916,7 +951,21 @@ _ROLE_WORDS: Dict[str, "re.Pattern"] = {
     "STUDENT_ID": re.compile(r"\b(?:studentnummer(?:et)?|studentnr\.?)\b", re.IGNORECASE),
     "PHONE": re.compile(r"\b(?:telefon(?:nummer(?:et)?)?|tlf\.?|mobil(?:nummer(?:et)?)?)\b", re.IGNORECASE),
     "DEVICE_ID": re.compile(r"\b(?:enhets-?id(?:entifikator)?|imei)\b", re.IGNORECASE),
+    "FIREARMS_LICENSE": re.compile(
+        r"\b(?:våpenkort(?:nummer(?:et)?|[ \t]+nr\.?)?|lisens(?:nummer(?:et)?|[ \t]?nr\.?)|våpenlisens(?:nummer(?:et)?)?)",
+        re.IGNORECASE),
+    # `registreringsnummer` and `reg.nr.` name a car's plate, a rifle's register entry
+    # and a vessel's mark alike (B20: the registered object decides), so this one
+    # is only a wrong role for a type that is none of the three.
+    "REGISTRATION": re.compile(
+        r"\b(?:reg(?:istrerings)?\.?[ \t]?nr\.?|registreringsnummer(?:et)?|registreringsmerke(?:t)?|kjennemerke(?:t)?)",
+        re.IGNORECASE),
 }
+_REGISTRY_TYPES = {"LICENSE_PLATE", "FIREARMS_LICENSE", "VESSEL_REGISTRATION"}
+# Types that have no role word of their own but are still checked against every
+# other type's words: a firearms number or a vessel mark is a registry number
+# and must not sit under a case number's, a phone number's or an ID's label.
+_FULLY_ROLE_CHECKED = {"FIREARMS_LICENSE", "VESSEL_REGISTRATION"}
 _ROLE_REACH_CHARS = 14
 
 # `Sak 2026-0451`, `Saksnummer 24723932`, `Vår ref: MT-2023-4789-BA`: a label that
@@ -961,14 +1010,19 @@ def gate_identifier_roles(
             window = text[max(line_start, match.start() - 48):match.start()]
             nearest = None
             for other, pattern in _ROLE_WORDS.items():
+                if other == "REGISTRATION" and etype not in _REGISTRY_TYPES | {"CASE_NUMBER"}:
+                    continue
                 for hit in pattern.finditer(window):
                     if len(window) - hit.end() <= _ROLE_REACH_CHARS and (nearest is None or hit.end() > nearest[0]):
                         nearest = (hit.end(), other)
             # Types with no role word of their own (an e-mail address, a date) are
             # only checked against the two labels they were seen under in smoke
             # runs, "Saksnummer: kari@x.no"; their own words are too varied to police.
-            if etype not in _ROLE_WORDS and (not nearest or nearest[1] not in ("CASE_NUMBER", "NATIONAL_ID")
-                                             or etype in ("DATE_TIME", "AGE", "GENDER", "PERSON")):
+            if (etype not in _ROLE_WORDS and etype not in _FULLY_ROLE_CHECKED
+                    and (not nearest or nearest[1] not in ("CASE_NUMBER", "NATIONAL_ID")
+                         or etype in ("DATE_TIME", "AGE", "GENDER", "PERSON"))):
+                continue
+            if nearest and nearest[1] == "REGISTRATION" and etype in _REGISTRY_TYPES:
                 continue
             if nearest and nearest[1] != etype:
                 violations.append({"kind": "wrong_role", "type": etype, "value": value,

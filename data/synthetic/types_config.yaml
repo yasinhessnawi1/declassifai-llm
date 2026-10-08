@@ -17,6 +17,8 @@ entity_types:
     tier: A
   FAX_NUMBER:
     tier: A
+  FIREARMS_LICENSE:
+    tier: A
   IBAN:
     tier: A
   IDENTITY_CARD:
@@ -52,6 +54,8 @@ entity_types:
   URL:
     tier: A
   USERNAME:
+    tier: A
+  VESSEL_REGISTRATION:
     tier: A
   VISA_NUMBER:
     tier: A
