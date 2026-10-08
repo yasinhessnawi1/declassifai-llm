@@ -11,8 +11,11 @@ this generator's own tests can rely on, and implements it twice:
   exercised and proven to catch injected failures without a GPU or a chosen
   model -- see `tools/check_generator_gates.py`, which drives every gate through
   it. Its G11 audit reports the two cue phrases `MOCK_ELABORATION_CUE` and
-  `MOCK_FRAMING_CUE`, so the content-audit gate can be tested without a
-  language model's judgement in the loop.
+  `MOCK_FRAMING_CUE`, and applies a small lexical version of the two judgements the
+  real auditor makes about meaning: a special-category word in the same sentence as a
+  relevance cue is a framing finding, and a denial of a planted clause's topic (or an
+  explain-away after the clause itself) is a contradiction finding. It is a stand-in
+  that exercises the plumbing, not a measurement of what the model will find.
 * `HFBackend` -- the real backend, used for every pilot and smoke run with the
   model `docs/MODEL_SELECTION.md` settles on (`Qwen/Qwen3.5-9B`): fp16, sdpa
   attention, chat template, batched generation, and a hook to disable
@@ -54,6 +57,8 @@ import random
 import re
 from typing import List, Optional
 
+import gendoc_genres as genres_mod
+
 
 MANIFEST_SENTINEL = "<<<MANIFEST>>>"
 DRAFT_OPEN = "<<<UTKAST>>>"
@@ -91,7 +96,7 @@ class GenerationBackend(abc.ABC):
 
 _MANIFEST_LINE_RE = re.compile(
     r"^(VALUE|CLAUSE_SEEDED|CLAUSE_MARKED|NEGATIVE|SEED|META|REPAIR|MISSING|AUDIT|AUDIT_REPAIR|REMOVE|KEEP"
-    r"|SECTION|HEADING|LAST)\|(.*)$"
+    r"|SECTION|HEADING|LAST|CLAUSE)\|(.*)$"
 )
 
 # Sentinels the audit prompt wraps the document in; duplicated from
@@ -108,6 +113,50 @@ AUDIT_CLOSE = "<<<SLUTT PÅ DOKUMENT>>>"
 # contains either, so a clean mock document audits clean.
 MOCK_ELABORATION_CUE = "og har difor eit vedvarande rusproblem"
 MOCK_FRAMING_CUE = "relevant for etterforskningen"
+
+# The mock's stand-in for the auditor's Task B: a sentence is a framing finding when it
+# names a special category and says it bears on suspicion, risk, credibility or an
+# assessment. A health fact that justifies treatment or support is not one.
+_MOCK_SPECIAL_RE = re.compile(
+    r"\b(?:senterpartiet|fremskrittspartiet|arbeiderpartiet|høyre|partiet|politisk\w*|innvandring\w*|"
+    r"religi\w*|menighet\w*|kirke\w*|moské\w*|muslim\w*|kristendom\w*|fagforening\w*|fagorganis\w*|"
+    r"tillitsvalgt|homofil\w*|lesbisk\w*|seksuell\w*|etnisk\w*|romani|samisk|asyl\w*|oppholdsstatus|"
+    r"diagnos\w*|depresjon\w*|angst\w*|antidepressiva|medisin\w*|sykdom\w*|sjukdom\w*|"
+    r"funksjonsnedsett\w*|helseproblem\w*)\b", re.IGNORECASE)
+_MOCK_RELEVANCE_RE = re.compile(
+    r"relevant for|av betydning for|tyder på|øker (?:risikoen|faren)|gir grunn til|taler for|"
+    r"styrker mistanken|svekker troverdigheten|betydning for vurderingen|"
+    r"vurdering av (?:risiko|troverdighet|sikkerhet)|helhetsvurderingen|kan presses",
+    re.IGNORECASE)
+_MOCK_NEGATED_RE = re.compile(r"\b(?:ikke|ikkje|ingen|uten|utan)\b", re.IGNORECASE)
+_MOCK_SUPPORT_RE = re.compile(r"behandling|tilrettelegg|arbeidsevne|ytelse|støtte|oppfølging", re.IGNORECASE)
+
+# Task C: a denial about the topic of a planted clause, or an explain-away after the clause.
+# "ingen direkte samband med ..." and "ingen tvil om ..." are not denials of a fact.
+_MOCK_DENIAL_RE = re.compile(
+    r"\b(?:foreligger|finst|finnes|er|har|ligg|ligger)\s+(?:det\s+)?(?:ingen|inga)\b"
+    r"(?!\s+(?:direkte\s+)?(?:samband|forbindelse|tilknyt\w*|tvil|nye|ytterlegare|ytterligere))|"
+    r"\bingen\s+(?:registrerte|kjente|tidlegare|tidligere)\b|"
+    r"\b(?:ikke|ikkje)\s+(?:registrert|kjent|dømt|dømd|straffet|diagnostisert)\b", re.IGNORECASE)
+_MOCK_EXPLAIN_AWAY_RE = re.compile(
+    r"\bmen\s+(?:denne|dette|det|dei|de)\s+(?:finst|finnes|er|har|ligg|ligger|vart|ble)?\s*(?:ikke|ikkje)\b|"
+    r"\buten\s+at\s+(?:dette|det)\s+er\s+(?:dokumentert|bekreftet)|"
+    r"\bkan\s+(?:ikke|ikkje)\s+(?:bekreftes|stadfestast|stadfestes)|\bstemmer\s+(?:ikke|ikkje)\b|"
+    r"\ber\s+uklart\s+om\b|\b(?:ikke|ikkje)\s+(?:i|frå|fra)\s+(?:oppgjeve|oppgitt)\s+register",
+    re.IGNORECASE)
+_MOCK_TOPIC_STEMS = {
+    "CRIMINAL": re.compile(r"\b(?:straff\w*|dømt|dømd|siktel\w*|sikta|anmeld\w*|kriminell\w*|lovbrudd|politisak\w*)", re.I),
+    "HEALTH": re.compile(r"\b(?:diagnos\w*|sjukdom\w*|sykdom\w*|helseproblem\w*|lidelse\w*|liding\w*)", re.I),
+    "MEDICATION": re.compile(r"\b(?:medisin\w*|medikament\w*|legemiddel\w*)", re.I),
+    "DISABILITY": re.compile(r"\b(?:funksjonsned\w*|uføre\w*|hemming|hemma)", re.I),
+    "FINANCIAL": re.compile(r"\b(?:gjeld(?:en|a)?|lån\w*|betalingsanmerk\w*|betalingsmerk\w*|inkasso\w*)\b", re.I),
+    "ECONOMIC_STATUS": re.compile(r"\bøkonomi\w*", re.I),
+    "BEHAVIORAL_PATTERN": re.compile(r"\b(?:atferd|åtferd|adferd|oppførsel|framferd)\w*", re.I),
+    "FAMILY_RELATION": re.compile(r"\b(?:ektefelle\w*|samboer\w*|sambuar\w*)", re.I),
+    "POLITICAL": re.compile(r"\b(?:politisk\w*|parti\w*)", re.I),
+    "RELIGIOUS_BELIEF": re.compile(r"\b(?:religi\w*|livssyn)", re.I),
+    "TRADE_UNION": re.compile(r"\b(?:fagforen\w*|fagorganis\w*|tillitsvald|tillitsvalgt)", re.I),
+}
 
 MOCK_HEADER_FIELDS = 4
 
@@ -212,18 +261,52 @@ class MockBackend(GenerationBackend):
         return prompt.split(AUDIT_OPEN + "\n", 1)[1].split("\n" + AUDIT_CLOSE, 1)[0]
 
     def _audit(self, prompt: str) -> str:
-        """Mock a G11 audit pass by reporting sentences carrying the mock cues."""
+        """Mock a G11 audit pass: the two cue phrases, plus lexical framing and contradiction tests.
+
+        Args:
+            prompt: A G11 audit prompt; its manifest may carry `CLAUSE|TYPE|text` lines
+                for the planned clauses.
+
+        Returns:
+            `FUNN|<code>|<sentence>` lines, or `INGEN`.
+        """
         document = self._audited_document(prompt)
+        manifest = prompt.split(MANIFEST_SENTINEL, 1)[1] if MANIFEST_SENTINEL in prompt else ""
+        clauses = [tuple(line.split("|", 2)[1:]) for line in manifest.splitlines() if line.startswith("CLAUSE|")]
         findings = []
         for sentence in re.split(r"(?<=[.!?])\s+|\n+", document):
             stripped = sentence.strip().rstrip(".")
             if not stripped:
                 continue
+            lowered = stripped.lower()
             if MOCK_FRAMING_CUE in stripped:
                 findings.append(f"FUNN|RAMME|{stripped}")
             elif MOCK_ELABORATION_CUE in stripped:
                 findings.append(f"FUNN|SENSITIV|{stripped}")
+            elif (_MOCK_SPECIAL_RE.search(stripped) and not _MOCK_SUPPORT_RE.search(stripped)
+                  and any(not _MOCK_NEGATED_RE.search(stripped[max(0, m.start() - 25):m.start()])
+                          for m in _MOCK_RELEVANCE_RE.finditer(stripped))):
+                findings.append(f"FUNN|RAMME|{stripped}")
+            elif self._contradicts(lowered, clauses):
+                findings.append(f"FUNN|MOTSIGELSE|{stripped}")
         return "\n".join(findings) if findings else "INGEN"
+
+    @staticmethod
+    def _contradicts(sentence: str, clauses) -> bool:
+        """Whether a (lower-cased) sentence denies a planted clause or explains it away.
+
+        A sentence contradicts when it carries the clause's own words followed by an
+        explain-away ("men denne finst ikkje i register"), or when it denies the topic of a
+        clause the record planted ("ingen registrerte straffedomar" with a CRIMINAL clause).
+        """
+        for etype, clause in clauses:
+            if clause.lower() in sentence and _MOCK_EXPLAIN_AWAY_RE.search(sentence):
+                return True
+            topic = _MOCK_TOPIC_STEMS.get(etype)
+            if (topic is not None and _MOCK_DENIAL_RE.search(sentence) and topic.search(sentence)
+                    and clause.lower() not in sentence):
+                return True
+        return False
 
     def _audit_repair(self, prompt: str) -> str:
         """Mock a targeted repair: delete the quoted material, keep the listed values.
@@ -303,6 +386,7 @@ class MockBackend(GenerationBackend):
         for etype, value in values:
             to_header = k == 0 and rng.random() < 0.55 and len(header_items) < MOCK_HEADER_FIELDS
             (header_items if to_header else prose_items).append((etype, value))
+        header_label = lambda etype: genres_mod.field_label(etype, form)  # noqa: E731
         sentences = [f"Opplysning ({etype}) i saken er {value}." for etype, value in prose_items]
         sentences += [f"Videre er det opplyst at vedkommende {text}." for _etype, text in seeded_clauses]
         sentences += [f"Det er også notert at vedkommende {text}." for text in negatives]
@@ -315,7 +399,7 @@ class MockBackend(GenerationBackend):
         if heading:
             parts.append(heading)
         if header_items:
-            parts.append("\n".join(f"{etype}: {value}" for etype, value in header_items))
+            parts.append("\n".join(f"{header_label(etype)}: {value}" for etype, value in header_items))
         parts.append(" ".join(sentences))
         return "\n\n".join(parts)
 
@@ -331,7 +415,7 @@ class MockBackend(GenerationBackend):
 
         lines = []
         for etype, value in header_items:
-            lines.append(f"{etype}: {value}")
+            lines.append(f"{genres_mod.field_label(etype, form)}: {value}")
 
         body_sentences = []
         for etype, value in prose_items:

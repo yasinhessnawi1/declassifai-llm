@@ -13,8 +13,10 @@ guarantee automatically:
 * G7 -- the model did not invent PII that was never planned and never labeled.
 * G13 -- the document is not a table dump: few table rows, few values in fields,
   no value listed under two labels.
-* G14 -- no planned identifier is presented as a different kind of number, and no
-  case or reference number appears that nothing planned.
+* G14 -- no planned identifier is presented as a different kind of number, no case or
+  reference number appears that nothing planned, a professional's licence number is not
+  given to the patient, and a device, IP address or username is not presented as the
+  issuing organisation's own.
 
 G1 (schema validation via `tools/validate_labels.py`), G5 (distribution vs
 plan) and G8 (sample dump) are orchestrated directly in
@@ -54,8 +56,55 @@ def skeleton_hash(text: str) -> str:
     return hashlib.md5(skeleton(text).encode("utf-8")).hexdigest()
 
 
-def word_ngrams(text: str, n: int = 5) -> Set[Tuple[str, ...]]:
-    """Return the set of lowercase word n-grams in a document."""
+def _outside_literals(text: str, exempt: Sequence[str]) -> List[str]:
+    """Return the stretches of text that no exempt literal overlaps.
+
+    Several clauses of one type in one document legitimately share words (`dømt for
+    ...`, `siktet for ...`, a stem the bank reuses), and the model restates a planted
+    clause as often as it likes. A repetition or near-duplicate measure that counted
+    those words would reject a document for carrying the planted facts it was asked to
+    carry. So a window that overlaps a planted literal is not counted by G6 or G12; only
+    the model's own prose between the literals is measured.
+
+    Args:
+        text: The document.
+        exempt: Planted literals (seeded clauses).
+
+    Returns:
+        The pieces of text between the occurrences of the literals, in order; the whole
+        text when `exempt` is empty.
+    """
+    spans = sorted(iv for iv in _covered_intervals(text, [e for e in exempt if e]))
+    if not spans:
+        return [text]
+    pieces, pos = [], 0
+    for start, end in spans:
+        if start > pos:
+            pieces.append(text[pos:start])
+        pos = max(pos, end)
+    if pos < len(text):
+        pieces.append(text[pos:])
+    return pieces
+
+
+def word_ngrams(text: str, n: int = 5, exempt: Sequence[str] = ()) -> Set[Tuple[str, ...]]:
+    """Return the set of lowercase word n-grams in a document.
+
+    Args:
+        text: The document.
+        n: N-gram width.
+        exempt: Planted literals; n-grams that overlap one are left out (see
+            `_outside_literals`). Empty counts every word.
+
+    Returns:
+        The n-gram set.
+    """
+    if exempt:
+        grams: Set[Tuple[str, ...]] = set()
+        for piece in _outside_literals(text, exempt):
+            words = re.findall(r"\w+", piece.lower())
+            grams.update(tuple(words[i:i + n]) for i in range(len(words) - n + 1))
+        return grams
     words = re.findall(r"\w+", text.lower())
     if len(words) < n:
         return {tuple(words)} if words else set()
@@ -950,7 +999,7 @@ _ROLE_WORDS: Dict[str, "re.Pattern"] = {
     "DRIVER_LICENSE": re.compile(r"\b(?:førerkort(?:nummer(?:et)?)?|førarkort(?:nummer(?:et)?)?)\b", re.IGNORECASE),
     "STUDENT_ID": re.compile(r"\b(?:studentnummer(?:et)?|studentnr\.?)\b", re.IGNORECASE),
     "PHONE": re.compile(r"\b(?:telefon(?:nummer(?:et)?)?|tlf\.?|mobil(?:nummer(?:et)?)?)\b", re.IGNORECASE),
-    "DEVICE_ID": re.compile(r"\b(?:enhets-?id(?:entifikator)?|imei)\b", re.IGNORECASE),
+    "DEVICE_ID": re.compile(r"\b(?:enhets-?id(?:entifikator)?|einings-?id(?:entifikator)?|imei)\b", re.IGNORECASE),
     "FIREARMS_LICENSE": re.compile(
         r"\b(?:våpenkort(?:nummer(?:et)?|[ \t]+nr\.?)?|lisens(?:nummer(?:et)?|[ \t]?nr\.?)|våpenlisens(?:nummer(?:et)?)?)",
         re.IGNORECASE),
@@ -967,6 +1016,39 @@ _REGISTRY_TYPES = {"LICENSE_PLATE", "FIREARMS_LICENSE", "VESSEL_REGISTRATION"}
 # and must not sit under a case number's, a phone number's or an ID's label.
 _FULLY_ROLE_CHECKED = {"FIREARMS_LICENSE", "VESSEL_REGISTRATION"}
 _ROLE_REACH_CHARS = 14
+
+# Whose number it is. The span is correct by construction either way, but pilot v4 wrote
+# "Håkon Selvik, født 17. mars 1933, med hpr-nummer 4665353" for a patient (an HPR number
+# is a clinician's) and "vår enhetsidentifikator 999038879317022" for a device the bank's
+# letter was asking about (a device, an IP address and a username are the customer's, never
+# the issuing organisation's own). The sentence tells the detector the wrong thing about
+# who the value identifies.
+_CLINICIAN_TITLES_RE = re.compile(
+    r"\b(?:lege|legen|fastlege\w*|overlege\w*|bedriftslege\w*|spesialist\w*|psykolog\w*|"
+    r"veterinær\w*|dyrlege\w*|arbeidsmedisin\w*|sykepleier\w*|behandlende)\b",
+    re.IGNORECASE)
+_SUBJECT_GENERIC_RE = re.compile(r"\b(?:pasienten|vedkommende|hovedpersonen|klienten|søkeren)\b", re.IGNORECASE)
+_OWNER_WINDOW_CHARS = 90
+_CLINICIAN_WINDOW_CHARS = 150
+_ISSUER_OWNED_TYPES = {"DEVICE_ID", "IP_ADDRESS", "USERNAME"}
+# "vår enhetsidentifikator 99..." and "vårt brukernavn x" present the value as the sender's own; a
+# sentence that merely has the sender as its subject ("våre systemer logget IP-adressen ...") or
+# says the customer is registered with the sender does not, so the possessive must be within two
+# words of the value.
+_ISSUER_OWN_RE = re.compile(
+    r"\b(?:vår|vårt|våre)\b(?:[ \t]+[\w\-]+){0,2}[ \t:]*$"
+    r"|\b(?:referanse(?:nummer(?:et)?)?|ref\.?(?:nr\.?)?)\W{0,3}$",
+    re.IGNORECASE)
+
+
+def _ref_in_window(text: str, window_start: int, end: int, refs: Sequence[str]) -> bool:
+    """Whether any reference string occurs, as a whole word, in text[window_start:end]."""
+    window = text[window_start:end]
+    for ref in refs:
+        if ref and re.search(r"(?<!\w)" + re.escape(ref) + r"(?!\w)", window, re.IGNORECASE if ref.islower() else 0):
+            return True
+    return False
+
 
 # `Sak 2026-0451`, `Saksnummer 24723932`, `Vår ref: MT-2023-4789-BA`: a label that
 # introduces a reference number, and the number. The number has to look like one
@@ -986,8 +1068,15 @@ def _reference_like(token: str) -> bool:
 
 def gate_identifier_roles(
     text: str, typed_values: Iterable[Tuple[str, str]], covered_spans: Iterable[str],
+    owners: Optional[dict] = None,
 ) -> Tuple[bool, List[dict]]:
-    """Reject an identifier presented as a different kind of number, or an unplanned reference number.
+    """Reject an identifier presented as a different kind of number, or as someone else's.
+
+    Four things are caught: an identifier whose preceding words name another kind of
+    number; a reference number nothing planned; a clinician's HPR number written next to the
+    subject instead of next to a clinician; and a device identifier, IP address or username
+    presented as the issuing organisation's own ("vår enhetsidentifikator ...", "referanse
+    ...").
 
     Args:
         text: The generated document.
@@ -995,16 +1084,44 @@ def gate_identifier_roles(
         covered_spans: Every planned or labelled span, so a reference number that
             sits inside one (the case number in a seeded CRIMINAL clause) is not
             reported as unplanned.
+        owners: Whose value is whose, for the two ownership checks: `subject_refs`
+            (the subject's name parts and pronouns) and `clinician_refs` (the names of the
+            document's clinicians). None skips the HPR check; the issuer check needs no
+            context and always runs.
 
     Returns:
         Tuple of (passed, violations as `{"kind", ...}`): `wrong_role` when the
-        words just before a planned identifier name another type, and
-        `unplanned_reference` for a "Sak <number>" nothing planned.
+        words just before a planned identifier name another type, `unplanned_reference`
+        for a "Sak <number>" nothing planned, `wrong_owner` for an HPR number placed with
+        the subject and `issuer_identifier` for a customer's device, IP address or username
+        written as the organisation's own.
     """
     violations = []
+    owners = owners or {}
     for etype, value in typed_values:
         if not value:
             continue
+        if etype == "MEDICAL_LICENSE" and owners.get("subject_refs"):
+            for match in re.finditer(r"(?<!\w)" + re.escape(value) + r"(?!\w)", text):
+                line_start = text.rfind("\n", 0, match.start()) + 1
+                near_subject = _ref_in_window(
+                    text, max(line_start, match.start() - _OWNER_WINDOW_CHARS), match.start(),
+                    owners["subject_refs"])
+                far = max(line_start, match.start() - _CLINICIAN_WINDOW_CHARS)
+                near_clinician = (_ref_in_window(text, far, match.start(), owners.get("clinician_refs", []))
+                                  or bool(_CLINICIAN_TITLES_RE.search(text[far:match.start()])))
+                if near_subject and not near_clinician:
+                    violations.append({"kind": "wrong_owner", "type": etype, "value": value,
+                                       "context": text[max(line_start, match.start() - 70):match.end()].strip()})
+                    break
+        if etype in _ISSUER_OWNED_TYPES:
+            for match in re.finditer(r"(?<!\w)" + re.escape(value) + r"(?!\w)", text):
+                line_start = text.rfind("\n", 0, match.start()) + 1
+                window = text[max(line_start, match.start() - 60):match.start()]
+                if _ISSUER_OWN_RE.search(window):
+                    violations.append({"kind": "issuer_identifier", "type": etype, "value": value,
+                                       "context": text[max(line_start, match.start() - 60):match.end()].strip()})
+                    break
         for match in re.finditer(r"(?<!\w)" + re.escape(value) + r"(?!\w)", text):
             line_start = text.rfind("\n", 0, match.start()) + 1
             window = text[max(line_start, match.start() - 48):match.start()]
@@ -1120,26 +1237,49 @@ def extend_seeded_clause_spans(text: str, clauses: Sequence[str]) -> Tuple[Dict[
 
 # -- G12: intra-document degeneration ----------------------------------------------
 
-def repetition_share(text: str, n: int = 8) -> float:
+# How many occurrences of one planted literal G12 exempts: the planting and one natural
+# restatement. A model that loops a clause forty times is still degenerate.
+EXEMPT_OCCURRENCES = 2
+
+
+def repetition_share(text: str, n: int = 8, exempt: Sequence[str] = ()) -> float:
     """Return the share of word n-grams in the text that are exact repeats.
 
     Args:
         text: The generated document text.
         n: N-gram width; 8 words is long enough that ordinary Norwegian
             administrative boilerplate does not trip it.
+        exempt: Planted literals. A window that overlaps one is never counted as a repeat
+            (it stays in the denominator, so the threshold keeps the calibration it was
+            measured with), so a document that plans four offences opening `dømt for ...`
+            or `siktet for ...`, or restates one, is not read as looping. Only the first
+            `EXEMPT_OCCURRENCES` occurrences of each literal are exempt.
 
     Returns:
         Duplicated n-grams as a share of all n-grams, 0.0 for a short text.
     """
-    words = re.findall(r"\S+", text)
-    if len(words) < n * 2:
+    tokens = [(m.start(), m.end(), m.group()) for m in re.finditer(r"\S+", text)]
+    if len(tokens) < n * 2:
         return 0.0
-    grams = collections.Counter(tuple(words[i:i + n]) for i in range(len(words) - n + 1))
+    covered = []
+    for literal in {e for e in exempt if e}:
+        covered += _covered_intervals(text, [literal])[:EXEMPT_OCCURRENCES]
+    covered.sort()
+    grams: collections.Counter = collections.Counter()
+    total = 0
+    for i in range(len(tokens) - n + 1):
+        total += 1
+        if covered:
+            lo, hi = tokens[i][0], tokens[i + n - 1][1]
+            if any(a < hi and lo < b for a, b in covered):
+                continue
+        grams[tuple(tok[2] for tok in tokens[i:i + n])] += 1
     duplicated = sum(count - 1 for count in grams.values() if count > 1)
-    return duplicated / max(1, sum(grams.values()))
+    return duplicated / max(1, total)
 
 
-def gate_internal_repetition(text: str, threshold: float) -> Tuple[bool, float]:
+def gate_internal_repetition(text: str, threshold: float,
+                             exempt: Sequence[str] = ()) -> Tuple[bool, float]:
     """Reject a document that has started repeating itself.
 
     Raising the length cap so long documents are not discarded for overshooting
@@ -1154,9 +1294,11 @@ def gate_internal_repetition(text: str, threshold: float) -> Tuple[bool, float]:
     Args:
         text: The generated document text.
         threshold: Maximum allowed duplicated-8-gram share.
+        exempt: Planted literals whose windows are never counted as repeats (see
+            `repetition_share`).
 
     Returns:
         Tuple of (passed, the measured share).
     """
-    share = repetition_share(text)
+    share = repetition_share(text, exempt=exempt)
     return share <= threshold, round(share, 4)

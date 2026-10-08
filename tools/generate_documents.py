@@ -28,6 +28,18 @@ any plan of more than about ten items, are written in sections instead, see belo
            repair, then a regeneration)
         -> accept, or retry with a new record
 
+**A judgement type may appear more than once.** Pilot v4's 39 accepted documents carried
+every clause-level type exactly once, so a detector trained on them learns "find one and
+stop", while a gold inspection report averages 5.3 CRIMINAL and a concern report 8.1 HEALTH
+spans. `gendoc_genres.draw_instance_counts` plans, per document, 1 to 4 instances of the
+types a genre repeats (several offences in a police report, several findings in a vet
+record, several debts in a debt-counselling note); most documents stay at one. The extra
+instances are chosen after the rest of the record is fixed, from clauses whose `topic`
+differs, that do not share a run of six words with each other, and that agree with what the
+record already says (status, marital status, means, one psychiatric condition at a
+time, headline debt against its components), and they are counted against the document's
+item budget. The Art. 9 and health-family caps count categories, never instances.
+
 **Long documents are written in sections.** Pilot v4 asked Qwen3.5-9B for a whole
 dense or case-file document in one call, and the model is reliable with about eight
 values per call and falls apart at twenty. 6 of 26 such documents were accepted, so
@@ -111,6 +123,7 @@ from typing import Callable, Dict, List, Optional, Sequence, Set, Tuple
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import gendoc_audit as audit
+import gendoc_coherence as coherence
 import gendoc_data as data
 import gendoc_dataset as dataset_mod
 import gendoc_gates as gates
@@ -164,6 +177,7 @@ class PlannedValue:
     difficulty: Optional[str] = None
     hint: Optional[str] = None  # whose value this is / where it belongs, for the prompt
     party: Optional[str] = None  # "author" or a cast role for a person other than the subject; None = subject
+    topic: Optional[str] = None  # clause bank `topic` of a clause, for the compatibility and instance reports
 
 
 @dataclass
@@ -202,6 +216,10 @@ class Record:
     included: a case file's spouse, children, caseworker and doctor each carry
     their own coherent identifiers, which is where a dense document's many
     distinct spans come from.
+
+    Attributes beyond the sampled content: `instances_planned` is what the plan asked for
+    (`{type: 2..4}`), `instances_realised` what the record could supply (types with two or more
+    planned values), and `coherence` the report of the cast-coherence pass.
     """
 
     doc_seed: int
@@ -219,6 +237,9 @@ class Record:
     dataset: str = "train"
     planted_negatives: List[PlantedNegative] = field(default_factory=list)
     dropped_forced: List[str] = field(default_factory=list)
+    instances_planned: Dict[str, int] = field(default_factory=dict)  # plan: type -> instances asked for
+    instances_realised: Dict[str, int] = field(default_factory=dict)  # type -> planned values of it (>= 2 only)
+    coherence: Optional[dict] = None  # `gendoc_coherence.CoherenceReport.as_dict()` of the cast
 
 
 def sample_person(rng: random.Random, age_profile: str = "adult", today: date = REFERENCE_DATE,
@@ -549,6 +570,9 @@ class _Subject:
     status: Optional[str] = None  # employed / unemployed / retired / uforetrygd
     marital: Optional[str] = None
     no_partner: bool = False  # set once a SEXUAL_ORIENTATION clause is chosen
+    animal_types: Set[str] = dataclasses.field(default_factory=set)  # types drawn from the animal's clauses
+    polarity: Optional[str] = None  # "poor" / "rich", the means the first financial clause implies
+    groups: Dict[str, str] = dataclasses.field(default_factory=dict)  # clause `group` -> the one topic in use
 
     @property
     def foreign(self) -> bool:
@@ -558,27 +582,37 @@ class _Subject:
 _YEAR_IN_TEXT_RE = re.compile(r"\b(19[5-9]\d|20[0-2]\d)\b")
 
 
-def _clause_fits(entry: dict, subject: _Subject) -> bool:
+def _clause_fits(entry: dict, subject: _Subject, etype: Optional[str] = None) -> bool:
     """Whether a clause-bank entry is coherent with the record's subject.
 
-    The clause bank annotates each entry with the five original pilot genre
-    ids; a genre declares in `gendoc_genres.GENRES[...]["clause_genres"]` which
-    of those its own clauses may come from, so 30-odd genres share one bank.
+    The clause bank annotates each entry with the original pilot genre ids and the ids
+    added since for particular kinds of document (`crime`, `debt`, `barnevern`, `school`,
+    `vet_clinical` ...); a genre declares in `gendoc_genres.GENRES[...]["clause_genres"]`
+    which of those its own clauses may come from, so 30-odd genres share one bank.
 
     Args:
         entry: A clause-bank entry (see `schema_note` in clause_bank.json).
         subject: The subject state so far.
+        etype: The clause type being drawn. Needed for the types a veterinary genre
+            takes from the *animal's* clauses (`subject.animal_types`); those entries are
+            then the only ones that fit, and every other type takes a person's clause.
 
     Returns:
-        True if the entry's genre, form, gender, age, origin, status and partner
-        constraints all hold, and any year it mentions falls after the
-        subject's 15th birthday.
+        True if the entry's genre, form, subject kind, gender, age, origin, status, partner,
+        means (`polarity`) and `group` constraints all hold, and any year it mentions falls
+        after the subject's 15th birthday.
     """
     if not subject.clause_genres.intersection(entry.get("genres", [])):
         return False
     if entry.get("form") != subject.form:
         return False
-    if entry.get("subject", "person") != "person":
+    wanted_kind = "animal" if etype in subject.animal_types else "person"
+    if entry.get("subject", "person") != wanted_kind:
+        return False
+    if entry.get("polarity") and subject.polarity and entry["polarity"] != subject.polarity:
+        return False
+    group = entry.get("group")
+    if group and subject.groups.get(group, entry.get("topic")) != entry.get("topic"):
         return False
     person = subject.person
     if entry.get("gender") and entry["gender"] != person.gender:
@@ -603,6 +637,75 @@ def _clause_fits(entry: dict, subject: _Subject) -> bool:
         return False
     for year in _YEAR_IN_TEXT_RE.findall(entry["text"]):
         if int(year) < person.birth_date.year + 15 or int(year) > REFERENCE_DATE.year:
+            return False
+    return True
+
+
+def _commit_entry(subject: _Subject, etype: str, entry: dict) -> None:
+    """Record what a chosen clause settles about the subject, so later clauses agree with it.
+
+    An EMPLOYMENT clause fixes the employment status, a family clause the marital status,
+    an orientation clause rules out a partner of the other sex, the first clause that
+    implies means (`polarity`) fixes whether the subject is in difficulty or comfortable,
+    and a clause with a `group` fixes which one topic of that group the document is about
+    (one psychiatric condition, one general financial condition).
+    """
+    subject.status = subject.status or entry.get("status")
+    subject.marital = subject.marital or entry.get("marital")
+    subject.polarity = subject.polarity or entry.get("polarity")
+    if etype == "SEXUAL_ORIENTATION":
+        subject.no_partner = True
+    if entry.get("group"):
+        subject.groups.setdefault(entry["group"], entry.get("topic"))
+
+
+def _entry_topics(entry: dict) -> Set[str]:
+    """Return the topics an entry occupies: its own and any it also covers (`also`)."""
+    return {entry["topic"], *entry.get("also", ())} if entry.get("topic") else {entry["text"]}
+
+
+def clauses_compatible(chosen: Sequence[dict], cand: dict) -> bool:
+    """Whether a candidate clause may join clauses of the same type already chosen.
+
+    Several clauses of one type in one document must be several different facts that can all
+    be true of one person. Four tests, none of which needs the model:
+
+    * **Different topic.** Two convictions for violence, two depressions and two statements
+      of the general financial condition are one fact said twice. A topic is the bank's
+      `topic` (and its `also` list), so an entry that mentions a threat and a weapon occupies
+      both topics.
+    * **Different words.** No text contains another, and no two share a run of six words
+      (`_SHARED_RUN_WORDS`): "dømt for bedrageri i 2018" and "dømt for bedrageri i sak
+      12345/2018" are one clause. Shorter shared stems ("har ved flere anledninger ...",
+      "dømt for ...") are ordinary and are allowed; G6 and G12 do not count them.
+    * **Debts add up.** A headline debt ("gjeld på over 700 000 NOK") is a floor on the sum
+      of the debts listed beside it, so the components may not exceed it.
+    * **Different cases.** Entries marked `as_type` (a civil-status clause filed under
+      MARITAL_STATUS) are never a further instance of the type they were drawn for.
+
+    Args:
+        chosen: Entries already chosen for this type in this document.
+        cand: The candidate entry.
+
+    Returns:
+        True when the candidate may be added.
+    """
+    if cand.get("as_type"):
+        return False
+    used: Set[str] = set()
+    for entry in chosen:
+        used |= _entry_topics(entry)
+    if _entry_topics(cand) & used:
+        return False
+    for entry in chosen:
+        a, b = entry["text"].lower(), cand["text"].lower()
+        if a in b or b in a or _shares_word_run(a, b):
+            return False
+    both = list(chosen) + [cand]
+    headlines = [e["amount"] for e in both if e.get("kind") == "headline" and e.get("amount")]
+    if headlines:
+        components = sum(e.get("amount", 0) for e in both if e.get("kind") == "debt")
+        if components > min(headlines):
             return False
     return True
 
@@ -671,12 +774,13 @@ def _cast_person(rng: random.Random, role: str, subject: Person, public_figures:
         age = max(0, min(subject_age - 18, rng.randint(1, 17)))
         age = age if age >= 1 else 1
         gender = None
-    elif role in {"parent", "guardian"}:
+    elif role == "parent" or (role == "guardian" and subject_age < 18):
         age = subject_age + rng.randint(22, 42)
         gender = None
-    elif role in {"physician", "psychologist", "veterinarian", "lawyer", "caseworker",
-                  "officer", "teacher", "employer_contact", "creditor_contact"}:
-        age = genres_mod.sample_age(rng, "working")
+    elif role in coherence.PROFESSIONAL_ROLES or role == "guardian":
+        # A verge for an adult is a professional; every professional is 25-67 (see
+        # `gendoc_coherence`), which the old "working" band (18-29 for a fifth of draws) broke.
+        age = genres_mod.sample_age(rng, "professional")
         gender = None
     else:
         age = genres_mod.sample_age(rng, age_profile)
@@ -686,6 +790,17 @@ def _cast_person(rng: random.Random, role: str, subject: Person, public_figures:
     )
 
 
+def _with_age(person: Person, age: int, rng: random.Random, today: date = REFERENCE_DATE) -> Person:
+    """Return the same person (name, sex, nationality) at a different age.
+
+    Used by the coherence repair: a physician drawn at 23 keeps their name and becomes 41.
+    """
+    birth = date(today.year - age, rng.randint(1, 12), rng.randint(1, 28))
+    if (birth.month, birth.day) > (today.month, today.day):
+        birth = date(birth.year - 1, birth.month, birth.day)
+    return Person(person.first_name, person.last_name, person.gender, birth, person.nationality)
+
+
 # A child under fifteen has no phone, mailbox or bank account of their own to
 # give a caseworker; the smoke run's eleven-year-old witness supplied a phone
 # number that the document then printed as the school's contact line.
@@ -693,6 +808,109 @@ _NOT_FOR_YOUNG_CHILDREN = {"PHONE", "EMAIL", "FAX_NUMBER", "BANK_ACCOUNT", "ORG_
 
 _STAFF_ROLES = {"physician", "psychologist", "veterinarian", "caseworker", "lawyer",
                 "officer", "teacher", "employer_contact", "creditor_contact"}
+
+# Whose a professional licence number can be: a clinician's. The subject of a record is a
+# patient, a claimant or a suspect, and an HPR number printed next to them (pilot v4's
+# "Håkon Selvik ... med hpr-nummer 4665353") is the sampler's mistake before it is the
+# model's, so the planned value is always given to a clinician.
+_CLINICIAN_ROLES = ("physician", "psychologist", "veterinarian")
+_CLINICAL_TITLES = {"fastlege", "lege", "overlege", "spesialist", "bedriftslege", "arbeidsmedisiner",
+                    "arbeidsmedisinar", "psykolog", "psykologspesialist", "veterinær", "dyrlege"}
+
+
+def _animal_conflict(a: str, b: str) -> bool:
+    """Whether two animal descriptors could be the same animal or the same herd.
+
+    `hunden Rex` and `Rex, labrador` name one dog, and `120 sauer` beside `besetning på 40
+    sauer` is one flock counted twice; `hunden Rex` beside `katten Mia` is two animals.
+    """
+    names = lambda s: set(re.findall(r"[A-ZÆØÅ][\wæøå]+", s))  # noqa: E731
+    kind = lambda s: re.sub(r"\d+|besetning på", "", s).strip()  # noqa: E731
+    return bool(names(a) & names(b)) or kind(a) == kind(b)
+
+
+def _add_instances(
+    rng: random.Random, plan: "DocPlan", planned: List[PlannedValue], clause_texts: Dict[str, dict],
+    subject: _Subject, clause_bank: dict, public_figures: Set[str],
+    difficulty_weights: Optional[Dict[str, float]], form: str, tier, label,
+) -> None:
+    """Append the further instances `plan.instances` asks for, as far as the record allows.
+
+    Runs after every first instance, cast value and identifier is fixed, so each extra is
+    chosen against the finished record: it must fit the subject (`_clause_fits`, which carries
+    status, marital status, means and the one-topic-per-group rule) and the clauses already
+    chosen for its type (`clauses_compatible`), and its cost -- the clause and any person it
+    names -- must fit what is left of `genres_mod.item_budget`. A type the document did not
+    draw, an EMPLOYMENT role, and a type with no compatible clause left are skipped, so the
+    realised count can be lower than the planned one; the shortfall is in the metadata.
+
+    Args:
+        rng: The instance RNG stream.
+        plan: The document plan; `plan.instances` is `{type: total instances wanted}`.
+        planned: The record's planned values, extended in place.
+        clause_texts: `{type: the first clause entry chosen}`.
+        subject: The subject state after the first instances.
+        clause_bank: The dataset's clause bank.
+        public_figures: Public-figure set, for names in clauses.
+        difficulty_weights: Dataset weights by clause difficulty.
+        form: "nb" or "nn".
+        tier: Type -> tier lookup.
+        label: Type -> field label lookup.
+    """
+    room = (genres_mod.item_budget(plan.profile, plan.length_band[1]) - len(planned) - plan.n_negatives)
+    order = {t: i for i, t in enumerate(_SAMPLING_ORDER)}
+    for etype in sorted(plan.instances, key=lambda t: (order.get(t, len(order)), t)):
+        extra = plan.instances[etype] - 1
+        if etype == "ANIMAL_INFO":
+            existing = [pv.value for pv in planned if pv.type == "ANIMAL_INFO"]
+            if not existing:
+                continue
+            for _ in range(extra):
+                if room < 1:
+                    break
+                for _try in range(12):
+                    value = ident.animal_descriptor(rng)
+                    if not any(_animal_conflict(value, other) for other in existing):
+                        planned.append(PlannedValue(etype, tier(etype), "value", value, None, label(etype),
+                                                    hint="et annet dyr eller en annen flokk i saken"))
+                        existing.append(value)
+                        room -= 1
+                        break
+            continue
+        first = clause_texts.get(etype)
+        if first is None or first.get("role_value"):
+            continue
+        chosen = [first]
+        for _ in range(extra):
+            candidates = [
+                e for e in clause_bank.get(etype, [])
+                if _clause_fits(e, subject, etype) and clauses_compatible(chosen, e)
+                and 1 + len(re.findall(r"\{PERSON(?:_[MF])?\}", e["text"])) <= room]
+            if not candidates:
+                break
+            entry = _weighted_entry(rng, candidates, difficulty_weights)
+            text, introduced = localize_clause_names(rng, entry["text"], public_figures)
+            for name in introduced:
+                planned.append(PlannedValue("PERSON", "B", "value", name, None, label("PERSON"),
+                                            hint="person nevnt i en av opplysningene"))
+            planned.append(PlannedValue(
+                etype, tier(etype), "clause", text, "seeded", label(etype),
+                difficulty=entry.get("difficulty"), topic=entry.get("topic")))
+            _commit_entry(subject, etype, entry)
+            chosen.append(entry)
+            room -= 1 + len(introduced)
+
+
+def _licence_holder(parties: Sequence["Party"], signatory_role: Optional[str]) -> Optional["Party"]:
+    """Return the party whose HPR number a planned MEDICAL_LICENSE is: a clinician, never the subject.
+
+    The author when the signature is clinical (a GP, a psychologist, a vet), otherwise the
+    first clinician in the cast.
+    """
+    author = next((p for p in parties if p.role == "author"), None)
+    if author is not None and (signatory_role or "") in _CLINICAL_TITLES:
+        return author
+    return next((p for p in parties if p.role in _CLINICIAN_ROLES), None)
 
 
 def _weighted_entry(rng: random.Random, candidates: List[dict],
@@ -1006,13 +1224,14 @@ def sample_record(
         status = "employed"
     elif person.age() > 67:
         status = "retired"
-    subject = _Subject(person, genre, form, set(spec["clause_genres"]), status=status)
+    subject = _Subject(person, genre, form, set(spec["clause_genres"]), status=status,
+                       animal_types=set(spec.get("animal_types", ())))
     street_address, postal, place = _address(rng)
 
     signatory = None
     signatory_role = None
     if rng.random() < 0.75:
-        signatory = _resample_until_no_collision(rng, public_figures, age_profile="working")
+        signatory = _resample_until_no_collision(rng, public_figures, age_profile="professional")
         signatory_role = rng.choice(spec["signatory_roles"])[0 if form == "nb" else 1]
 
     ceiling = genres_mod.type_ceiling(length_band[1], spec.get("density_factor", 1.0))
@@ -1029,13 +1248,17 @@ def sample_record(
             return True
         if etype == "IMMIGRATION_STATUS" and not subject.foreign:
             return False
-        return any(_clause_fits(e, subject) for e in clause_bank.get(etype, []))
+        return any(_clause_fits(e, subject, etype) for e in clause_bank.get(etype, []))
 
     def _value_fits(etype: str) -> bool:
         if etype in genres_mod.ADULT_ONLY_TYPES and person.age() < 18:
             return False
         return not (etype == "VISA_NUMBER" and not subject.foreign)
 
+    # Both lists hold *types*, appended once per type however many instances `_add_instances`
+    # adds afterwards, so the Art. 9 cap and the health-family cap count categories: three HEALTH
+    # findings use one health-family slot, and a typical document (cap 1) cannot also carry a
+    # MEDICATION clause.
     special_used = [t for t in spec["core"] if t in genres_mod.SPECIAL_CATEGORIES]
     health_used = [t for t in spec["core"] if t in genres_mod.HEALTH_FAMILY]
     health_cap = genres_mod.health_family_cap(plan.profile)
@@ -1086,6 +1309,13 @@ def sample_record(
     n_judgement = max(0, min(int(round(target * 0.35)) + rng.randint(-1, 1), 9))
     remaining = {t: w for t, w in spec["judgement"].items() if t not in judgement and t not in core}
     judgement += _weighted_pick(rng, remaining, max(0, n_judgement - len(judgement)), _allowed)
+    # A type the plan asks for several instances of is part of this document, not left to the
+    # weighted draw; it still has to pass the Art. 9 and health-family budgets (which count
+    # the category once however many instances follow) and the subject's coherence.
+    for etype in sorted(plan.instances):
+        if (is_clause(etype) and etype not in core and etype not in judgement
+                and etype not in forced_values and len(core) + len(judgement) < ceiling and _allowed(etype)):
+            judgement.append(etype)
 
     pair_employer = genre in _EMPLOYED_SUBJECT_GENRES or rng.random() < 0.4
     extra_org = int("EMPLOYMENT" in judgement and pair_employer and "ORGANIZATION" not in core)
@@ -1096,6 +1326,10 @@ def sample_record(
                                             lambda t: t in _VALUE_KIND_TYPES or t == "PERSON")
 
     chosen = core + [t for t in values if t not in core] + judgement
+    # The plan's identification block (address and postal code) is part of how a letter or
+    # decision about a named person opens, so it is added to the chosen types rather than
+    # competing with them for the type target.
+    chosen += [t for t in plan.id_block if t not in chosen and t in _VALUE_KIND_TYPES and _value_fits(t)]
     order = {t: i for i, t in enumerate(_SAMPLING_ORDER)}
     clause_types = sorted(
         [t for t in chosen if taxonomy_index.get(t, {}).get("value_kind") == "clause"],
@@ -1127,28 +1361,50 @@ def sample_record(
             subject.status = "employed"
             clause_texts[etype] = {"text": text, "difficulty": "easy", "role_value": True}
             continue
-        candidates = [e for e in clause_bank.get(etype, []) if _clause_fits(e, subject)]
+        candidates = [e for e in clause_bank.get(etype, []) if _clause_fits(e, subject, etype)]
         if not candidates:
             continue
         entry = _weighted_entry(rng, candidates, difficulty_weights)
-        subject.status = subject.status or entry.get("status")
-        subject.marital = subject.marital or entry.get("marital")
-        if etype == "SEXUAL_ORIENTATION":
-            subject.no_partner = True
+        _commit_entry(subject, etype, entry)
         clause_texts[etype] = entry
-
-    parties: List[Party] = [Party(person, None, "hovedpersonen", is_subject=True)]
-    if signatory:
-        parties.append(Party(signatory, "author", signatory_role or "saksbehandler", staff=True))
 
     profile_cast = genres_mod.PROFILES[plan.profile]["cast"]
     n_cast = min(rng.randint(*profile_cast), len(spec.get("cast_roles", [])) + 2)
     cast_pool = list(spec.get("cast_roles", []))
     rng.shuffle(cast_pool)
+    cast: List[Tuple[str, Person]] = []
     for role in cast_pool[:n_cast]:
-        role_spec = genres_mod.CAST_ROLES[role]
-        member = _cast_person(rng, role, person, public_figures, age_profile)
-        parties.append(Party(member, role, role_spec[form], staff=role in _STAFF_ROLES))
+        cast.append((role, _cast_person(rng, role, person, public_figures, age_profile)))
+    # A planned HPR number belongs to a clinician. When the document has neither a clinical
+    # signatory nor a clinician in its cast, one is added rather than giving the number to
+    # the patient.
+    author_is_clinician = bool(signatory) and (signatory_role or "") in _CLINICAL_TITLES
+    if ("MEDICAL_LICENSE" in chosen and not author_is_clinician
+            and not any(role in _CLINICIAN_ROLES for role, _p in cast)):
+        clinician_role = "veterinarian" if spec.get("domain") == "veterinary" else "physician"
+        cast.append((clinician_role, _cast_person(rng, clinician_role, person, public_figures, age_profile)))
+
+    # The cast is drawn from each role's natural distribution and then held to the rules of
+    # `gendoc_coherence` (professionals 25-67, no living parent past 100, a child at least 16
+    # years younger, a spouse of a possible age) before any value is generated for them, so
+    # a violating plan is repaired here and costs no model call.
+    roster = ([coherence.Member("author", signatory.age())] if signatory else []) \
+        + [coherence.Member(role, member.age()) for role, member in cast]
+    repaired, coherence_report = coherence.enforce_cast(person.age(), roster, rng)
+    if signatory:
+        author_fixed, repaired = repaired[0], repaired[1:]
+        if author_fixed is not None and author_fixed.age != signatory.age():
+            signatory = _with_age(signatory, author_fixed.age, rng)
+    parties: List[Party] = [Party(person, None, "hovedpersonen", is_subject=True)]
+    if signatory:
+        parties.append(Party(signatory, "author", signatory_role or "saksbehandler", staff=True))
+    for (role, member), fixed in zip(cast, repaired):
+        if fixed is None:
+            continue
+        if fixed.age != member.age():
+            member = _with_age(member, fixed.age, rng)
+        parties.append(Party(member, fixed.role, genres_mod.CAST_ROLES[fixed.role][form],
+                             staff=fixed.role in _STAFF_ROLES))
 
     date_lo, date_hi = genres_mod.PROFILES[plan.profile]["dates"]
 
@@ -1167,8 +1423,11 @@ def sample_record(
                                             party=None if party.is_subject else party.role))
             continue
         if etype == "ADDRESS":
-            planned.append(PlannedValue(etype, tier(etype), "value", street_address, None, label(etype),
-                                        hint="hovedpersonens bostedsadresse"))
+            in_block = "ADDRESS" in plan.id_block
+            planned.append(PlannedValue(
+                etype, tier(etype), "value", street_address, None, label(etype),
+                hint=("hovedpersonens bostedsadresse, som hører hjemme i identifikasjonsblokken i begynnelsen "
+                      "av dokumentet" if in_block else "hovedpersonens bostedsadresse")))
             continue
         if etype == "POSTAL_CODE":
             planned.append(PlannedValue(etype, tier(etype), "value", postal, None, label(etype),
@@ -1235,6 +1494,7 @@ def sample_record(
             planned.append(PlannedValue(
                 as_type, tier(as_type), "clause", text if strategy == "seeded" else None,
                 strategy, label(as_type), difficulty=chosen_entry.get("difficulty"),
+                topic=chosen_entry.get("topic"),
             ))
             continue
         if entry.get("value_kind") == "clause":
@@ -1245,8 +1505,20 @@ def sample_record(
             continue
         hint = None
         field = label(etype)
-        if etype == "MEDICAL_LICENSE" and signatory:
-            hint = f"HPR-nummeret til {signatory.full_name}"
+        holder_role = None
+        if etype == "MEDICAL_LICENSE":
+            holder = _licence_holder(parties, signatory_role)
+            if holder is None:
+                continue
+            hint = f"HPR-nummeret til {holder.person.full_name} ({holder.label}), ikke hovedpersonens"
+            holder_role = holder.role
+        elif etype == "DEVICE_ID":
+            hint = ("enhetsidentifikatoren til en enhet som tilhører hovedpersonen – aldri avsenderens egen; "
+                    "skriv aldri «vår» eller «vårt» foran den")
+        elif etype == "IP_ADDRESS":
+            hint = "IP-adressen hovedpersonens tilkobling kom fra – aldri avsenderens egen"
+        elif etype == "USERNAME":
+            hint = "hovedpersonens brukernavn – aldri avsenderens eget"
         elif etype == "ORG_NUMBER" and employer:
             hint = f"organisasjonsnummeret til {employer}"
         elif etype == "FIREARMS_LICENSE":
@@ -1262,8 +1534,7 @@ def sample_record(
             hint = (f"registreringsmerket til {ident.vessel_description(rng, form)}, som hovedpersonen eier; "
                     "fartøyets navn kan nevnes i teksten, men er ikke en del av merket")
         planned.append(PlannedValue(etype, tier(etype), "value", value, None, field,
-                                    checksum_valid, hint=hint,
-                                    party="author" if hint and hint.startswith("HPR-nummeret til") else None))
+                                    checksum_valid, hint=hint, party=holder_role))
 
     # A plate-shaped firearms number teaches "label decides" best with a real road
     # plate in the same document to contrast it with.
@@ -1310,6 +1581,9 @@ def sample_record(
                 continue
             if etype not in planned_types and len(planned_types) >= ceiling:
                 continue
+            if etype == "MEDICAL_LICENSE" and any(
+                    pv.type == "MEDICAL_LICENSE" and pv.party == party.role for pv in planned):
+                continue  # one clinician, one HPR number
             if etype == "ORGANIZATION":
                 value, checksum_valid = _employer(rng, employer_place)[0], None
             else:
@@ -1324,6 +1598,12 @@ def sample_record(
                 checksum_valid, hint=f"tilhører {party.label} {party.person.full_name}",
                 party=party.role))
 
+    # Further instances of the repeatable types, from their own RNG stream so that a document
+    # planned at one of everything is sampled exactly as it was before instances existed.
+    if strategy == "seeded" and plan.instances:
+        _add_instances(random.Random(doc_seed ^ 0x1257), plan, planned, clause_texts, subject, clause_bank,
+                       public_figures, difficulty_weights, form, tier, label)
+
     negatives: List[PlantedNegative] = []
     if plan.n_negatives and negative_bank:
         literals = [pv.value for pv in planned if pv.value]
@@ -1331,9 +1611,13 @@ def sample_record(
                                      literals, negative_ledger)
     realised = {pv.type for pv in planned}
     dropped = [t for t in plan.forced_types if t not in realised]
+    per_type = collections.Counter(pv.type for pv in planned if pv.type in genres_mod.MULTI_INSTANCE_TYPES)
     return Record(doc_seed, genre, plan.variant, form, length_band, person, parties, planned,
                   signatory_role=signatory_role, employer=employer, profile=plan.profile,
-                  dataset=dataset, planted_negatives=negatives, dropped_forced=dropped)
+                  dataset=dataset, planted_negatives=negatives, dropped_forced=dropped,
+                  instances_planned=dict(plan.instances),
+                  instances_realised={t: n for t, n in per_type.items() if n >= 2},
+                  coherence=coherence_report.as_dict())
 
 
 # ---------------------------------------------------------------------------
@@ -1524,7 +1808,8 @@ def _item_blocks(record: Record, planned: Sequence[PlannedValue],
 
 
 def _prompt_rules(record: Record, planned_types: Set[str], marked: bool, *,
-                  first_part: bool = True, section: bool = False) -> List[str]:
+                  first_part: bool = True, section: bool = False,
+                  items: Optional[Sequence[PlannedValue]] = None) -> List[str]:
     """Return the numbered rules of a generation prompt.
 
     Every rule a whole-document prompt carries is carried by a section prompt too:
@@ -1540,11 +1825,17 @@ def _prompt_rules(record: Record, planned_types: Set[str], marked: bool, *,
         first_part: False for a section after the first, which opens no
             identification block.
         section: True for a section prompt.
+        items: The planned items this prompt lists; the rule about several clauses of one
+            kind is given only when this prompt lists two of them. None means the whole record.
 
     Returns:
         The rules in order, without numbering.
     """
     named = ", ".join(p.person.full_name for p in record.parties) or "ingen"
+    # The labels the identification block names, in the document's own form: a Nynorsk
+    # document that is told «Navn:» writes «Navn:» (pilot v4's Nynorsk headers did).
+    labels = ", ".join(f"«{genres_mod.field_label(t, record.form)}:»"
+                       for t in ("PERSON", "NATIONAL_ID", "ADDRESS", "CASE_NUMBER", "DATE_TIME"))
     rules = [
         "ALLE oppgitte verdier og opplysninger skal brukes ORDRETT, tegn for tegn, uten omskriving "
         "eller endret bøyning.",
@@ -1566,8 +1857,8 @@ def _prompt_rules(record: Record, planned_types: Set[str], marked: bool, *,
     if first_part:
         rules.append(
             "Dokumentet kan åpne med én liten identifikasjonsblokk på høyst fem linjer. Hver linje har en "
-            "etikett som sier hva verdien er («Navn:», «Fødselsnummer:», «Adresse:», «Saksnummer:», "
-            "«Dato:»), og blokken har bare hovedpersonens egne verdier fra listen ovenfor. Finn ikke på "
+            f"etikett som sier hva verdien er ({labels}), og blokken har bare hovedpersonens egne "
+            "verdier fra listen ovenfor. Står hovedpersonens adresse i listen, hører den hjemme i blokken. Finn ikke på "
             "et saksnummer eller en referanse som ikke står i listen, og sett aldri et nummer under "
             "etiketten for en annen slags nummer (et tjenestenummer eller en enhetsidentifikator er "
             "aldri et saksnummer). Alt annet – andre personers navn og nummer, telefon, e-post, "
@@ -1593,10 +1884,26 @@ def _prompt_rules(record: Record, planned_types: Set[str], marked: bool, *,
         "lovhenvisninger, frister, klageadgang og nøytral administrativ tekst er derimot fritt.",
         "Opplysningene i listen skal gjengis ordrett og IKKE utvides: ikke føy til et årstall, en "
         "dato, en årsak, en følge eller en presisering på slutten av en oppgitt opplysning.",
-        "Etnisitet, religion, nasjonalitet, seksualitet og oppholdsstatus skal, hvis de er oppgitt, "
-        "stå som nøytrale personopplysninger. De skal ALDRI knyttes til mistanke, risiko, "
-        "kriminalitet, farlighet eller troverdighet.",
+        # Pilot v4 wrote "Vi ser at du er aktiv i Senterpartiet ..., noe som kan være relevant for
+        # helhetsvurderingen" in a money-laundering letter. The rule covers every special category.
+        "En opplysning om etnisitet, religion, nasjonalitet, seksualitet, oppholdsstatus, politisk "
+        "ståsted, helse, funksjonsnedsettelse, medisinbruk eller fagforeningsmedlemskap skal stå som et "
+        "nøytralt faktum. Den skal ALDRI presenteres som en grunn til, eller et bevis i, en vurdering: "
+        "ikke knytt den til mistanke, risiko, kriminalitet, farlighet, troverdighet eller en økonomisk "
+        "vurdering eller sikkerhetsvurdering, og ikke skriv at den er «relevant» for noe.",
+        # Pilot v4 wrote "Det foreligger ingen registrerte straffedomar" and then the seeded
+        # conviction, "men denne finst ikkje i oppgjeve register".
+        "Benekt, begrens, betvil eller forklar aldri bort en opplysning i listen. Skriv ikke at den "
+        "ikke finnes i et register, at den er uklar eller ubekreftet, eller at ingen slike forhold "
+        "foreligger. Hver opplysning er sann og står som et nøytralt faktum.",
     ]
+    listed = record.planned if items is None else items
+    if any(count >= 2 for count in collections.Counter(
+            pv.type for pv in listed if pv.value_kind == "clause").values()):
+        rules.append(
+            "Flere av opplysningene i listen gjelder samme slags forhold, men de er ulike forhold. Skriv "
+            "hver av dem ordrett i sin egen setning eller sitt eget setningsledd, slå dem ikke sammen til "
+            "én, og gjenta ingen av dem.")
     where = "denne delen" if section else "dette dokumentet"
     if "CASE_NUMBER" not in planned_types:
         rules.append(f"{where.capitalize()} har ikke noe saksnummer og ingen referanse. Skriv ingen linje "
@@ -1607,6 +1914,13 @@ def _prompt_rules(record: Record, planned_types: Set[str], marked: bool, *,
         if etype in planned_types:
             rules.append(f"Verdien oppgitt som {word} skal alltid omtales som {word} og aldri som "
                          "saksnummer, referanse eller noe annet nummer.")
+    if planned_types & {"DEVICE_ID", "IP_ADDRESS", "USERNAME"}:
+        rules.append("Enhetsidentifikatoren, IP-adressen og brukernavnet i listen tilhører hovedpersonen (eller "
+                     "en annen person som er nevnt), ikke den som skriver dokumentet. Skriv aldri «vår» eller «vårt» "
+                     "foran dem, og omtal dem aldri som avsenderens egen referanse eller eget system.")
+    if "MEDICAL_LICENSE" in planned_types:
+        rules.append("HPR-nummeret i listen tilhører legen, psykologen eller veterinæren det står oppgitt for, "
+                     "og skal stå sammen med den personens navn eller tittel – aldri ved hovedpersonen eller en pasient.")
     if "FIREARMS_LICENSE" in planned_types:
         rules.append("Nummeret oppgitt for våpenet (våpenkortnummer, lisensnummer eller registreringsnummer "
                      "i våpenregisteret) skal stå alene som nummer, med våpenet beskrevet utenfor nummeret, "
@@ -1805,7 +2119,8 @@ def build_section_prompt(record: Record, plan: "sections_mod.SectionPlan", k: in
                      + "\n".join(clause_lines))
     if negative_lines:
         parts.append(_NEGATIVE_INTRO.strip("\n") + "\n" + "\n".join(negative_lines))
-    rules = _prompt_rules(record, {pv.type for pv in items}, marked, first_part=k == 0, section=True)
+    rules = _prompt_rules(record, {pv.type for pv in items}, marked, first_part=k == 0, section=True,
+                          items=items)
     rules.append("Bruk bare personer, verdier og opplysninger som står i listen for denne delen eller i tidligere "
                  "deler; ikke legg til noe nytt om noen.")
     parts.append("Regler:\n" + "\n".join(f"{i}. {r}" for i, r in enumerate(rules, 1)))
@@ -1880,7 +2195,63 @@ def build_output(record: Record, clean_text: str, marked_spans: Dict[str, List[s
         for code in re.findall(r"(?<!\d)\d{4}(?!\d)", address):
             if code not in output["POSTAL_CODE"]:
                 output["POSTAL_CODE"].append(code)
+    # B13: a date or bare year inside a narrative clause is also DATE_TIME.
+    clause_types = {pv.type for pv in record.planned if pv.value_kind == "clause"}
+    for etype in clause_types:
+        for span in output.get(etype, []):
+            for date in clause_dates(span):
+                if date not in output["DATE_TIME"] and date not in output.get("DATE_OF_BIRTH", []):
+                    output["DATE_TIME"].append(date)
     return {k: v for k, v in output.items() if v}
+
+
+_CLAUSE_DATE_RE = re.compile(
+    rf"(?<![\w./-])\d{{1,2}}\.\s?(?:{gates._MONTHS})\s\d{{4}}(?![\w/-])"
+    rf"|(?<![\w./-])\d{{1,2}}\.\d{{1,2}}\.\d{{4}}(?![\w/-])"
+    rf"|(?<![\w./-])(?:{gates._MONTHS})\s(?:19|20)\d{{2}}(?![\w/-])"
+    r"|(?<![\w./-])(?:19|20)\d{2}(?![\w/-]|\.\d)",
+    re.IGNORECASE,
+)
+
+
+_YEAR_CUES = {
+    "i", "fra", "frå", "siden", "sidan", "før", "etter", "innen", "til", "og", "mellom",
+    "høsten", "hausten", "våren", "sommeren", "sommaren", "vinteren", "året", "år", "uke",
+    "veke", "januar", "februar", "mars", "april", "mai", "juni", "juli", "august",
+    "september", "oktober", "november", "desember", "dømt", "domfelt", "anmeldt",
+    "siktet", "sikta", "tiltalt", "diagnostisert", "innlagt", "utskrevet", "utskriven",
+}
+
+
+def clause_dates(span: str) -> List[str]:
+    """Return the dates and bare years ANNOTATION_SPEC B13 nests inside a clause.
+
+    Longest form first (`3. mars 2021`, `12.05.2019`, `mars 2021`, then a bare
+    year as its own token), so a year that belongs to a fuller date is not
+    emitted twice. Digits glued to `/`, `-` or another digit are part of an
+    identifier (`2018/45678`, `2018-475963`) and are left alone, per B13.
+
+    Args:
+        span: A labelled clause.
+
+    Returns:
+        The date substrings, in order of appearance, without duplicates.
+    """
+    found: List[str] = []
+    taken: List[Tuple[int, int]] = []
+    for m in _CLAUSE_DATE_RE.finditer(span):
+        if any(a < m.end() and m.start() < b for a, b in taken):
+            continue
+        if re.fullmatch(r"(?:19|20)\d{2}", m.group(0)):
+            # A bare four-digit number is a year only with a temporal cue before it;
+            # `betalte 2000 kroner` and `2000 høner` are amounts.
+            prev = re.findall(r"[\wæøåÆØÅ]+", span[:m.start()])
+            if not prev or prev[-1].lower() not in _YEAR_CUES:
+                continue
+        taken.append((m.start(), m.end()))
+        if m.group(0) not in found:
+            found.append(m.group(0))
+    return found
 
 
 # ---------------------------------------------------------------------------
@@ -1960,6 +2331,10 @@ class GenerationConfig:
     sectioning: str = "auto"  # "auto", "off" or "always"; see gendoc_sections.needs_sections
     section_retries: int = 3  # generations per section: the first and two regenerations
     section_join_redos: int = 2  # sections regenerated because the joined document failed
+    known_clause_texts: List[str] = field(default_factory=list)  # every literal clause text of the dataset's bank (G6)
+    coherence_log: List[dict] = field(default_factory=list)  # one CoherenceReport.as_dict() per record that went on
+    coherence_rejected: int = 0  # records `check_record_coherence` refused before any model call
+    max_coherence_redraws: int = 5  # fresh samples tried for one attempt before giving up
 
 
 @dataclass
@@ -1983,6 +2358,8 @@ class DocPlan:
     art9_cap: int = 1
     pii_free: bool = False
     n_negatives: int = 0
+    instances: Dict[str, int] = field(default_factory=dict)  # repeatable type -> instances planned (2..4)
+    id_block: List[str] = field(default_factory=list)  # types the document's identification block must carry
 
 
 @dataclass
@@ -2013,9 +2390,29 @@ def _doc_seed(base_seed: int, idx: int, attempt: int) -> int:
     return base_seed * 100003 + idx * 97 + attempt
 
 
+def check_record_coherence(record: Record) -> List[Tuple[str, str, int]]:
+    """Test a sampled record's cast against the rules of `gendoc_coherence`.
+
+    Returns:
+        `(rule, role, age)` for each violation; empty when the cast is possible or the record
+        has no subject.
+    """
+    if record.person is None:
+        return []
+    members = [coherence.Member(p.role or "subject", p.person.age())
+               for p in record.parties if not p.is_subject]
+    return coherence.check(record.person.age(), members)
+
+
 def new_attempt_record(state: DocState, base_seed: int, taxonomy_index: Dict[str, dict],
                        clause_bank: dict, public_figures: Set[str], config: GenerationConfig) -> Record:
-    """Sample the record for the state's next attempt, deterministically from its doc seed."""
+    """Sample the record for the state's next attempt, deterministically from its doc seed.
+
+    The sampler repairs an impossible cast (`gendoc_coherence.enforce_cast`); this is the
+    independent test of the result. A record that still fails it is released and sampled
+    again from a derived seed -- before any prompt is built, so no model call is spent on it
+    -- and counted in `config.coherence_rejected`.
+    """
     state.attempt += 1
     state.repairs = 0
     state.audit_repairs = 0
@@ -2026,13 +2423,22 @@ def new_attempt_record(state: DocState, base_seed: int, taxonomy_index: Dict[str
         config.negative_ledger = NegativeLedger(config.negative_cap)
     if state.record is not None:
         config.negative_ledger.release(state.record.planted_negatives)
-    doc_seed = _doc_seed(base_seed, plan.idx, state.attempt)
-    rng = random.Random(doc_seed)
-    record = sample_record(
-        rng, doc_seed, plan, config.strategy, taxonomy_index, clause_bank, public_figures,
-        negative_bank=config.negative_bank, difficulty_weights=config.difficulty_weights,
-        dataset=config.dataset, negative_ledger=config.negative_ledger,
-    )
+    for redraw in range(config.max_coherence_redraws + 1):
+        doc_seed = _doc_seed(base_seed, plan.idx, state.attempt) + redraw * 7_919_000
+        rng = random.Random(doc_seed)
+        record = sample_record(
+            rng, doc_seed, plan, config.strategy, taxonomy_index, clause_bank, public_figures,
+            negative_bank=config.negative_bank, difficulty_weights=config.difficulty_weights,
+            dataset=config.dataset, negative_ledger=config.negative_ledger,
+        )
+        if not check_record_coherence(record):
+            break
+        config.coherence_rejected += 1
+        config.negative_ledger.release(record.planted_negatives)
+    else:
+        raise RuntimeError(f"no coherent record for plan {plan.idx} after {config.max_coherence_redraws} redraws")
+    if record.coherence is not None:
+        config.coherence_log.append(record.coherence)
     for pv in record.planned:
         if pv.tier == "A" and pv.checksum_valid is not None and rng.random() < config.invalid_checksum_rate:
             value, valid = _generate_value_kind(pv.type, random.Random(doc_seed + 1), record.person,
@@ -2118,6 +2524,30 @@ def _drop_absorbed_spans(text: str, output: Dict[str, List[str]],
     return {k: v for k, v in out.items() if v}
 
 
+def _seeded_clause_literals(record: Record) -> List[str]:
+    """The seeded clause texts of a record: the words G6 and G12 must not count as the model's prose."""
+    return [pv.value for pv in record.planned if pv.value_kind == "clause" and pv.value]
+
+
+def _ownership_context(record: Record) -> Optional[dict]:
+    """Whose-value context for G14: the subject's names and pronouns, and the clinicians' names.
+
+    A planned HPR number is a clinician's; the gate rejects it when the text writes it next to
+    the subject (or the subject's pronoun) and not next to a clinician's name or title.
+    """
+    if record.person is None:
+        return None
+    person = record.person
+    pronouns = {("M", "nb"): ["han", "ham", "hans"], ("F", "nb"): ["hun", "henne", "hennes"],
+                ("M", "nn"): ["han", "hans"], ("F", "nn"): ["ho", "henne", "hennar"]}[(person.gender, record.form)]
+    clinicians = []
+    for party in record.parties:
+        if party.role in _CLINICIAN_ROLES or (party.role == "author" and (record.signatory_role or "") in _CLINICAL_TITLES):
+            clinicians += [party.person.full_name, party.person.last_name]
+    return {"subject_refs": [person.full_name, person.first_name, person.last_name, *pronouns],
+            "clinician_refs": clinicians}
+
+
 def evaluate_candidate(
     state: DocState, raw_text: str, finished: bool, *, taxonomy_index: Dict[str, dict],
     public_figures: Set[str], place_names: Set[str], agency_names: Set[str],
@@ -2146,6 +2576,7 @@ def evaluate_candidate(
     record = state.record
     attempt = state.attempt
     stage_tag = {"attempt": attempt, "repair": state.repairs}
+    clause_literals = _seeded_clause_literals(record)
 
     def fail(stage: str, detail) -> Tuple[str, None]:
         state.gate_log.append({**stage_tag, "stage": stage, "ok": False, "detail": detail})
@@ -2175,7 +2606,8 @@ def evaluate_candidate(
     if not length_ok:
         return fail("G10_length", {"length": length, "band_max": record.length_band[1],
                                    "hard_max": config.hard_max_chars})
-    repetition_ok, repetition = gates.gate_internal_repetition(clean_text, config.repetition_threshold)
+    repetition_ok, repetition = gates.gate_internal_repetition(
+        clean_text, config.repetition_threshold, exempt=clause_literals)
     if not repetition_ok:
         return fail("G12_repetition", {"repeat_8gram_share": repetition,
                                        "threshold": config.repetition_threshold})
@@ -2214,7 +2646,7 @@ def evaluate_candidate(
         return fail("G13_tabular", tabular_hits)
     roles_ok, role_hits = gates.gate_identifier_roles(
         clean_text, [(pv.type, pv.value) for pv in record.planned if pv.value_kind == "value"],
-        literal_values + negative_texts)
+        literal_values + negative_texts, owners=_ownership_context(record))
     if not roles_ok:
         return fail("G14_roles", role_hits)
 
@@ -2228,7 +2660,11 @@ def evaluate_candidate(
     if not g4_ok:
         return fail("G4_checksum", g4_bad)
 
-    ngrams = gates.word_ngrams(clean_text)
+    # G6 compares prose with prose. Two documents that draw the same bank clause (or the same
+    # pair of clauses of one type) look more alike by that clause alone, so the windows that
+    # overlap any clause text of the dataset's bank, and this document's own literals, are not
+    # part of the fingerprint.
+    ngrams = gates.word_ngrams(clean_text, exempt=clause_literals + config.known_clause_texts)
     g6_ok, g6_sim = gates.gate_near_duplicate(clean_text, ngrams, accepted_ngrams, config.near_dup_threshold)
     if not g6_ok:
         return fail("G6_near_duplicate", g6_sim)
@@ -2372,7 +2808,8 @@ def evaluate_section(
     length_ok, length = gates.gate_length(clean, section_max)
     if not length_ok:
         return fail("G10_length", {"length": length, "section_max": section_max})
-    repetition_ok, repetition = gates.gate_internal_repetition(clean, config.repetition_threshold)
+    repetition_ok, repetition = gates.gate_internal_repetition(
+        clean, config.repetition_threshold, exempt=_seeded_clause_literals(record))
     if not repetition_ok:
         return fail("G12_repetition", {"repeat_8gram_share": repetition,
                                        "threshold": config.repetition_threshold})
@@ -2404,7 +2841,8 @@ def evaluate_section(
         return fail("G13_tabular", tabular_hits)
     everything = _document_literals(record)
     roles_ok, role_hits = gates.gate_identifier_roles(
-        clean, [(pv.type, pv.value) for pv in planned if pv.value_kind == "value"], everything)
+        clean, [(pv.type, pv.value) for pv in planned if pv.value_kind == "value"], everything,
+        owners=_ownership_context(record))
     if not roles_ok:
         return fail("G14_roles", role_hits)
     covered = everything + [sub for neg in record.planted_negatives for sub in neg.also_labelled.values()]
@@ -2481,6 +2919,10 @@ def run_generation(
     """
     states = [DocState(plan) for plan in plans]
     queue: collections.deque = collections.deque()
+    if not config.known_clause_texts:
+        config.known_clause_texts = sorted({
+            e["text"] for etype, entries in clause_bank.items() if etype != "negatives"
+            for e in entries if "{" not in e["text"] and len(e["text"].split()) >= 3})
     if config.negative_ledger is None:
         config.negative_ledger = NegativeLedger(config.negative_cap)
     accepted_ngrams: List[Set[Tuple[str, ...]]] = []
@@ -2651,7 +3093,9 @@ def run_generation(
                 budgets.append(_token_budget(config, max(sec.chars[1], len(sec.text))))
             elif kind == "audit":
                 prompts.append(audit.build_audit_prompt(
-                    st.result["text"], _covered_spans(st) + _exempt_spans(st), st.record.doc_seed))
+                    st.result["text"], _covered_spans(st) + _exempt_spans(st), st.record.doc_seed,
+                    clauses=[(pv.type, pv.value) for pv in st.record.planned
+                             if pv.value_kind == "clause" and pv.value]))
                 budgets.append(config.audit_max_new_tokens)
             else:
                 keep = [pv.value for pv in st.record.planned if pv.value] + _exempt_spans(st)
@@ -2914,6 +3358,13 @@ NN_PLAN_SHARE = 0.45
 # is not what Norwegian correspondence looks like; these genres get a floor.
 CONTACT_FLOOR_SHARE = 0.38
 
+# Share of letter and decision documents (`gendoc_genres.ID_BLOCK_GENRES`, never minimal or
+# PII-free ones) whose identification block carries the subject's address. The gold set has
+# an address block in nearly every official document about a named person; pilot v4's
+# generated ones had it in a quarter. The postal code needs no separate item: it is the four
+# digits inside the address span and `build_output` labels it POSTAL_CODE by the nesting rule.
+ID_BLOCK_P = 0.85
+
 # How many coverage-scheduled types one document may be asked to host, by
 # density profile. A 600-character note cannot absorb a forced type without
 # becoming the checklist pilot v1 produced; a case file absorbs several.
@@ -3039,12 +3490,19 @@ def plan_batch(
     else:
         report = _schedule_rare_types(rng, plans, rare_force_share)
 
+    # Instances and the identification block are drawn from their own stream, after the
+    # coverage scheduling has settled each plan's genre.
+    irng = random.Random(rng.getrandbits(32))
     for plan in plans:
         if plan.pii_free:
             continue
         spec = genres_mod.GENRES[plan.genre]
         ceiling = genres_mod.type_ceiling(plan.length_band[1], spec.get("density_factor", 1.0))
         plan.type_target = max(1, min(plan.type_target, ceiling))
+        plan.instances = genres_mod.draw_instance_counts(irng, plan.genre, plan.profile)
+        if (plan.genre in genres_mod.ID_BLOCK_GENRES and plan.profile != "minimal"
+                and irng.random() < ID_BLOCK_P):
+            plan.id_block = ["ADDRESS"]
         # A contact floor, applied where the genre hosts one: pilot v2's
         # accepted batch carried one phone number in 46 documents.
         contact = _contact_types_for(plan.genre)
@@ -3060,6 +3518,12 @@ def plan_batch(
     report["planned_negatives"] = sum(p.n_negatives for p in plans)
     report["planned_profiles"] = dict(collections.Counter(p.profile for p in plans))
     report["planned_pii_free"] = sum(1 for p in plans if p.pii_free)
+    report["planned_instances"] = {
+        "documents_with_a_repeated_type": sum(1 for p in plans if p.instances),
+        "by_type": dict(collections.Counter(t for p in plans for t in p.instances)),
+        "by_count": dict(sorted(collections.Counter(n for p in plans for n in p.instances.values()).items())),
+    }
+    report["planned_id_block_address"] = sum(1 for p in plans if p.id_block)
     report["planned_nn_share"] = round(sum(1 for p in plans if p.form == "nn") / max(1, len(plans)), 3)
     report["planned_type_target"] = {
         "min": min((p.type_target for p in plans), default=None),
@@ -3438,6 +3902,103 @@ def density_report(accepted: List[dict], plans: List[DocPlan]) -> dict:
     }
 
 
+def multi_instance_report(accepted: List[dict], plans: List[DocPlan], clause_types: Sequence[str]) -> dict:
+    """Report how many spans of each clause type the accepted documents carry, and where.
+
+    Pilot v4 had exactly one span per clause type per document in all 39 documents, so the
+    number to show is the histogram itself: for each clause type, how many documents carry
+    1, 2, 3 or 4 spans of it. The per-family table is the comparison with the gold set
+    (inspection reports average 5.3 CRIMINAL spans, concern reports 8.1 HEALTH spans), and
+    the planned-versus-realised table says how much of what was planned the record could
+    supply.
+
+    Args:
+        accepted: Accepted document dicts.
+        plans: Every plan.
+        clause_types: Taxonomy types of kind `clause`.
+
+    Returns:
+        The multi-instance section of the gate report.
+    """
+    import gendoc_sections as sec
+    hist: Dict[str, Dict[int, int]] = {}
+    for etype in clause_types:
+        counts = collections.Counter(len(r["output"][etype]) for r in accepted if etype in r["output"])
+        if counts:
+            hist[etype] = dict(sorted(counts.items()))
+    families: Dict[str, List[dict]] = collections.defaultdict(list)
+    for r in accepted:
+        families[sec.family_for(r["record"].genre)].append(r)
+    by_family = {}
+    for fam, docs in sorted(families.items()):
+        n = len(docs)
+        by_family[fam] = {
+            "documents": n,
+            "CRIMINAL_spans_per_doc": round(sum(len(d["output"].get("CRIMINAL", [])) for d in docs) / n, 2),
+            "HEALTH_spans_per_doc": round(sum(len(d["output"].get("HEALTH", [])) for d in docs) / n, 2),
+            "docs_with_2plus_CRIMINAL": sum(1 for d in docs if len(d["output"].get("CRIMINAL", [])) >= 2),
+            "docs_with_2plus_HEALTH": sum(1 for d in docs if len(d["output"].get("HEALTH", [])) >= 2),
+        }
+    n_all = max(1, len(accepted))
+    planned_vs_realised = {}
+    for etype in genres_mod.MULTI_INSTANCE_TYPES:
+        asked = [r for r in accepted if etype in r["record"].instances_planned]
+        planned_vs_realised[etype] = {
+            "documents_planned_repeated": len(asked),
+            "realised_repeated": sum(1 for r in asked if r["record"].instances_realised.get(etype, 0) >= 2),
+            "instances_asked": sum(r["record"].instances_planned[etype] for r in asked),
+            "instances_realised": sum(r["record"].instances_realised.get(etype, 1) if etype in
+                                      r["record"].instances_planned and etype in r["output"] else 0
+                                      for r in asked),
+        }
+    items_by_profile: Dict[str, List[int]] = collections.defaultdict(list)
+    for r in accepted:
+        items_by_profile[r["record"].profile].append(len(r["record"].planned) + len(r["record"].planted_negatives))
+    return {
+        "spans_per_document_histogram": hist,
+        "criminal_and_health_by_genre_family": by_family,
+        "all_documents": {
+            "CRIMINAL_spans_per_doc": round(sum(len(r["output"].get("CRIMINAL", [])) for r in accepted) / n_all, 2),
+            "HEALTH_spans_per_doc": round(sum(len(r["output"].get("HEALTH", [])) for r in accepted) / n_all, 2),
+        },
+        "planned_vs_realised": planned_vs_realised,
+        "planned_items_per_document": {p: {"mean": round(sum(v) / len(v), 1), "max": max(v)}
+                                       for p, v in sorted(items_by_profile.items())},
+        "political_hosts": dict(collections.Counter(
+            r["record"].genre for r in accepted if "POLITICAL" in r["output"])),
+    }
+
+
+def coherence_report(config: GenerationConfig) -> dict:
+    """Report what the cast-coherence check found, repaired and rejected in the run."""
+    return coherence.summarise(config.coherence_log, config.coherence_rejected)
+
+
+def identification_report(accepted: List[dict]) -> dict:
+    """Report how often the documents carry an address block, a postal code, an e-mail and a case number.
+
+    The gold set carries these in nearly every official document about a named person; pilot v4's
+    generated ones in a quarter. The second rate leaves out PII-free and minimal documents and
+    the genres that are not letters or decisions about a named person, which is the population the
+    identification-block change is aimed at.
+
+    Args:
+        accepted: Accepted document dicts.
+
+    Returns:
+        Rates of ADDRESS, POSTAL_CODE, EMAIL and CASE_NUMBER overall and in letter and decision genres.
+    """
+    def rates(docs: List[dict]) -> dict:
+        n = max(1, len(docs))
+        return {"documents": len(docs),
+                **{t: round(sum(1 for d in docs if t in d["output"]) / n, 3)
+                   for t in ("ADDRESS", "POSTAL_CODE", "EMAIL", "CASE_NUMBER")}}
+
+    letters = [r for r in accepted if r["record"].genre in genres_mod.ID_BLOCK_GENRES
+               and not r["record"].pii_free and r["record"].profile != "minimal"]
+    return {"all_documents": rates(accepted), "letter_and_decision_documents": rates(letters)}
+
+
 def negatives_report(accepted: List[dict], states: List[DocState], plans: List[DocPlan]) -> dict:
     """Report what happened to the planted hard negatives.
 
@@ -3736,6 +4297,9 @@ def main() -> int:
                 "strategy": config.strategy, "seed": rec.doc_seed, "length": len(r["text"]),
                 "length_band": list(rec.length_band),
                 "planned_types": sorted({pv.type for pv in rec.planned}),
+                "planned_items": len(rec.planned) + len(rec.planted_negatives),
+                "instances_planned": rec.instances_planned, "instances_realised": rec.instances_realised,
+                "id_block": st.plan.id_block, "cast_coherence": rec.coherence,
                 "forced_types": st.plan.forced_types, "dropped_forced": rec.dropped_forced,
                 "planted_negatives": [
                     {"type": neg.type, "text": neg.text, "template": neg.template,
@@ -3818,7 +4382,8 @@ def main() -> int:
         "g7_labelled_spans": {"count": labelled_spans, "total_spans": total_spans,
                               "share": round(labelled_spans / total_spans, 4) if total_spans else 0.0},
         "repetition_share": {
-            "max": max((gates.repetition_share(r["text"]) for r in accepted), default=None),
+            "max": max((gates.repetition_share(r["text"], exempt=_seeded_clause_literals(r["record"]))
+                        for r in accepted), default=None),
             "threshold": config.repetition_threshold,
         },
         "clause_extension_fired": sum(len(r["clause_extensions"]) for r in accepted),
@@ -3850,6 +4415,10 @@ def main() -> int:
         "hard_negatives": {**negatives_report(accepted, states, plans),
                            "run_ledger": config.negative_ledger.report() if config.negative_ledger else None},
         "tabular": tabular_report(accepted),
+        "multi_instance": multi_instance_report(accepted, plans, sorted(
+            t for t, entry in taxonomy_index.items() if entry.get("value_kind") == "clause")),
+        "cast_coherence": coherence_report(config),
+        "identification_block": identification_report(accepted),
         "forced_types_dropped_by_sampler": dict(collections.Counter(
             t for r in accepted for t in r["record"].dropped_forced)),
     }

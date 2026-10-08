@@ -38,9 +38,18 @@ share to `negatives`, lists its training share in `negatives_train` so the split
 explicit and checkable, and records the batch in `negative_batches`. Running it
 twice for one batch is refused.
 
+New clauses are added the same way. Multi-instance documents (several offences, several
+findings, several debts in one document) need a bank deep enough to supply three or four
+compatible, distinct clauses of a type per genre and form, and the original bank was not.
+The entries added for that (`origin: multi_v6`) are partitioned by `extend-clauses`:
+about a quarter of each (type, form, kind of document) stratum of the batch goes to the
+benchmark, ranked by hash, every earlier assignment stays exactly where it was, the training share is
+listed in `clauses_train` and the batch recorded in `clause_batches`.
+
 Usage:
     python3 tools/gendoc_dataset.py build                         # write the partition file once
     python3 tools/gendoc_dataset.py extend-negatives nearmiss_v5  # partition a later batch of negatives
+    python3 tools/gendoc_dataset.py extend-clauses multi_v6       # partition a later batch of clauses
     python3 tools/gendoc_dataset.py summary                       # print its sizes
 """
 
@@ -60,7 +69,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import gendoc_data as data
 
 PARTITION_PATH = "data/synthetic/benchmark_partition.json"
-PARTITION_VERSION = 2
+PARTITION_VERSION = 3
 HOLDOUT_RATIO = 0.25
 SALT = "gendoc-benchmark-partition-v1"
 
@@ -69,6 +78,11 @@ SALT = "gendoc-benchmark-partition-v1"
 # document and the training set at most one, so it needs the larger pool.
 NEGATIVE_BATCH_BENCHMARK_RATIO = 0.70
 NEGATIVE_BATCH_SALT = "gendoc-negatives-batch-v1"
+
+# Share of a later clause batch that goes to the benchmark: the same quarter the
+# original bank was held out at, so the benchmark keeps its size relative to training.
+CLAUSE_BATCH_BENCHMARK_RATIO = 0.25
+CLAUSE_BATCH_SALT = "gendoc-clauses-batch-v1"
 
 # The two near-misses `PROJECT_SPEC_V2.md` found in the gold set (every apparent
 # trade-union hit was a case number containing "LO") and `ANNOTATION_SPEC.md` B7
@@ -382,6 +396,77 @@ def extend_negatives(partition: dict, clause_bank: dict, batch: str,
     return out
 
 
+def extend_clauses(partition: dict, clause_bank: dict, batch: str,
+                   ratio: float = CLAUSE_BATCH_BENCHMARK_RATIO) -> dict:
+    """Partition a later batch of clauses without touching any earlier assignment.
+
+    The partition lists only the benchmark share, so a clause added to the bank
+    would silently join the training set; the batch is assigned deterministically
+    here instead, per (type, form, kind of document) stratum and ranked by hash exactly as
+    `build_partition` and `extend_negatives` do, its benchmark share is added to
+    `clauses`, its training share is listed in `clauses_train` so the split can be
+    read and checked, and the batch is recorded in `clause_batches`. A text that
+    occurs in two forms of the batch (a Nynorsk clause character-identical to its
+    Bokmål one) lands on one side, as in the original partition.
+
+    Args:
+        partition: The loaded partition.
+        clause_bank: The flat bank from `gendoc_data.load_clause_bank`; the batch is
+            every clause whose `origin` equals `batch`.
+        batch: Batch name, e.g. "multi_v6".
+        ratio: Benchmark share of the batch.
+
+    Returns:
+        A new partition dict; the argument is not modified.
+
+    Raises:
+        ValueError: The batch is already recorded, is empty, or shares a text with
+            an earlier clause or with any negative (a text is on one side only).
+    """
+    if batch in partition.get("clause_batches", {}):
+        raise ValueError(f"clause batch {batch!r} is already in the partition")
+    types = sorted(t for t in clause_bank if t != "negatives")
+    fresh = {t: [e for e in clause_bank[t] if e.get("origin") == batch] for t in types}
+    fresh = {t: v for t, v in fresh.items() if v}
+    if not fresh:
+        raise ValueError(f"no clauses with origin {batch!r} in the bank")
+    batch_texts = {e["text"] for v in fresh.values() for e in v}
+    earlier = ({e["text"] for t in types for e in clause_bank[t] if e.get("origin") != batch}
+               | {e["text"] for v in clause_bank.get("negatives", {}).values() for e in v})
+    if batch_texts & earlier:
+        raise ValueError(f"batch shares texts with the bank: {sorted(batch_texts & earlier)[:3]}")
+
+    # A stratum is (type, form, the kind of document the clause is written for -- the first of
+    # its `genres`): a quarter of the school observations, a quarter of the child-welfare ones and
+    # a quarter of the police ones each go to the benchmark, instead of the hash sending three
+    # of four use cases a few entries and the fourth none.
+    strata: Dict[str, List[str]] = {}
+    for t, entries in sorted(fresh.items()):
+        for e in entries:
+            strata.setdefault(f"{t}:{e['form']}:{(e.get('genres') or [''])[0]}", []).append(e["text"])
+    assigned: Dict[str, bool] = {}
+    _assign({k: v for k, v in strata.items() if v}, assigned, ratio, False, salt=CLAUSE_BATCH_SALT)
+
+    out = json.loads(json.dumps(partition))
+    bench = {t: set(v) for t, v in out["clauses"].items()}
+    train: Dict[str, Set[str]] = {t: set(v) for t, v in out.get("clauses_train", {}).items()}
+    for t, entries in fresh.items():
+        for e in entries:
+            (bench if assigned[e["text"]] else train).setdefault(t, set()).add(e["text"])
+    out["clauses"] = {t: sorted(v) for t, v in sorted(bench.items()) if v}
+    out["clauses_train"] = {t: sorted(v) for t, v in sorted(train.items()) if v}
+    out.setdefault("clause_batches", {})[batch] = {
+        "salt": CLAUSE_BATCH_SALT, "ratio": ratio, "texts": len(batch_texts),
+        "benchmark": sum(1 for v in assigned.values() if v),
+        "train": sum(1 for v in assigned.values() if not v),
+    }
+    out["version"] = PARTITION_VERSION
+    bench_negatives = {t: set(v) for t, v in out["negatives"].items()}
+    pool_strata = _pool_strata(data.full_pools())
+    out["counts"] = _counts(clause_bank, bench, bench_negatives, pool_strata, out["names"])
+    return out
+
+
 def load_partition(path: str = PARTITION_PATH) -> dict:
     """Load the partition file, failing loudly if it is missing.
 
@@ -452,8 +537,8 @@ def main() -> int:
     """CLI: build or summarise the partition file."""
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("command", choices=["build", "extend-negatives", "summary"])
-    parser.add_argument("batch", nargs="?", help="negatives batch name for extend-negatives")
+    parser.add_argument("command", choices=["build", "extend-negatives", "extend-clauses", "summary"])
+    parser.add_argument("batch", nargs="?", help="batch name for extend-negatives / extend-clauses")
     parser.add_argument("--clause-bank", default="data/synthetic/clause_bank.json")
     parser.add_argument("--partition", default=PARTITION_PATH)
     parser.add_argument("--force", action="store_true",
@@ -474,6 +559,15 @@ def main() -> int:
             return 2
         partition = extend_negatives(load_partition(args.partition),
                                      data.load_clause_bank(args.clause_bank), args.batch)
+        with open(args.partition, "w", encoding="utf-8") as handle:
+            json.dump(partition, handle, ensure_ascii=False, indent=1)
+            handle.write("\n")
+    elif args.command == "extend-clauses":
+        if not args.batch:
+            print("extend-clauses needs a batch name", file=sys.stderr)
+            return 2
+        partition = extend_clauses(load_partition(args.partition),
+                                   data.load_clause_bank(args.clause_bank), args.batch)
         with open(args.partition, "w", encoding="utf-8") as handle:
             json.dump(partition, handle, ensure_ascii=False, indent=1)
             handle.write("\n")

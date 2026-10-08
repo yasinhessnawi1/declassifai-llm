@@ -1,5 +1,5 @@
 {
-  "version": 5,
+  "version": 6,
   "clause_bank": {
     "RELIGIOUS_BELIEF": [
       {
@@ -1266,7 +1266,8 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "diabetes"
       },
       {
         "text": "lider av kronisk depresjon",
@@ -1280,7 +1281,9 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "depression",
+        "group": "psych"
       },
       {
         "text": "diagnosekode F32.9",
@@ -1291,7 +1294,9 @@
         "genres": [
           "gp_referral",
           "nav_decision"
-        ]
+        ],
+        "topic": "depression",
+        "group": "psych"
       },
       {
         "text": "innlagt på Bærum sykehus etter et illebefinnende",
@@ -1305,7 +1310,8 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "hospitalised"
       },
       {
         "text": "ustabil mental helse over lengre tid",
@@ -1319,7 +1325,9 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "mental_general",
+        "group": "psych"
       },
       {
         "text": "mistanke om rabies",
@@ -1330,7 +1338,9 @@
         "genres": [
           "vet_clinical",
           "vet_inspection"
-        ]
+        ],
+        "topic": "rabies",
+        "group": "infection"
       },
       {
         "text": "mistenkt tuberkulose hos flere av dyrene i besetningen",
@@ -1341,7 +1351,9 @@
         "genres": [
           "vet_clinical",
           "vet_inspection"
-        ]
+        ],
+        "topic": "tuberculosis",
+        "group": "infection"
       },
       {
         "text": "skorper rundt øynene",
@@ -1352,7 +1364,8 @@
         "genres": [
           "vet_clinical",
           "vet_inspection"
-        ]
+        ],
+        "topic": "eyes"
       },
       {
         "text": "synlige sår og betente sår på bakbeina",
@@ -1363,7 +1376,8 @@
         "genres": [
           "vet_clinical",
           "vet_inspection"
-        ]
+        ],
+        "topic": "wound_hind"
       },
       {
         "text": "halter tydelig på venstre forbein",
@@ -1374,7 +1388,8 @@
         "genres": [
           "vet_clinical",
           "vet_inspection"
-        ]
+        ],
+        "topic": "gait"
       },
       {
         "text": "matt og flokete pels over hele kroppen",
@@ -1385,7 +1400,8 @@
         "genres": [
           "vet_clinical",
           "vet_inspection"
-        ]
+        ],
+        "topic": "coat"
       },
       {
         "text": "bovine tuberkulose bekreftet ved funn av mistenkelige lesjoner",
@@ -1396,7 +1412,9 @@
         "genres": [
           "vet_clinical",
           "vet_inspection"
-        ]
+        ],
+        "topic": "tuberculosis",
+        "group": "infection"
       },
       {
         "text": "paratuberkulose (Johne's sykdom)",
@@ -1407,7 +1425,9 @@
         "genres": [
           "vet_clinical",
           "vet_inspection"
-        ]
+        ],
+        "topic": "paratuberculosis",
+        "group": "infection"
       },
       {
         "text": "åpenbart en hudsykdom",
@@ -1418,7 +1438,8 @@
         "genres": [
           "vet_clinical",
           "vet_inspection"
-        ]
+        ],
+        "topic": "skin"
       },
       {
         "text": "sikler kraftig og virker desorientert",
@@ -1429,7 +1450,8 @@
         "genres": [
           "vet_clinical",
           "vet_inspection"
-        ]
+        ],
+        "topic": "neurological"
       },
       {
         "text": "fortsatt ikke hadde tilgang til mat eller vann",
@@ -1440,7 +1462,8 @@
         "genres": [
           "vet_clinical",
           "vet_inspection"
-        ]
+        ],
+        "topic": "food_water"
       },
       {
         "text": "ikke får den nødvendige veterinærbehandlingen",
@@ -1451,7 +1474,8 @@
         "genres": [
           "vet_clinical",
           "vet_inspection"
-        ]
+        ],
+        "topic": "vet_care"
       },
       {
         "text": "ikke har råd til nødvendig veterinærbehandling",
@@ -1462,7 +1486,8 @@
         "genres": [
           "vet_clinical",
           "vet_inspection"
-        ]
+        ],
+        "topic": "vet_care"
       },
       {
         "text": "apatiske og beveger seg lite",
@@ -1473,7 +1498,8 @@
         "genres": [
           "vet_clinical",
           "vet_inspection"
-        ]
+        ],
+        "topic": "apathy"
       },
       {
         "text": "alvorlig depresjon, bekreftet av journalnotater",
@@ -1487,7 +1513,9 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "depression",
+        "group": "psych"
       },
       {
         "text": "tegn på alvorlig underernæring hos flere av dyrene",
@@ -1498,7 +1526,8 @@
         "genres": [
           "vet_clinical",
           "vet_inspection"
-        ]
+        ],
+        "topic": "nutrition"
       },
       {
         "text": "diagnostisert med kronisk utmattelsessyndrom",
@@ -1512,7 +1541,8 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "fatigue"
       },
       {
         "text": "diagnostisert med diabetes type 2",
@@ -1526,7 +1556,8 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "diabetes"
       },
       {
         "text": "lid av kronisk depresjon",
@@ -1540,7 +1571,9 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "depression",
+        "group": "psych"
       },
       {
         "text": "skorper kring augo",
@@ -1551,7 +1584,8 @@
         "genres": [
           "vet_clinical",
           "vet_inspection"
-        ]
+        ],
+        "topic": "eyes"
       },
       {
         "text": "haltar tydeleg på venstre forbein",
@@ -1562,7 +1596,8 @@
         "genres": [
           "vet_clinical",
           "vet_inspection"
-        ]
+        ],
+        "topic": "gait"
       },
       {
         "text": "matt og flokut pels over heile kroppen",
@@ -1573,7 +1608,8 @@
         "genres": [
           "vet_clinical",
           "vet_inspection"
-        ]
+        ],
+        "topic": "coat"
       },
       {
         "text": "fekk ikkje naudsynt veterinærbehandling",
@@ -1584,7 +1620,8 @@
         "genres": [
           "vet_clinical",
           "vet_inspection"
-        ]
+        ],
+        "topic": "vet_care"
       },
       {
         "text": "mistanke om rabies",
@@ -1595,7 +1632,9 @@
         "genres": [
           "vet_clinical",
           "vet_inspection"
-        ]
+        ],
+        "topic": "rabies",
+        "group": "infection"
       },
       {
         "text": "har hatt vedvarende ryggsmerter siden høsten",
@@ -1607,7 +1646,9 @@
           "gp_referral",
           "nav_decision",
           "dismissal_letter"
-        ]
+        ],
+        "topic": "back_pain",
+        "group": "musculoskeletal"
       },
       {
         "text": "har hatt vedvarande ryggsmerter sidan hausten",
@@ -1619,7 +1660,9 @@
           "gp_referral",
           "nav_decision",
           "dismissal_letter"
-        ]
+        ],
+        "topic": "back_pain",
+        "group": "musculoskeletal"
       },
       {
         "text": "sykmeldt på grunn av utbrenthet",
@@ -1632,7 +1675,9 @@
           "nav_decision",
           "dismissal_letter"
         ],
-        "status": "employed"
+        "status": "employed",
+        "topic": "burnout",
+        "group": "psych"
       },
       {
         "text": "sjukmeld på grunn av utbrenttheit",
@@ -1645,7 +1690,9 @@
           "nav_decision",
           "dismissal_letter"
         ],
-        "status": "employed"
+        "status": "employed",
+        "topic": "burnout",
+        "group": "psych"
       },
       {
         "text": "utredes for mulig hjertesvikt",
@@ -1656,7 +1703,8 @@
         "genres": [
           "gp_referral",
           "nav_decision"
-        ]
+        ],
+        "topic": "cardiac"
       },
       {
         "text": "vert utgreidd for mogleg hjartesvikt",
@@ -1667,7 +1715,8 @@
         "genres": [
           "gp_referral",
           "nav_decision"
-        ]
+        ],
+        "topic": "cardiac"
       },
       {
         "text": "angstlidelse som har forverret seg det siste året",
@@ -1680,7 +1729,9 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "anxiety",
+        "group": "psych"
       },
       {
         "text": "angstliding som har forverra seg det siste året",
@@ -1693,7 +1744,9 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "anxiety",
+        "group": "psych"
       },
       {
         "text": "posttraumatisk stresslidelse etter krigsopplevelser",
@@ -1713,7 +1766,9 @@
           "eritreisk",
           "somalisk",
           "irakisk"
-        ]
+        ],
+        "topic": "ptsd",
+        "group": "psych"
       },
       {
         "text": "posttraumatisk stressliding etter krigsopplevingar",
@@ -1733,7 +1788,722 @@
           "eritreisk",
           "somalisk",
           "irakisk"
-        ]
+        ],
+        "topic": "ptsd",
+        "group": "psych"
+      },
+      {
+        "text": "behandlet for høyt blodtrykk i flere år",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "topic": "hypertension",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "behandla for høgt blodtrykk i fleire år",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "topic": "hypertension",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "operert for brudd i høyre ankel høsten 2024",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "topic": "ankle_fracture",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "operert for brot i høgre ankel hausten 2024",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "topic": "ankle_fracture",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "astma som har forverret seg det siste halvåret",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "topic": "respiratory",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "astma som har forverra seg det siste halvåret",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "topic": "respiratory",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "diagnostisert med kols",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "topic": "respiratory",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "påvist tykktarmskreft i 2023",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision"
+        ],
+        "topic": "oncology",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "påvist tjukktarmskreft i 2023",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision"
+        ],
+        "topic": "oncology",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "migrene med hyppige anfall",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "topic": "migraine",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "migrene med hyppige åtak",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "topic": "migraine",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "epilepsi med flere anfall det siste året",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "topic": "epilepsy",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "epilepsi med fleire anfall det siste året",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "topic": "epilepsy",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "gjennomgått hjerteinfarkt i 2022",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "topic": "cardiac",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "gjennomgått hjarteinfarkt i 2022",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "topic": "cardiac",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "kroniske smerter i nakken",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "topic": "neck_pain",
+        "group": "musculoskeletal",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "kroniske smerter i nakken",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "topic": "neck_pain",
+        "group": "musculoskeletal",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "innlagt på sykehus i to uker etter en lungebetennelse",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "topic": "pneumonia",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "innlagd på sjukehus i to veker etter ei lungebetennelse",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "topic": "pneumonia",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "behandling for kronisk nyresvikt",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision"
+        ],
+        "topic": "kidney",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "under behandling for kronisk nyresvikt",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision"
+        ],
+        "topic": "kidney",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "plaget av hyppige svimmelhetsanfall",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "topic": "dizziness",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "plaga av hyppige svimmelheitsåtak",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "topic": "dizziness",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "nylig operert for grå stær",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision"
+        ],
+        "topic": "cataract",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "alvorlig overvekt",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision"
+        ],
+        "topic": "obesity",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "alvorleg overvekt",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision"
+        ],
+        "topic": "obesity",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "synlige ribbein",
+        "form": "nb",
+        "subject": "animal",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "vet_clinical",
+          "vet_inspection"
+        ],
+        "topic": "nutrition",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "synlege ribbein",
+        "form": "nn",
+        "subject": "animal",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "vet_clinical",
+          "vet_inspection"
+        ],
+        "topic": "nutrition",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "betent og hoven på venstre øre",
+        "form": "nb",
+        "subject": "animal",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "vet_clinical",
+          "vet_inspection"
+        ],
+        "topic": "ear",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "betent og hoven på venstre øyre",
+        "form": "nn",
+        "subject": "animal",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "vet_clinical",
+          "vet_inspection"
+        ],
+        "topic": "ear",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "alvorlig tannråte",
+        "form": "nb",
+        "subject": "animal",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "vet_clinical",
+          "vet_inspection"
+        ],
+        "topic": "dental",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "alvorleg tannråte",
+        "form": "nn",
+        "subject": "animal",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "vet_clinical",
+          "vet_inspection"
+        ],
+        "topic": "dental",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "gjentatte hosteanfall",
+        "form": "nb",
+        "subject": "animal",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "vet_clinical",
+          "vet_inspection"
+        ],
+        "topic": "cough",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "gjentekne hosteanfall",
+        "form": "nn",
+        "subject": "animal",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "vet_clinical",
+          "vet_inspection"
+        ],
+        "topic": "cough",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "kraftig parasittangrep med flått",
+        "form": "nb",
+        "subject": "animal",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "vet_clinical",
+          "vet_inspection"
+        ],
+        "topic": "parasites",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "kraftig parasittåtak med flått",
+        "form": "nn",
+        "subject": "animal",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "vet_clinical",
+          "vet_inspection"
+        ],
+        "topic": "parasites",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "åpne, infiserte sår på halsen etter et for stramt halsbånd",
+        "form": "nb",
+        "subject": "animal",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "vet_clinical",
+          "vet_inspection"
+        ],
+        "topic": "wound_neck",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "opne, infiserte sår på halsen etter eit for stramt halsband",
+        "form": "nn",
+        "subject": "animal",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "vet_clinical",
+          "vet_inspection"
+        ],
+        "topic": "wound_neck",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "vedvarende diaré",
+        "form": "nb",
+        "subject": "animal",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "vet_clinical",
+          "vet_inspection"
+        ],
+        "topic": "digestive",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "vedvarande diaré",
+        "form": "nn",
+        "subject": "animal",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "vet_clinical",
+          "vet_inspection"
+        ],
+        "topic": "digestive",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "ingen beskyttelse mot vær og vind",
+        "form": "nb",
+        "subject": "animal",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "vet_clinical",
+          "vet_inspection"
+        ],
+        "topic": "shelter",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "ingen vern mot vêr og vind",
+        "form": "nn",
+        "subject": "animal",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "vet_clinical",
+          "vet_inspection"
+        ],
+        "topic": "shelter",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "isolert fra andre dyr av samme art",
+        "form": "nb",
+        "subject": "animal",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "vet_clinical",
+          "vet_inspection"
+        ],
+        "topic": "social",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "isolert frå andre dyr av same art",
+        "form": "nn",
+        "subject": "animal",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "vet_clinical",
+          "vet_inspection"
+        ],
+        "topic": "social",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "mangle tilstrekkelig bevegelse, stimulering og omsorg",
+        "form": "nb",
+        "subject": "animal",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "vet_clinical",
+          "vet_inspection"
+        ],
+        "topic": "exercise",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "mangle tilstrekkeleg rørsle, stimulering og omsorg",
+        "form": "nn",
+        "subject": "animal",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "vet_clinical",
+          "vet_inspection"
+        ],
+        "topic": "exercise",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "blåtunge påvist hos flere av dyrene",
+        "form": "nb",
+        "subject": "animal",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "vet_clinical",
+          "vet_inspection"
+        ],
+        "topic": "bluetongue",
+        "group": "infection",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "blåtunge påvist hos fleire av dyra",
+        "form": "nn",
+        "subject": "animal",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "vet_clinical",
+          "vet_inspection"
+        ],
+        "topic": "bluetongue",
+        "group": "infection",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "tegn på lungebetennelse hos kalvene",
+        "form": "nb",
+        "subject": "animal",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "vet_clinical",
+          "vet_inspection"
+        ],
+        "topic": "pneumonia",
+        "group": "infection",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "ubehandlet skade på høyre bakbein",
+        "form": "nb",
+        "subject": "animal",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "vet_clinical",
+          "vet_inspection"
+        ],
+        "topic": "untreated_injury",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "ubehandla skade på høgre bakbein",
+        "form": "nn",
+        "subject": "animal",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "vet_clinical",
+          "vet_inspection"
+        ],
+        "topic": "untreated_injury",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "får smertestillende fra veterinæren hver dag",
+        "form": "nb",
+        "subject": "animal",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "vet_clinical",
+          "vet_inspection"
+        ],
+        "topic": "pain_medication",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "får smertestillande frå veterinæren kvar dag",
+        "form": "nn",
+        "subject": "animal",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "vet_clinical",
+          "vet_inspection"
+        ],
+        "topic": "pain_medication",
+        "origin": "multi_v6"
       }
     ],
     "DISABILITY": [
@@ -2044,7 +2814,9 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "depression",
+        "group": "psych"
       },
       {
         "text": "tar Metformin daglig",
@@ -2058,7 +2830,8 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "diabetes"
       },
       {
         "text": "behandles med Sertralin",
@@ -2072,7 +2845,9 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "depression",
+        "group": "psych"
       },
       {
         "text": "bruk av insulin flere ganger daglig",
@@ -2086,7 +2861,8 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "diabetes"
       },
       {
         "text": "medisineres med antipsykotika på grunn av tilstanden",
@@ -2100,7 +2876,9 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "psychosis",
+        "group": "psych"
       },
       {
         "text": "brukt cannabis på medisinsk resept mot kroniske smerter",
@@ -2114,7 +2892,8 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "pain"
       },
       {
         "text": "tar smertestillende opioider foreskrevet av fastlegen",
@@ -2128,7 +2907,8 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "pain"
       },
       {
         "text": "behandles med kjemoterapi hver tredje uke",
@@ -2142,7 +2922,8 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "oncology"
       },
       {
         "text": "bruker blodfortynnende medisin etter hjerteoperasjonen",
@@ -2156,7 +2937,8 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "cardiac"
       },
       {
         "text": "mistenkes å ha sluttet å ta sine foreskrevne medisiner",
@@ -2170,7 +2952,8 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "adherence"
       },
       {
         "text": "gis daglig medisin mot epilepsi",
@@ -2184,7 +2967,8 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "epilepsy"
       },
       {
         "text": "bruker ADHD-medisin på skoledager",
@@ -2198,7 +2982,9 @@
         "age_range": [
           6,
           30
-        ]
+        ],
+        "topic": "adhd",
+        "group": "psych"
       },
       {
         "text": "behandles med Litium for den bipolare lidelsen",
@@ -2212,7 +2998,9 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "bipolar",
+        "group": "psych"
       },
       {
         "text": "tar veterinærforeskrevet smertestillende til hunden daglig",
@@ -2223,7 +3011,8 @@
         "genres": [
           "vet_clinical",
           "vet_inspection"
-        ]
+        ],
+        "topic": "pain_medication"
       },
       {
         "text": "behandles med antibiotika for en luftveisinfeksjon",
@@ -2237,7 +3026,8 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "respiratory"
       },
       {
         "text": "brukar antidepressiva",
@@ -2251,7 +3041,9 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "depression",
+        "group": "psych"
       },
       {
         "text": "tek Metformin dagleg",
@@ -2265,7 +3057,8 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "diabetes"
       },
       {
         "text": "vert behandla med Sertralin",
@@ -2279,7 +3072,9 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "depression",
+        "group": "psych"
       },
       {
         "text": "får dagleg medisin mot epilepsi",
@@ -2293,7 +3088,8 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "epilepsy"
       },
       {
         "text": "brukar blodfortynnande medisin etter hjarteoperasjonen",
@@ -2307,7 +3103,8 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "cardiac"
       },
       {
         "text": "vert behandla med kjemoterapi kvar tredje veke",
@@ -2321,7 +3118,203 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "oncology"
+      },
+      {
+        "text": "bruker inhalator hver dag",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "topic": "respiratory",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "brukar inhalator kvar dag",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "topic": "respiratory",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "tar blodtrykksmedisin hver morgen",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "topic": "hypertension",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "tek blodtrykksmedisin kvar morgon",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "topic": "hypertension",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "får månedlige injeksjoner",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "topic": "rheumatism",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "får månadlege injeksjonar",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "topic": "rheumatism",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "tar kolesterolsenkende tabletter",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "topic": "cholesterol",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "tek kolesterolsenkande tablettar",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "topic": "cholesterol",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "står på sterke sovemedisiner",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "topic": "sleep",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "står på sterke sovemedisinar",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "topic": "sleep",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "bruker migrenemedisin ved anfall",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "topic": "migraine",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "brukar migrenemedisin ved anfall",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "topic": "migraine",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "tar hormontabletter etter operasjonen",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "topic": "hormones",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "behandles med cellegift i tablettform",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "gp_referral",
+          "nav_decision"
+        ],
+        "topic": "oncology",
+        "origin": "multi_v6"
       }
     ],
     "BEHAVIORAL_PATTERN": [
@@ -2333,7 +3326,8 @@
         "note": "B18 exception: subject kept",
         "genres": [
           "vet_inspection"
-        ]
+        ],
+        "topic": "neighbour_dispute"
       },
       {
         "text": "Har sett eieren bli sint på hunden ved flere anledninger",
@@ -2343,7 +3337,8 @@
         "note": "B18 exception: subject kept",
         "genres": [
           "vet_inspection"
-        ]
+        ],
+        "topic": "anger_at_animal"
       },
       {
         "text": "rope på hunden aggressivt flere ganger",
@@ -2353,7 +3348,8 @@
         "note": null,
         "genres": [
           "vet_inspection"
-        ]
+        ],
+        "topic": "shouting_at_animal"
       },
       {
         "text": "kaste tomflasker og stein etter hundene",
@@ -2363,7 +3359,8 @@
         "note": null,
         "genres": [
           "vet_inspection"
-        ]
+        ],
+        "topic": "throwing_objects"
       },
       {
         "text": "nektet å samarbeide med inspektørene og fremviste aggressiv atferd",
@@ -2373,7 +3370,8 @@
         "note": null,
         "genres": [
           "vet_inspection"
-        ]
+        ],
+        "topic": "noncooperation"
       },
       {
         "text": "sparke og slå hundene ved flere anledninger",
@@ -2383,7 +3381,8 @@
         "note": "human acting on an animal — kept per the 9.6% owner-conduct carve-out",
         "genres": [
           "vet_inspection"
-        ]
+        ],
+        "topic": "hitting_animal"
       },
       {
         "text": "jeg har sett {PERSON_M} oppføre seg uberegnelig noen ganger",
@@ -2393,7 +3392,8 @@
         "note": null,
         "genres": [
           "police_report"
-        ]
+        ],
+        "topic": "erratic"
       },
       {
         "text": "Dere skal få svi, begge to!",
@@ -2403,7 +3403,8 @@
         "note": "quoted outburst attributed to an identifiable person in a context of recurring krangler",
         "genres": [
           "police_report"
-        ]
+        ],
+        "topic": "outburst_quote"
       },
       {
         "text": "resistant to previous guidance and exhibits a pattern of non-compliance",
@@ -2411,7 +3412,8 @@
         "subject": "person",
         "difficulty": "hard",
         "note": "English-language source keeps English span, per Global Rule 1",
-        "genres": []
+        "genres": [],
+        "topic": "noncooperation"
       },
       {
         "text": "utagerende oppførsel, spesielt etter inntak av alkohol",
@@ -2424,7 +3426,9 @@
           "dismissal_letter",
           "nav_decision",
           "gp_referral"
-        ]
+        ],
+        "topic": "intoxication",
+        "group": "intoxication"
       },
       {
         "text": "beruset ved flere anledninger uten at det er meldt noe straffbart forhold",
@@ -2437,7 +3441,9 @@
           "dismissal_letter",
           "nav_decision",
           "gp_referral"
-        ]
+        ],
+        "topic": "intoxication",
+        "group": "intoxication"
       },
       {
         "text": "stadig mer radikalisert i sine uttalelser det siste året",
@@ -2448,7 +3454,8 @@
         "genres": [
           "police_report",
           "udi_decision"
-        ]
+        ],
+        "topic": "radicalisation"
       },
       {
         "text": "mistenkes å ha kastet gjenstander etter hundene ved flere tilfeller",
@@ -2458,7 +3465,8 @@
         "note": "hedge kept; conduct pattern about the owner, not the animal",
         "genres": [
           "vet_inspection"
-        ]
+        ],
+        "topic": "throwing_objects"
       },
       {
         "text": "aggressiv og lite samarbeidsvillig overfor kontrolletatene",
@@ -2470,7 +3478,8 @@
           "police_report",
           "nav_decision",
           "udi_decision"
-        ]
+        ],
+        "topic": "noncooperation"
       },
       {
         "text": "nektet å samarbeide med inspektørene og fremviste aggressiv atferd",
@@ -2480,7 +3489,8 @@
         "note": null,
         "genres": [
           "vet_inspection"
-        ]
+        ],
+        "topic": "noncooperation"
       },
       {
         "text": "har fleire gonger høyrt eigaren rope og skrike til hundane",
@@ -2490,7 +3500,8 @@
         "note": "B18 exception: subject kept",
         "genres": [
           "vet_inspection"
-        ]
+        ],
+        "topic": "shouting_at_animal"
       },
       {
         "text": "kasta tomflasker og stein etter hundane",
@@ -2500,7 +3511,8 @@
         "note": null,
         "genres": [
           "vet_inspection"
-        ]
+        ],
+        "topic": "throwing_objects"
       },
       {
         "text": "utagerande framferd, særleg etter inntak av alkohol",
@@ -2513,7 +3525,9 @@
           "dismissal_letter",
           "nav_decision",
           "gp_referral"
-        ]
+        ],
+        "topic": "intoxication",
+        "group": "intoxication"
       },
       {
         "text": "mistenkjest å ha kasta gjenstandar etter hundane fleire gonger",
@@ -2523,7 +3537,8 @@
         "note": null,
         "genres": [
           "vet_inspection"
-        ]
+        ],
+        "topic": "throwing_objects"
       },
       {
         "text": "stadig meir radikalisert i uttalelsane sine det siste året",
@@ -2534,7 +3549,8 @@
         "genres": [
           "police_report",
           "udi_decision"
-        ]
+        ],
+        "topic": "radicalisation"
       },
       {
         "text": "kaste gjenstander etter dyrene i sinne",
@@ -2544,7 +3560,8 @@
         "note": null,
         "genres": [
           "vet_inspection"
-        ]
+        ],
+        "topic": "throwing_objects"
       },
       {
         "text": "høylytte krangler med familiemedlemmer observert av naboer",
@@ -2554,7 +3571,8 @@
         "note": null,
         "genres": [
           "police_report"
-        ]
+        ],
+        "topic": "family_quarrels"
       },
       {
         "text": "nekter gjentatte ganger å slippe inn tilsynet på eiendommen",
@@ -2564,7 +3582,8 @@
         "note": null,
         "genres": [
           "vet_inspection"
-        ]
+        ],
+        "topic": "noncooperation"
       },
       {
         "text": "har ved fleire høve vist sinneutbrot mot tilsette",
@@ -2576,7 +3595,8 @@
           "dismissal_letter",
           "nav_decision",
           "gp_referral"
-        ]
+        ],
+        "topic": "outbursts_staff"
       },
       {
         "text": "nektar gjentekne gonger å sleppe inn tilsynet på eigedomen",
@@ -2586,7 +3606,8 @@
         "note": null,
         "genres": [
           "vet_inspection"
-        ]
+        ],
+        "topic": "noncooperation"
       },
       {
         "text": "har gjentatte ganger møtt for sent uten gyldig grunn",
@@ -2598,7 +3619,8 @@
           "dismissal_letter",
           "nav_decision"
         ],
-        "status": "employed"
+        "status": "employed",
+        "topic": "late_work"
       },
       {
         "text": "har fleire gonger møtt for seint utan gyldig grunn",
@@ -2610,7 +3632,8 @@
           "dismissal_letter",
           "nav_decision"
         ],
-        "status": "employed"
+        "status": "employed",
+        "topic": "late_work"
       },
       {
         "text": "har ved flere anledninger opptrådt truende overfor kolleger",
@@ -2621,7 +3644,8 @@
         "genres": [
           "dismissal_letter"
         ],
-        "status": "employed"
+        "status": "employed",
+        "topic": "threatening_colleagues"
       },
       {
         "text": "har ved fleire høve opptredd trugande overfor kollegaer",
@@ -2632,7 +3656,8 @@
         "genres": [
           "dismissal_letter"
         ],
-        "status": "employed"
+        "status": "employed",
+        "topic": "threatening_colleagues"
       },
       {
         "text": "har uteblitt fra jobb uten å gi beskjed flere ganger",
@@ -2643,7 +3668,8 @@
         "genres": [
           "dismissal_letter"
         ],
-        "status": "employed"
+        "status": "employed",
+        "topic": "absence_work"
       },
       {
         "text": "har fleire gonger vore borte frå jobb utan å melde frå",
@@ -2654,7 +3680,8 @@
         "genres": [
           "dismissal_letter"
         ],
-        "status": "employed"
+        "status": "employed",
+        "topic": "absence_work"
       },
       {
         "text": "har ved flere anledninger oppsøkt fornærmedes bolig om natten",
@@ -2664,7 +3691,8 @@
         "note": "added for genre coverage after pilot_v1",
         "genres": [
           "police_report"
-        ]
+        ],
+        "topic": "stalking"
       },
       {
         "text": "har fleire gonger oppsøkt bustaden til den fornærma om natta",
@@ -2674,7 +3702,8 @@
         "note": "added for genre coverage after pilot_v1",
         "genres": [
           "police_report"
-        ]
+        ],
+        "topic": "stalking"
       },
       {
         "text": "har gjentatte ganger unnlatt å møte til avtalte samtaler",
@@ -2684,7 +3713,8 @@
         "note": "added for genre coverage after pilot_v1",
         "genres": [
           "nav_decision"
-        ]
+        ],
+        "topic": "missed_meetings"
       },
       {
         "text": "har fleire gonger late vere å møte til avtalte samtalar",
@@ -2694,7 +3724,8 @@
         "note": "added for genre coverage after pilot_v1",
         "genres": [
           "nav_decision"
-        ]
+        ],
+        "topic": "missed_meetings"
       },
       {
         "text": "isolerer seg i økende grad og har sluttet å gå ut",
@@ -2705,7 +3736,8 @@
         "genres": [
           "gp_referral",
           "nav_decision"
-        ]
+        ],
+        "topic": "withdrawal"
       },
       {
         "text": "isolerer seg meir og meir og har slutta å gå ut",
@@ -2716,7 +3748,870 @@
         "genres": [
           "gp_referral",
           "nav_decision"
-        ]
+        ],
+        "topic": "withdrawal"
+      },
+      {
+        "text": "gjentatte ganger latt barna være alene hjemme om kveldene",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "barnevern"
+        ],
+        "topic": "unsupervised",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "gjentekne gonger late barna vere åleine heime om kveldane",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "barnevern"
+        ],
+        "topic": "unsupervised",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "roper og skjeller ut barna ved flere anledninger",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "barnevern"
+        ],
+        "topic": "shouting",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "ropar og skjeller ut barna ved fleire høve",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "barnevern"
+        ],
+        "topic": "shouting",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "uteblitt fra flere møter med barnehagen uten å melde fra",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "barnevern"
+        ],
+        "topic": "missed_kindergarten",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "uteblitt frå fleire møte med barnehagen utan å melde frå",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "barnevern"
+        ],
+        "topic": "missed_kindergarten",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "vist liten vilje til å ta imot veiledning fra hjelpetjenesten",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "barnevern"
+        ],
+        "topic": "refuses_guidance",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "vist lita vilje til å ta imot rettleiing frå hjelpetenesta",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "barnevern"
+        ],
+        "topic": "refuses_guidance",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "kommer ofte for sent når barna skal hentes",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "barnevern"
+        ],
+        "topic": "late_pickup",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "kjem ofte for seint når barna skal hentast",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "barnevern"
+        ],
+        "topic": "late_pickup",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "beruset ved flere anledninger når barna har vært til stede",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "barnevern"
+        ],
+        "topic": "intoxicated_with_children",
+        "group": "intoxication",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "rusa ved fleire høve når barna har vore til stades",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "barnevern"
+        ],
+        "topic": "intoxicated_with_children",
+        "group": "intoxication",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "gjentatte ganger avlyst avtalte hjemmebesøk fra barneverntjenesten",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "barnevern"
+        ],
+        "topic": "cancelled_visits",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "fleire gonger avlyst avtalte heimebesøk frå barnevernstenesta",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "barnevern"
+        ],
+        "topic": "cancelled_visits",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "flere ganger holdt barna hjemme fra skolen uten gyldig grunn",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "barnevern"
+        ],
+        "topic": "school_absence",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "fleire gonger halde barna heime frå skulen utan gyldig grunn",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "barnevern"
+        ],
+        "topic": "school_absence",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "ved flere anledninger kranglet høylytt med samboeren i barnas påhør",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "barnevern"
+        ],
+        "topic": "quarrels_in_front_of_children",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "ved fleire høve kjekla høglytt med sambuaren i høyrsla til barna",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "barnevern"
+        ],
+        "topic": "quarrels_in_front_of_children",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "ved flere anledninger avbrutt undervisningen med høylytte utbrudd",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "school"
+        ],
+        "topic": "disruption",
+        "age_range": [
+          6,
+          18
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "ved fleire høve avbrote undervisninga med høglytte utbrot",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "school"
+        ],
+        "topic": "disruption",
+        "age_range": [
+          6,
+          18
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "flere ganger nektet å følge beskjeder fra læreren",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "school"
+        ],
+        "topic": "defiance",
+        "age_range": [
+          6,
+          18
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "fleire gonger nekta å følgje beskjedar frå læraren",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "school"
+        ],
+        "topic": "defiance",
+        "age_range": [
+          6,
+          18
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "slår og dytter andre elever i friminuttene",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "school"
+        ],
+        "topic": "hitting",
+        "age_range": [
+          6,
+          18
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "slår og dyttar andre elevar i friminutta",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "school"
+        ],
+        "topic": "hitting",
+        "age_range": [
+          6,
+          18
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "gjentatte ganger kommet for sent til første time",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "school"
+        ],
+        "topic": "late_arrival",
+        "age_range": [
+          6,
+          18
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "gjentekne gonger kome for seint til første time",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "school"
+        ],
+        "topic": "late_arrival",
+        "age_range": [
+          6,
+          18
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "trekker seg unna de andre elevene i friminuttene",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "school"
+        ],
+        "topic": "withdrawal",
+        "age_range": [
+          6,
+          18
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "trekkjer seg unna dei andre elevane i friminutta",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "school"
+        ],
+        "topic": "withdrawal",
+        "age_range": [
+          6,
+          18
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "ved flere anledninger forlatt klasserommet uten tillatelse",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "school"
+        ],
+        "topic": "leaves_class",
+        "age_range": [
+          6,
+          18
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "ved fleire høve forlate klasserommet utan løyve",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "school"
+        ],
+        "topic": "leaves_class",
+        "age_range": [
+          6,
+          18
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "bruker nedsettende ord om medelever",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "school"
+        ],
+        "topic": "name_calling",
+        "age_range": [
+          6,
+          18
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "observert i slåsskamper på skoleveien",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "school"
+        ],
+        "topic": "fighting",
+        "age_range": [
+          6,
+          18
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "gjentatte ganger ringt og sendt meldinger til den fornærmede etter at kontakten var brutt",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "crime"
+        ],
+        "topic": "contact_attempts",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "gjentekne gonger ringt og sendt meldingar til den fornærma etter at kontakten var broten",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "crime"
+        ],
+        "topic": "contact_attempts",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "ved flere anledninger stått utenfor den fornærmedes arbeidsplass",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "crime"
+        ],
+        "topic": "loitering_work",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "ved fleire høve stått utanfor arbeidsplassen til den fornærma",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "crime"
+        ],
+        "topic": "loitering_work",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "fulgt etter den fornærmede på vei hjem fra jobb",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "crime"
+        ],
+        "topic": "following",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "følgt etter den fornærma på veg heim frå jobb",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "crime"
+        ],
+        "topic": "following",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "vist truende atferd overfor betjenter ved tidligere kontroller",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "crime"
+        ],
+        "topic": "threatening_officers",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "vist truande åtferd overfor betjentar ved tidlegare kontrollar",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "crime"
+        ],
+        "topic": "threatening_officers",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "gjentatte ganger unnlatt å møte til avhør",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "crime"
+        ],
+        "topic": "missed_interviews",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "gjentekne gonger late vere å møte til avhøyr",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "crime"
+        ],
+        "topic": "missed_interviews",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "lagt ut krenkende innlegg om den fornærmede i sosiale medier",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "crime"
+        ],
+        "topic": "online_harassment",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "lagt ut krenkande innlegg om den fornærma i sosiale medium",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "crime"
+        ],
+        "topic": "online_harassment",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "flere ganger banket på døren til naboen midt på natten",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "crime"
+        ],
+        "topic": "neighbour_door",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "gjentatte ganger ignorert pålegg fra nærmeste leder",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "dismissal_letter"
+        ],
+        "topic": "defiance_manager",
+        "status": "employed",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "gjentekne gonger oversett pålegg frå nærmaste leiar",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "dismissal_letter"
+        ],
+        "topic": "defiance_manager",
+        "status": "employed",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "ved flere anledninger kommet med nedsettende kommentarer til kolleger",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "dismissal_letter"
+        ],
+        "topic": "derogatory_remarks",
+        "status": "employed",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "ved fleire høve kome med nedsetjande kommentarar til kollegaer",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "dismissal_letter"
+        ],
+        "topic": "derogatory_remarks",
+        "status": "employed",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "flere ganger forlatt arbeidsplassen før arbeidstiden var over",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "dismissal_letter"
+        ],
+        "topic": "leaves_early",
+        "status": "employed",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "fleire gonger forlate arbeidsplassen før arbeidstida var over",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "dismissal_letter"
+        ],
+        "topic": "leaves_early",
+        "status": "employed",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "gjentatte ganger glemt å følge sikkerhetsrutinene",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "dismissal_letter"
+        ],
+        "topic": "safety_routines",
+        "status": "employed",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "gjentekne gonger gløymt å følgje tryggleiksrutinane",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "dismissal_letter"
+        ],
+        "topic": "safety_routines",
+        "status": "employed",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "ved flere anledninger kastet gjenstander i klasserommet",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "school"
+        ],
+        "topic": "throwing",
+        "age_range": [
+          6,
+          18
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "ved fleire høve kasta gjenstandar i klasserommet",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "school"
+        ],
+        "topic": "throwing",
+        "age_range": [
+          6,
+          18
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "ber ofte om å få gå hjem midt i skoledagen",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "school"
+        ],
+        "topic": "asks_to_go_home",
+        "age_range": [
+          6,
+          18
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "ber ofte om å få gå heim midt i skuledagen",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "school"
+        ],
+        "topic": "asks_to_go_home",
+        "age_range": [
+          6,
+          18
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "bruker mobilen i timene til tross for gjentatte beskjeder",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "school"
+        ],
+        "topic": "phone_use",
+        "age_range": [
+          6,
+          18
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "bruker mobilen i timane trass i gjentekne beskjedar",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "school"
+        ],
+        "topic": "phone_use",
+        "age_range": [
+          6,
+          18
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "glemmer jevnlig å ta med skolesaker",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "school"
+        ],
+        "topic": "forgets_materials",
+        "age_range": [
+          6,
+          18
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "bruker nedsetjande ord om medelevar",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "school"
+        ],
+        "topic": "name_calling",
+        "age_range": [
+          6,
+          18
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "gløymer jamleg å ta med skulesaker",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "school"
+        ],
+        "topic": "forgets_materials",
+        "age_range": [
+          6,
+          18
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "observert i slagsmål på skuleveg",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "school"
+        ],
+        "topic": "fighting",
+        "age_range": [
+          6,
+          18
+        ],
+        "origin": "multi_v6"
       }
     ],
     "CRIMINAL": [
@@ -2732,7 +4627,8 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "violence"
       },
       {
         "text": "domfellelse for bedrageri i 2018",
@@ -2746,7 +4642,8 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "fraud"
       },
       {
         "text": "mistanke om skatteunndragelse",
@@ -2757,7 +4654,8 @@
         "genres": [
           "police_report",
           "nav_decision"
-        ]
+        ],
+        "topic": "tax"
       },
       {
         "text": "anmeldt for trusler med kniv",
@@ -2771,7 +4669,8 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "threat"
       },
       {
         "text": "politianmeldelse mot {PERSON} for trusler og ulovlig besittelse av et våpen",
@@ -2781,6 +4680,10 @@
         "note": null,
         "genres": [
           "police_report"
+        ],
+        "topic": "threat",
+        "also": [
+          "weapon"
         ]
       },
       {
@@ -2795,7 +4698,8 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "weapon"
       },
       {
         "text": "dømt for bedrageri i sak 12345/2018",
@@ -2805,7 +4709,8 @@
         "note": "GOV_ID nests inside this span per B20/precedence",
         "genres": [
           "police_report"
-        ]
+        ],
+        "topic": "fraud"
       },
       {
         "text": "fyllekjøring",
@@ -2819,7 +4724,8 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "drunk_driving"
       },
       {
         "text": "forfalskning av veterinærattester",
@@ -2829,7 +4735,8 @@
         "note": "B16: organisation's conduct is the named principal's conduct when a human principal is named",
         "genres": [
           "vet_inspection"
-        ]
+        ],
+        "topic": "forgery"
       },
       {
         "text": "truet Jensen med en kjøkkenkniv",
@@ -2839,7 +4746,8 @@
         "note": "per-se offense naming a weapon and named victim",
         "genres": [
           "police_report"
-        ]
+        ],
+        "topic": "threat"
       },
       {
         "text": "anmeldt for dyremishandling i 2018",
@@ -2850,7 +4758,8 @@
         "genres": [
           "police_report",
           "vet_inspection"
-        ]
+        ],
+        "topic": "animal_welfare"
       },
       {
         "text": "sak henlagt grunnet bevisets stilling",
@@ -2860,7 +4769,8 @@
         "note": "B3: outcome clause is its own span, not absorbed into the accusation",
         "genres": [
           "police_report"
-        ]
+        ],
+        "topic": "outcome"
       },
       {
         "text": "involvert i en offentlig skandale knyttet til et forhold med en mindreårig",
@@ -2870,7 +4780,8 @@
         "note": "B24: minor-involving relationship is CRIMINAL_RECORD, not SEXUAL_ORIENTATION",
         "genres": [
           "police_report"
-        ]
+        ],
+        "topic": "sexual_minor"
       },
       {
         "text": "pågående etterforskning knyttet til seksuelle overgrep mot mindreårige",
@@ -2880,7 +4791,8 @@
         "note": "B24",
         "genres": [
           "police_report"
-        ]
+        ],
+        "topic": "sexual_minor"
       },
       {
         "text": "betinget dom",
@@ -2894,7 +4806,8 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "outcome"
       },
       {
         "text": "mistenker at hundene brukes i ulovlige kampaktiviteter",
@@ -2904,6 +4817,10 @@
         "note": null,
         "genres": [
           "vet_inspection"
+        ],
+        "topic": "animal_fighting",
+        "also": [
+          "animal_welfare"
         ]
       },
       {
@@ -2914,7 +4831,8 @@
         "note": "B16 worked-example style; B1 still drops the org subject in the actual tagged span, kept here to show source context",
         "genres": [
           "vet_inspection"
-        ]
+        ],
+        "topic": "mislabeling"
       },
       {
         "text": "systematisk feilmerket eksportprodukter",
@@ -2924,7 +4842,8 @@
         "note": "the B1-correct boundary of the B16 example above, subject dropped",
         "genres": [
           "vet_inspection"
-        ]
+        ],
+        "topic": "mislabeling"
       },
       {
         "text": "vold i nære relasjoner",
@@ -2936,7 +4855,8 @@
           "police_report",
           "udi_decision",
           "nav_decision"
-        ]
+        ],
+        "topic": "domestic"
       },
       {
         "text": "besøksforbud ilagt etter en episode med trusler mot en nabo",
@@ -2947,6 +4867,10 @@
         "genres": [
           "police_report",
           "udi_decision"
+        ],
+        "topic": "restraining_breach",
+        "also": [
+          "threat"
         ]
       },
       {
@@ -2961,7 +4885,8 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "violence"
       },
       {
         "text": "mistanke om skatteunndraging",
@@ -2972,7 +4897,8 @@
         "genres": [
           "police_report",
           "nav_decision"
-        ]
+        ],
+        "topic": "tax"
       },
       {
         "text": "ulovleg våpenbesitting",
@@ -2986,7 +4912,8 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "weapon"
       },
       {
         "text": "melde til politiet for truslar med kniv",
@@ -3000,7 +4927,8 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "threat"
       },
       {
         "text": "dømd for bedrageri i sak 12345/2018",
@@ -3010,7 +4938,8 @@
         "note": null,
         "genres": [
           "police_report"
-        ]
+        ],
+        "topic": "fraud"
       },
       {
         "text": "sonet ein dom for vald mot offentleg tenestemann",
@@ -3024,7 +4953,503 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "violence"
+      },
+      {
+        "text": "siktet for grovt tyveri fra en butikk i 2019",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "crime"
+        ],
+        "topic": "theft",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "sikta for grovt tjuveri frå ein butikk i 2019",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "crime"
+        ],
+        "topic": "theft",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "tiltalt for innbrudd i en bolig i 2021",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "crime"
+        ],
+        "topic": "burglary",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "tiltalt for innbrot i ein bustad i 2021",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "crime"
+        ],
+        "topic": "burglary",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "anmeldt for skadeverk på en parkert bil",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "crime"
+        ],
+        "topic": "vandalism",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "meldt til politiet for skadeverk på ein parkert bil",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "crime"
+        ],
+        "topic": "vandalism",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "dømt for kjøring uten gyldig førerkort i 2017",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "crime"
+        ],
+        "topic": "drive_no_license",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "dømd for køyring utan gyldig førarkort i 2017",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "crime"
+        ],
+        "topic": "drive_no_license",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "dømt for besittelse av narkotika i 2015",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "crime",
+          "nav_decision"
+        ],
+        "topic": "drugs",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "dømd for besitting av narkotika i 2015",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "crime",
+          "nav_decision"
+        ],
+        "topic": "drugs",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "siktet for underslag av midler fra arbeidsgiveren",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "crime",
+          "dismissal_letter"
+        ],
+        "topic": "embezzlement",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "sikta for underslag av midlar frå arbeidsgivaren",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "crime",
+          "dismissal_letter"
+        ],
+        "topic": "embezzlement",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "dømt for dokumentfalsk i 2014",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "crime",
+          "nav_decision"
+        ],
+        "topic": "forgery",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "dømd for dokumentfalsk i 2014",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "crime",
+          "nav_decision"
+        ],
+        "topic": "forgery",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "anmeldt for hvitvasking av penger",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "crime",
+          "bank"
+        ],
+        "topic": "laundering",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "politianmeldt for kvitvasking av pengar",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "crime",
+          "bank"
+        ],
+        "topic": "laundering",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "dømt for trusler mot en tidligere kollega i 2020",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "crime",
+          "dismissal_letter"
+        ],
+        "topic": "threat",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "dømd for truslar mot ein tidlegare kollega i 2020",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "crime",
+          "dismissal_letter"
+        ],
+        "topic": "threat",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "siktet for uaktsom kroppsskade etter en trafikkulykke i 2022",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "crime"
+        ],
+        "topic": "traffic_injury",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "sikta for aktlaus kroppsskade etter ei trafikkulukke i 2022",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "crime"
+        ],
+        "topic": "traffic_injury",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "anmeldt for brudd på besøksforbud",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "crime"
+        ],
+        "topic": "restraining_breach",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "meldt for brot på besøksforbod",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "crime"
+        ],
+        "topic": "restraining_breach",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "mistenkt for uberettiget tilgang til en annens e-postkonto",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "forensics"
+        ],
+        "topic": "account_intrusion",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "mistenkt for uautorisert tilgang til e-postkontoen til ein annan",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "forensics"
+        ],
+        "topic": "account_intrusion",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "siktet for datainnbrudd i arbeidsgiverens system",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "forensics"
+        ],
+        "topic": "computer_intrusion",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "sikta for datainnbrot i systemet til arbeidsgivaren",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "forensics"
+        ],
+        "topic": "computer_intrusion",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "dømt for heleri i 2018",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "crime"
+        ],
+        "topic": "receiving",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "dømd for heleri i 2018",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "crime"
+        ],
+        "topic": "receiving",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "tiltalt for grov skatteunndragelse for inntektsårene 2020 og 2021",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "crime",
+          "nav_decision",
+          "bank"
+        ],
+        "topic": "tax",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "tiltalt for grov skatteunndraging for inntektsåra 2020 og 2021",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "crime",
+          "nav_decision",
+          "bank"
+        ],
+        "topic": "tax",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "dømt for farlig kjøring i 2023",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "crime"
+        ],
+        "topic": "reckless_driving",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "dømd for farleg køyring i 2023",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "crime"
+        ],
+        "topic": "reckless_driving",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "mistenkt for bedrageri ved salg av en bruktbil",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "crime",
+          "bank"
+        ],
+        "topic": "fraud",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "siktet for grov vold mot en ukjent person utenfor et utested i 2021",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "crime"
+        ],
+        "topic": "violence",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "sikta for grov vald mot ein ukjend person utanfor eit utestad i 2021",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "crime"
+        ],
+        "topic": "violence",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "dømt for brudd på dyrevelferdsloven i 2019",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "vet_inspection"
+        ],
+        "topic": "animal_welfare",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "dømd for brot på dyrevelferdslova i 2019",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "vet_inspection"
+        ],
+        "topic": "animal_welfare",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "anmeldt for forsømmelse av dyr i 2022",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "vet_inspection"
+        ],
+        "topic": "animal_neglect",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "meldt for forsøming av dyr i 2022",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "vet_inspection"
+        ],
+        "topic": "animal_neglect",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "mistenkt for ulovlig slakting av husdyr",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "vet_inspection"
+        ],
+        "topic": "illegal_slaughter",
+        "origin": "multi_v6"
       }
     ],
     "POLITICAL": [
@@ -3675,7 +6100,10 @@
           "nav_decision",
           "police_report",
           "udi_decision"
-        ]
+        ],
+        "topic": "bare_amount",
+        "kind": "unspecified",
+        "amount": 0
       },
       {
         "text": "gjeld på over 700 000 NOK, inkludert misligholdte lån til DNB og gjeld til private kreditorer",
@@ -3687,7 +6115,11 @@
           "nav_decision",
           "police_report",
           "udi_decision"
-        ]
+        ],
+        "topic": "debt_total",
+        "kind": "headline",
+        "amount": 700000,
+        "polarity": "poor"
       },
       {
         "text": "over 1,5 millioner NOK",
@@ -3699,7 +6131,11 @@
           "nav_decision",
           "police_report",
           "udi_decision"
-        ]
+        ],
+        "topic": "assets",
+        "kind": "asset",
+        "amount": 0,
+        "polarity": "rich"
       },
       {
         "text": "misligholdte lån hos Santander",
@@ -3711,7 +6147,11 @@
           "nav_decision",
           "police_report",
           "udi_decision"
-        ]
+        ],
+        "topic": "default_loan",
+        "kind": "debt",
+        "amount": 0,
+        "polarity": "poor"
       },
       {
         "text": "ubetalte fakturaer på 42 000 NOK",
@@ -3723,7 +6163,11 @@
           "nav_decision",
           "police_report",
           "udi_decision"
-        ]
+        ],
+        "topic": "unpaid_invoices",
+        "kind": "debt",
+        "amount": 42000,
+        "polarity": "poor"
       },
       {
         "text": "pant i eiendommen registrert hos Sparebanken Vest",
@@ -3735,7 +6179,10 @@
           "nav_decision",
           "police_report",
           "udi_decision"
-        ]
+        ],
+        "topic": "mortgage",
+        "kind": "asset",
+        "amount": 0
       },
       {
         "text": "inkassosaker hos Lindorff",
@@ -3747,7 +6194,11 @@
           "nav_decision",
           "police_report",
           "udi_decision"
-        ]
+        ],
+        "topic": "inkasso",
+        "kind": "debt",
+        "amount": 0,
+        "polarity": "poor"
       },
       {
         "text": "kredittkortgjeld på 85 000 NOK",
@@ -3759,7 +6210,10 @@
           "nav_decision",
           "police_report",
           "udi_decision"
-        ]
+        ],
+        "topic": "credit_card",
+        "kind": "debt",
+        "amount": 85000
       },
       {
         "text": "utestående gjeld på over 700 000 NOK",
@@ -3771,7 +6225,11 @@
           "nav_decision",
           "police_report",
           "udi_decision"
-        ]
+        ],
+        "topic": "debt_total",
+        "kind": "headline",
+        "amount": 700000,
+        "polarity": "poor"
       },
       {
         "text": "registrert med betalingsanmerkninger",
@@ -3783,7 +6241,11 @@
           "nav_decision",
           "police_report",
           "udi_decision"
-        ]
+        ],
+        "topic": "payment_remark",
+        "kind": "debt",
+        "amount": 0,
+        "polarity": "poor"
       },
       {
         "text": "unexplained cash deposits totaling 120,000 NOK",
@@ -3791,7 +6253,10 @@
         "subject": "person",
         "difficulty": "hard",
         "note": "English-language source keeps English span",
-        "genres": []
+        "genres": [],
+        "topic": "cash_deposits",
+        "kind": "unspecified",
+        "amount": 0
       },
       {
         "text": "aksjekonto med over 1,5 millioner NOK",
@@ -3803,7 +6268,11 @@
           "nav_decision",
           "police_report",
           "udi_decision"
-        ]
+        ],
+        "topic": "assets",
+        "kind": "asset",
+        "amount": 0,
+        "polarity": "rich"
       },
       {
         "text": "gjeldspost på over 500 000 NOK tilknyttet DNB",
@@ -3815,7 +6284,10 @@
           "nav_decision",
           "police_report",
           "udi_decision"
-        ]
+        ],
+        "topic": "bank_debt",
+        "kind": "debt",
+        "amount": 500000
       },
       {
         "text": "ubetalte skatter på 520 000 NOK",
@@ -3827,7 +6299,11 @@
           "nav_decision",
           "police_report",
           "udi_decision"
-        ]
+        ],
+        "topic": "tax_arrears",
+        "kind": "debt",
+        "amount": 520000,
+        "polarity": "poor"
       },
       {
         "text": "mislighold av leieavtale med et utestående beløp på 34 000 NOK",
@@ -3839,7 +6315,11 @@
           "nav_decision",
           "police_report",
           "udi_decision"
-        ]
+        ],
+        "topic": "rent_arrears",
+        "kind": "debt",
+        "amount": 34000,
+        "polarity": "poor"
       },
       {
         "text": "over 500 000 NOK",
@@ -3851,7 +6331,10 @@
           "nav_decision",
           "police_report",
           "udi_decision"
-        ]
+        ],
+        "topic": "bare_amount",
+        "kind": "unspecified",
+        "amount": 0
       },
       {
         "text": "gjeld på over 700 000 NOK, medrekna misleghaldne lån til DNB",
@@ -3863,7 +6346,11 @@
           "nav_decision",
           "police_report",
           "udi_decision"
-        ]
+        ],
+        "topic": "debt_total",
+        "kind": "headline",
+        "amount": 700000,
+        "polarity": "poor"
       },
       {
         "text": "ubetalte fakturaer på 42 000 NOK",
@@ -3875,7 +6362,11 @@
           "nav_decision",
           "police_report",
           "udi_decision"
-        ]
+        ],
+        "topic": "unpaid_invoices",
+        "kind": "debt",
+        "amount": 42000,
+        "polarity": "poor"
       },
       {
         "text": "kredittkortgjeld på 85 000 NOK",
@@ -3887,7 +6378,10 @@
           "nav_decision",
           "police_report",
           "udi_decision"
-        ]
+        ],
+        "topic": "credit_card",
+        "kind": "debt",
+        "amount": 85000
       },
       {
         "text": "registrert med betalingsmerknader",
@@ -3899,7 +6393,11 @@
           "nav_decision",
           "police_report",
           "udi_decision"
-        ]
+        ],
+        "topic": "payment_remark",
+        "kind": "debt",
+        "amount": 0,
+        "polarity": "poor"
       },
       {
         "text": "lån nr. 1234567890 hos DNB inkludert i gjeldsoppstillingen",
@@ -3911,7 +6409,10 @@
           "nav_decision",
           "police_report",
           "udi_decision"
-        ]
+        ],
+        "topic": "bank_loan",
+        "kind": "debt",
+        "amount": 0
       },
       {
         "text": "3,5 millioner NOK i antatt uregistrert inntekt",
@@ -3922,7 +6423,11 @@
         "genres": [
           "police_report",
           "nav_decision"
-        ]
+        ],
+        "topic": "unregistered_income",
+        "kind": "income",
+        "amount": 0,
+        "polarity": "rich"
       },
       {
         "text": "kredittkortgjeld på 85 000 NOK hos Bank Norwegian",
@@ -3934,7 +6439,10 @@
           "nav_decision",
           "police_report",
           "udi_decision"
-        ]
+        ],
+        "topic": "credit_card",
+        "kind": "debt",
+        "amount": 85000
       },
       {
         "text": "innskot på 250 000 NOK i Sparebanken Vest",
@@ -3946,7 +6454,10 @@
           "nav_decision",
           "police_report",
           "udi_decision"
-        ]
+        ],
+        "topic": "savings",
+        "kind": "asset",
+        "amount": 0
       },
       {
         "text": "misleghaldne lån hos Santander",
@@ -3958,7 +6469,397 @@
           "nav_decision",
           "police_report",
           "udi_decision"
-        ]
+        ],
+        "topic": "default_loan",
+        "kind": "debt",
+        "amount": 0,
+        "polarity": "poor"
+      },
+      {
+        "text": "forbrukslån på 120 000 NOK hos Nordea",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "consumer_loan",
+        "polarity": "poor",
+        "kind": "debt",
+        "amount": 120000,
+        "origin": "multi_v6"
+      },
+      {
+        "text": "forbrukslån på 120 000 NOK hos Nordea",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "consumer_loan",
+        "polarity": "poor",
+        "kind": "debt",
+        "amount": 120000,
+        "origin": "multi_v6"
+      },
+      {
+        "text": "studielån på 340 000 NOK hos Lånekassen",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "student_loan",
+        "kind": "debt",
+        "amount": 340000,
+        "origin": "multi_v6"
+      },
+      {
+        "text": "studielån på 340 000 NOK hos Lånekassen",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "student_loan",
+        "kind": "debt",
+        "amount": 340000,
+        "origin": "multi_v6"
+      },
+      {
+        "text": "ubetalt husleie på 28 000 NOK",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "rent_arrears",
+        "polarity": "poor",
+        "kind": "debt",
+        "amount": 28000,
+        "origin": "multi_v6"
+      },
+      {
+        "text": "ubetalt husleige på 28 000 NOK",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "rent_arrears",
+        "polarity": "poor",
+        "kind": "debt",
+        "amount": 28000,
+        "origin": "multi_v6"
+      },
+      {
+        "text": "krav på 65 000 NOK fra Kredinor",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "debt"
+        ],
+        "topic": "inkasso_claim",
+        "polarity": "poor",
+        "kind": "debt",
+        "amount": 65000,
+        "origin": "multi_v6"
+      },
+      {
+        "text": "krav på 65 000 NOK frå Kredinor",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "debt"
+        ],
+        "topic": "inkasso_claim",
+        "polarity": "poor",
+        "kind": "debt",
+        "amount": 65000,
+        "origin": "multi_v6"
+      },
+      {
+        "text": "forfalt krav på 9 800 NOK med påløpte renter og gebyrer",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "debt"
+        ],
+        "topic": "inkasso_claim",
+        "polarity": "poor",
+        "kind": "debt",
+        "amount": 9800,
+        "origin": "multi_v6"
+      },
+      {
+        "text": "forfalt krav på 9 800 NOK med påløpt rente og gebyr",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "debt"
+        ],
+        "topic": "inkasso_claim",
+        "polarity": "poor",
+        "kind": "debt",
+        "amount": 9800,
+        "origin": "multi_v6"
+      },
+      {
+        "text": "restskatt på 47 000 NOK for inntektsåret 2023",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "tax_arrears",
+        "kind": "debt",
+        "amount": 47000,
+        "origin": "multi_v6"
+      },
+      {
+        "text": "restskatt på 47 000 NOK for inntektsåret 2023",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "tax_arrears",
+        "kind": "debt",
+        "amount": 47000,
+        "origin": "multi_v6"
+      },
+      {
+        "text": "ubetalt barnebidrag på 54 000 NOK",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "child_support",
+        "polarity": "poor",
+        "kind": "debt",
+        "amount": 54000,
+        "origin": "multi_v6"
+      },
+      {
+        "text": "ubetalt fostringstilskot på 54 000 NOK",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "child_support",
+        "polarity": "poor",
+        "kind": "debt",
+        "amount": 54000,
+        "origin": "multi_v6"
+      },
+      {
+        "text": "kassekreditt med et overtrekk på 75 000 NOK",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "overdraft",
+        "polarity": "poor",
+        "kind": "debt",
+        "amount": 75000,
+        "origin": "multi_v6"
+      },
+      {
+        "text": "kassekreditt med eit overtrekk på 75 000 NOK",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "overdraft",
+        "polarity": "poor",
+        "kind": "debt",
+        "amount": 75000,
+        "origin": "multi_v6"
+      },
+      {
+        "text": "tvangsfullbyrdelse for et krav på 31 000 NOK",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "debt"
+        ],
+        "topic": "enforcement",
+        "polarity": "poor",
+        "kind": "debt",
+        "amount": 31000,
+        "origin": "multi_v6"
+      },
+      {
+        "text": "tvangsfullbyrding for eit krav på 31 000 NOK",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "debt"
+        ],
+        "topic": "enforcement",
+        "polarity": "poor",
+        "kind": "debt",
+        "amount": 31000,
+        "origin": "multi_v6"
+      },
+      {
+        "text": "gjeldsordning med en betalingsplan på fem år",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "debt"
+        ],
+        "topic": "debt_settlement",
+        "polarity": "poor",
+        "kind": "debt",
+        "amount": 0,
+        "origin": "multi_v6"
+      },
+      {
+        "text": "gjeldsordning med ein betalingsplan på fem år",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "debt"
+        ],
+        "topic": "debt_settlement",
+        "polarity": "poor",
+        "kind": "debt",
+        "amount": 0,
+        "origin": "multi_v6"
+      },
+      {
+        "text": "månedsinntekt på 24 500 NOK etter skatt",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "income",
+        "kind": "income",
+        "amount": 0,
+        "origin": "multi_v6"
+      },
+      {
+        "text": "månadsinntekt på 24 500 NOK etter skatt",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "income",
+        "kind": "income",
+        "amount": 0,
+        "origin": "multi_v6"
+      },
+      {
+        "text": "mottar sosialhjelp på 11 800 NOK i måneden",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "benefit",
+        "polarity": "poor",
+        "kind": "income",
+        "amount": 0,
+        "origin": "multi_v6"
+      },
+      {
+        "text": "får sosialhjelp på 11 800 NOK i månaden",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "benefit",
+        "polarity": "poor",
+        "kind": "income",
+        "amount": 0,
+        "origin": "multi_v6"
+      },
+      {
+        "text": "betalingsanmerkning for en ubetalt mobilregning på 4 300 NOK",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "payment_remark",
+        "polarity": "poor",
+        "kind": "debt",
+        "amount": 4300,
+        "origin": "multi_v6"
       }
     ],
     "ECONOMIC_STATUS": [
@@ -3970,7 +6871,10 @@
         "note": null,
         "genres": [
           "vet_inspection"
-        ]
+        ],
+        "topic": "hardship_animals",
+        "group": "general_condition",
+        "polarity": "poor"
       },
       {
         "text": "dårlig økonomi hos restauranten",
@@ -3980,7 +6884,10 @@
         "note": null,
         "genres": [
           "vet_inspection"
-        ]
+        ],
+        "topic": "org_economy",
+        "group": "general_condition",
+        "polarity": "poor"
       },
       {
         "text": "bekymring for økonomisk bærekraft hos senteret",
@@ -3990,7 +6897,10 @@
         "note": null,
         "genres": [
           "vet_inspection"
-        ]
+        ],
+        "topic": "org_sustainability",
+        "group": "general_condition",
+        "polarity": "poor"
       },
       {
         "text": "begrensede økonomiske midler",
@@ -4003,7 +6913,10 @@
           "police_report",
           "udi_decision",
           "gp_referral"
-        ]
+        ],
+        "topic": "limited_means",
+        "group": "general_condition",
+        "polarity": "poor"
       },
       {
         "text": "økonomisk ustabil situasjon mistenkes",
@@ -4016,7 +6929,10 @@
           "police_report",
           "udi_decision",
           "gp_referral"
-        ]
+        ],
+        "topic": "unstable",
+        "group": "general_condition",
+        "polarity": "poor"
       },
       {
         "text": "har vanskeligheter med å få endene til å møtes",
@@ -4030,7 +6946,10 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "ends_meet",
+        "group": "general_condition",
+        "polarity": "poor"
       },
       {
         "text": "tilsynelatende høy inntekt uten synlig kilde",
@@ -4043,7 +6962,10 @@
           "police_report",
           "udi_decision",
           "gp_referral"
-        ]
+        ],
+        "topic": "unexplained_income",
+        "group": "wealth_signal",
+        "polarity": "rich"
       },
       {
         "text": "pensjonert og har begrenset inntekt",
@@ -4062,7 +6984,10 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "retired_income",
+        "group": "general_condition",
+        "polarity": "poor"
       },
       {
         "text": "mistet jobben og sliter nå økonomisk",
@@ -4076,7 +7001,9 @@
           "gp_referral",
           "police_report",
           "udi_decision"
-        ]
+        ],
+        "topic": "job_loss",
+        "polarity": "poor"
       },
       {
         "text": "pågående økonomisk søksmål",
@@ -4086,7 +7013,8 @@
         "note": null,
         "genres": [
           "vet_inspection"
-        ]
+        ],
+        "topic": "lawsuit"
       },
       {
         "text": "bekymret for eierens økonomiske situasjon",
@@ -4096,7 +7024,10 @@
         "note": null,
         "genres": [
           "vet_inspection"
-        ]
+        ],
+        "topic": "owner_economy",
+        "group": "general_condition",
+        "polarity": "poor"
       },
       {
         "text": "åpenbart velstående til tross for lav registrert inntekt",
@@ -4109,7 +7040,10 @@
           "police_report",
           "udi_decision",
           "gp_referral"
-        ]
+        ],
+        "topic": "apparent_wealth",
+        "group": "wealth_signal",
+        "polarity": "rich"
       },
       {
         "text": "sliter økonomisk og ikkje har råd til fôr til sauene",
@@ -4119,7 +7053,10 @@
         "note": null,
         "genres": [
           "vet_inspection"
-        ]
+        ],
+        "topic": "hardship_animals",
+        "group": "general_condition",
+        "polarity": "poor"
       },
       {
         "text": "dårleg økonomi hos restauranten",
@@ -4129,7 +7066,10 @@
         "note": null,
         "genres": [
           "vet_inspection"
-        ]
+        ],
+        "topic": "org_economy",
+        "group": "general_condition",
+        "polarity": "poor"
       },
       {
         "text": "har vanskar med å få endane til å møtast",
@@ -4143,7 +7083,10 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "ends_meet",
+        "group": "general_condition",
+        "polarity": "poor"
       },
       {
         "text": "økonomisk ustabil situasjon vert mistenkt",
@@ -4156,7 +7099,10 @@
           "police_report",
           "udi_decision",
           "gp_referral"
-        ]
+        ],
+        "topic": "unstable",
+        "group": "general_condition",
+        "polarity": "poor"
       },
       {
         "text": "bekymra for eigaren si økonomiske situasjon",
@@ -4166,7 +7112,10 @@
         "note": null,
         "genres": [
           "vet_inspection"
-        ]
+        ],
+        "topic": "owner_economy",
+        "group": "general_condition",
+        "polarity": "poor"
       },
       {
         "text": "har hatt vedvarende økonomiske problemer de siste årene",
@@ -4180,7 +7129,10 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "persistent_problems",
+        "group": "general_condition",
+        "polarity": "poor"
       },
       {
         "text": "økonomisk press etter tap av fast inntekt",
@@ -4194,7 +7146,9 @@
           "gp_referral",
           "police_report",
           "udi_decision"
-        ]
+        ],
+        "topic": "job_loss",
+        "polarity": "poor"
       },
       {
         "text": "antatt god økonomi til tross for enkel levestandard",
@@ -4207,7 +7161,10 @@
           "police_report",
           "udi_decision",
           "gp_referral"
-        ]
+        ],
+        "topic": "apparent_wealth",
+        "group": "wealth_signal",
+        "polarity": "rich"
       },
       {
         "text": "har hatt vedvarande økonomiske problem dei siste åra",
@@ -4221,7 +7178,10 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "persistent_problems",
+        "group": "general_condition",
+        "polarity": "poor"
       },
       {
         "text": "antatt god økonomi trass i enkel levestandard",
@@ -4234,7 +7194,300 @@
           "police_report",
           "udi_decision",
           "gp_referral"
-        ]
+        ],
+        "topic": "apparent_wealth",
+        "group": "wealth_signal",
+        "polarity": "rich"
+      },
+      {
+        "text": "betalingsproblemer det siste året",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "payment_trouble",
+        "group": "general_condition",
+        "polarity": "poor",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "betalingsproblem det siste året",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "payment_trouble",
+        "group": "general_condition",
+        "polarity": "poor",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "svært presset økonomi etter skilsmissen",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "divorce_pressure",
+        "polarity": "poor",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "svært presa økonomi etter skilsmissa",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "divorce_pressure",
+        "polarity": "poor",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "lever på minstesatsene og har ikke økonomisk rom for uforutsette utgifter",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "minimal_means",
+        "group": "general_condition",
+        "polarity": "poor",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "lever på minstesatsane og har ikkje økonomisk rom for uføresette utgifter",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "minimal_means",
+        "group": "general_condition",
+        "polarity": "poor",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "måttet utsette betaling av regninger flere måneder på rad",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "delayed_payment",
+        "polarity": "poor",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "måtta utsetje betaling av rekningar fleire månader på rad",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "delayed_payment",
+        "polarity": "poor",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "økonomisk trangt etter at arbeidsforholdet ble avsluttet",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "job_end",
+        "polarity": "poor",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "økonomisk trongt etter at arbeidsforholdet vart avslutta",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "job_end",
+        "polarity": "poor",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "ustabil økonomi som følge av uregelmessig inntekt",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "irregular_income",
+        "group": "general_condition",
+        "polarity": "poor",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "ustabil økonomi som følgje av uregelmessig inntekt",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "irregular_income",
+        "group": "general_condition",
+        "polarity": "poor",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "stabil og god økonomi",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "comfortable",
+        "group": "general_condition",
+        "polarity": "rich",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "stabil og god økonomi",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "comfortable",
+        "group": "general_condition",
+        "polarity": "rich",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "vanskeligheter med å dekke faste utgifter som husleie og strøm",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "fixed_costs",
+        "group": "general_condition",
+        "polarity": "poor",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "vanskar med å dekkje faste utgifter som husleige og straum",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "fixed_costs",
+        "group": "general_condition",
+        "polarity": "poor",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "ikke hatt råd til nødvendige innkjøp til barna",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "child_costs",
+        "polarity": "poor",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "ikkje hatt råd til naudsynte innkjøp til borna",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "child_costs",
+        "polarity": "poor",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "tar opp små lån for å få endene til å møtes",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "small_loans",
+        "polarity": "poor",
+        "origin": "multi_v6"
+      },
+      {
+        "text": "tek opp små lån for å få endane til å møtast",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "debt",
+          "nav_decision"
+        ],
+        "topic": "small_loans",
+        "polarity": "poor",
+        "origin": "multi_v6"
       }
     ],
     "BIOMETRIC_DATA": [
@@ -5455,7 +8708,9 @@
           "dismissal_letter",
           "udi_decision"
         ],
-        "as_type": "MARITAL_STATUS"
+        "as_type": "MARITAL_STATUS",
+        "topic": "spouse",
+        "group": "partner"
       },
       {
         "text": "samboerforhold med {PERSON_M}",
@@ -5476,7 +8731,9 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "cohabitant",
+        "group": "partner"
       },
       {
         "text": "to barn på 15 og 12 år",
@@ -5494,7 +8751,9 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "children_count",
+        "group": "children"
       },
       {
         "text": "sønn fra et tidligere forhold, {PERSON_M}",
@@ -5512,7 +8771,9 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "son_prev",
+        "group": "children"
       },
       {
         "text": "skilt fra sin tidligere ektefelle",
@@ -5532,7 +8793,9 @@
           "dismissal_letter",
           "udi_decision"
         ],
-        "as_type": "MARITAL_STATUS"
+        "as_type": "MARITAL_STATUS",
+        "topic": "divorced",
+        "group": "partner"
       },
       {
         "text": "ektefellen {PERSON_F}",
@@ -5553,7 +8816,9 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "spouse",
+        "group": "partner"
       },
       {
         "text": "mor til to barn fra et tidligere forhold med {PERSON_M}",
@@ -5572,7 +8837,9 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "children_prev",
+        "group": "children"
       },
       {
         "text": "felles sønn, {PERSON_M}",
@@ -5590,7 +8857,9 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "son_shared",
+        "group": "children"
       },
       {
         "text": "svigerinne til {PERSON_M}",
@@ -5609,7 +8878,8 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "in_law"
       },
       {
         "text": "Familien {SURNAME_FAM}",
@@ -5619,7 +8889,8 @@
         "note": "surname-only collective, not additionally tagged PERSON",
         "genres": [
           "police_report"
-        ]
+        ],
+        "topic": "family_unit"
       },
       {
         "text": "gift med {PERSON_F}",
@@ -5641,7 +8912,9 @@
           "dismissal_letter",
           "udi_decision"
         ],
-        "as_type": "MARITAL_STATUS"
+        "as_type": "MARITAL_STATUS",
+        "topic": "spouse",
+        "group": "partner"
       },
       {
         "text": "sambuarforhold med {PERSON_M}",
@@ -5662,7 +8935,9 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "cohabitant",
+        "group": "partner"
       },
       {
         "text": "skild frå sin tidlegare ektefelle",
@@ -5682,7 +8957,9 @@
           "dismissal_letter",
           "udi_decision"
         ],
-        "as_type": "MARITAL_STATUS"
+        "as_type": "MARITAL_STATUS",
+        "topic": "divorced",
+        "group": "partner"
       },
       {
         "text": "mor til to born frå eit tidlegare forhold med {PERSON_M}",
@@ -5701,7 +8978,565 @@
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "topic": "children_prev",
+        "group": "children"
+      },
+      {
+        "text": "datter fra et tidligere forhold, {PERSON_F}",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "barnevern",
+          "nav_decision",
+          "gp_referral",
+          "udi_decision"
+        ],
+        "topic": "daughter_prev",
+        "group": "children",
+        "age_range": [
+          30,
+          99
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "dotter frå eit tidlegare forhold, {PERSON_F}",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "barnevern",
+          "nav_decision",
+          "gp_referral",
+          "udi_decision"
+        ],
+        "topic": "daughter_prev",
+        "group": "children",
+        "age_range": [
+          30,
+          99
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "bror til {PERSON_M}",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "barnevern",
+          "nav_decision",
+          "gp_referral",
+          "udi_decision"
+        ],
+        "topic": "sibling",
+        "age_range": [
+          18,
+          99
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "bror til {PERSON_M}",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "barnevern",
+          "nav_decision",
+          "gp_referral",
+          "udi_decision"
+        ],
+        "topic": "sibling",
+        "age_range": [
+          18,
+          99
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "far til tre barn",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "barnevern",
+          "nav_decision",
+          "gp_referral",
+          "udi_decision"
+        ],
+        "topic": "father_three",
+        "group": "children",
+        "gender": "M",
+        "age_range": [
+          28,
+          99
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "far til tre born",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "barnevern",
+          "nav_decision",
+          "gp_referral",
+          "udi_decision"
+        ],
+        "topic": "father_three",
+        "group": "children",
+        "gender": "M",
+        "age_range": [
+          28,
+          99
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "mor til tre barn",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "barnevern",
+          "nav_decision",
+          "gp_referral",
+          "udi_decision"
+        ],
+        "topic": "mother_three",
+        "group": "children",
+        "gender": "F",
+        "age_range": [
+          28,
+          99
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "mor til tre born",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "barnevern",
+          "nav_decision",
+          "gp_referral",
+          "udi_decision"
+        ],
+        "topic": "mother_three",
+        "group": "children",
+        "gender": "F",
+        "age_range": [
+          28,
+          99
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "enslig forsørger for to barn",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "barnevern",
+          "nav_decision",
+          "gp_referral",
+          "udi_decision"
+        ],
+        "topic": "single_parent",
+        "group": "children",
+        "age_range": [
+          24,
+          99
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "einsleg forsørgjar for to born",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "barnevern",
+          "nav_decision",
+          "gp_referral",
+          "udi_decision"
+        ],
+        "topic": "single_parent",
+        "group": "children",
+        "age_range": [
+          24,
+          99
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "svoger til {PERSON_M}",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "barnevern",
+          "nav_decision",
+          "gp_referral",
+          "udi_decision"
+        ],
+        "topic": "in_law",
+        "gender": "M",
+        "age_range": [
+          18,
+          99
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "svoger til {PERSON_M}",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "barnevern",
+          "nav_decision",
+          "gp_referral",
+          "udi_decision"
+        ],
+        "topic": "in_law",
+        "gender": "M",
+        "age_range": [
+          18,
+          99
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "moren {PERSON_F}",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "barnevern",
+          "nav_decision",
+          "gp_referral",
+          "udi_decision"
+        ],
+        "topic": "mother",
+        "age_range": [
+          18,
+          60
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "mora {PERSON_F}",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "barnevern",
+          "nav_decision",
+          "gp_referral",
+          "udi_decision"
+        ],
+        "topic": "mother",
+        "age_range": [
+          18,
+          60
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "søster til {PERSON_F}",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "barnevern",
+          "nav_decision",
+          "gp_referral",
+          "udi_decision"
+        ],
+        "topic": "sibling_sister",
+        "age_range": [
+          18,
+          99
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "syster til {PERSON_F}",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "barnevern",
+          "nav_decision",
+          "gp_referral",
+          "udi_decision"
+        ],
+        "topic": "sibling_sister",
+        "age_range": [
+          18,
+          99
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "tante til {PERSON_F}",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "barnevern",
+          "nav_decision",
+          "gp_referral",
+          "udi_decision"
+        ],
+        "topic": "aunt",
+        "gender": "F",
+        "age_range": [
+          22,
+          99
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "tante til {PERSON_F}",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "barnevern",
+          "nav_decision",
+          "gp_referral",
+          "udi_decision"
+        ],
+        "topic": "aunt",
+        "gender": "F",
+        "age_range": [
+          22,
+          99
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "onkel til {PERSON_M}",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "barnevern",
+          "nav_decision",
+          "gp_referral",
+          "udi_decision"
+        ],
+        "topic": "uncle",
+        "gender": "M",
+        "age_range": [
+          22,
+          99
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "onkel til {PERSON_M}",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "barnevern",
+          "nav_decision",
+          "gp_referral",
+          "udi_decision"
+        ],
+        "topic": "uncle",
+        "gender": "M",
+        "age_range": [
+          22,
+          99
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "svigerfar til {PERSON_M}",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "barnevern",
+          "nav_decision",
+          "gp_referral",
+          "udi_decision"
+        ],
+        "topic": "in_law_father",
+        "gender": "M",
+        "age_range": [
+          40,
+          99
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "svigerfar til {PERSON_M}",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "barnevern",
+          "nav_decision",
+          "gp_referral",
+          "udi_decision"
+        ],
+        "topic": "in_law_father",
+        "gender": "M",
+        "age_range": [
+          40,
+          99
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "fosterforelder for {PERSON_F}",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "barnevern",
+          "nav_decision",
+          "gp_referral",
+          "udi_decision"
+        ],
+        "topic": "foster",
+        "age_range": [
+          25,
+          99
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "fosterforelder for {PERSON_F}",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "barnevern",
+          "nav_decision",
+          "gp_referral",
+          "udi_decision"
+        ],
+        "topic": "foster",
+        "age_range": [
+          25,
+          99
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "bestemor til to av barna",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "barnevern",
+          "nav_decision",
+          "gp_referral",
+          "udi_decision"
+        ],
+        "topic": "grandmother",
+        "gender": "F",
+        "age_range": [
+          45,
+          99
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "bestemor til to av borna",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "barnevern",
+          "nav_decision",
+          "gp_referral",
+          "udi_decision"
+        ],
+        "topic": "grandmother",
+        "gender": "F",
+        "age_range": [
+          45,
+          99
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "bestefar til to av barna",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "barnevern",
+          "nav_decision",
+          "gp_referral",
+          "udi_decision"
+        ],
+        "topic": "grandfather",
+        "gender": "M",
+        "age_range": [
+          45,
+          99
+        ],
+        "origin": "multi_v6"
+      },
+      {
+        "text": "bestefar til to av borna",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "barnevern",
+          "nav_decision",
+          "gp_referral",
+          "udi_decision"
+        ],
+        "topic": "grandfather",
+        "gender": "M",
+        "age_range": [
+          45,
+          99
+        ],
+        "origin": "multi_v6"
       }
     ]
   },
@@ -8861,5 +12696,5 @@
       }
     ]
   },
-  "schema_note": "Entry fields: text, form (nb/nn/en), subject (person/animal/org), difficulty, note, genres (genre ids the clause is plausible in; [] = never sampled), and optional constraints on the record's subject: gender (M/F), age_range [min,max], origin (native/foreign), nationalities (list of nationality adjectives the subject must have), status (employed/unemployed/retired/uforetrygd), partner (opposite: implies an opposite-sex partner), marital (the MARITAL_STATUS value the clause implies). Negatives (version 4; version 5 adds the `nearmiss_v5` batch): `plantable` marks near-miss texts that are null under every type, so a benchmark run may plant them verbatim and leave them unlabelled; `genres` restricts them like a clause, `gender` (M/F) restricts the subject, and `also_labelled` maps a TYPE to a substring of the text that is a real value of that other type and is labelled as such (the near-miss is only for the type the negative is filed under). Negatives may carry `age_range` like a clause; without one a negative is for adult subjects only. `as_type` relabels an entry as another type when sampled (a civil-status clause with no kinship noun filed under FAMILY_RELATION is MARITAL_STATUS). Version 5: a negative's `text` may hold `{PRON}` (han/hun, han/ho), `{POSS}` (hans/hennes, hans/hennar) and `{OBJ}` (ham/henne, han/henne), filled from the document subject's gender and the document's form when the negative is planted; the planted text, and what G2 searches for, is the filled one. A near-miss that needs a subject carries its own (`og {PRON} svarte ...`) and starts with a coordinating word so it cannot open a sentence and be capitalised. `why_not` begins with the ANNOTATION_SPEC rule that makes the text a null; `kind` is one of refusal (B7), absence (B15), generic, ordinary, third_party, institution, id_shaped (B20), lawful, physical; `origin` names the batch so `gendoc_dataset.py extend-negatives` can partition it without moving earlier entries."
+  "schema_note": "Entry fields: text, form (nb/nn/en), subject (person/animal/org), difficulty, note, genres (genre ids the clause is plausible in; [] = never sampled), and optional constraints on the record's subject: gender (M/F), age_range [min,max], origin (native/foreign), nationalities (list of nationality adjectives the subject must have), status (employed/unemployed/retired/uforetrygd), partner (opposite: implies an opposite-sex partner), marital (the MARITAL_STATUS value the clause implies). Negatives (version 4; version 5 adds the `nearmiss_v5` batch): `plantable` marks near-miss texts that are null under every type, so a benchmark run may plant them verbatim and leave them unlabelled; `genres` restricts them like a clause, `gender` (M/F) restricts the subject, and `also_labelled` maps a TYPE to a substring of the text that is a real value of that other type and is labelled as such (the near-miss is only for the type the negative is filed under). Negatives may carry `age_range` like a clause; without one a negative is for adult subjects only. `as_type` relabels an entry as another type when sampled (a civil-status clause with no kinship noun filed under FAMILY_RELATION is MARITAL_STATUS). Version 5: a negative's `text` may hold `{PRON}` (han/hun, han/ho), `{POSS}` (hans/hennes, hans/hennar) and `{OBJ}` (ham/henne, han/henne), filled from the document subject's gender and the document's form when the negative is planted; the planted text, and what G2 searches for, is the filled one. A near-miss that needs a subject carries its own (`og {PRON} svarte ...`) and starts with a coordinating word so it cannot open a sentence and be capitalised. `why_not` begins with the ANNOTATION_SPEC rule that makes the text a null; `kind` is one of refusal (B7), absence (B15), generic, ordinary, third_party, institution, id_shaped (B20), lawful, physical; `origin` names the batch so `gendoc_dataset.py extend-negatives` can partition it without moving earlier entries. Version 6 (`origin: multi_v6`) adds the entries several instances of one type are drawn from, and these optional fields on the multi-instance types (CRIMINAL, HEALTH, MEDICATION, BEHAVIORAL_PATTERN, FINANCIAL, ECONOMIC_STATUS, FAMILY_RELATION): `topic` (what the clause is about; no two clauses of one type in one document share a topic), `also` (further topics an entry occupies, e.g. a threat clause that mentions a weapon), `group` (at most one topic of a group per document across all types: one psychiatric condition, one general financial condition, one infection, the partner and the children of FAMILY_RELATION), `polarity` (poor or rich, which the means a clause implies; one per document across FINANCIAL and ECONOMIC_STATUS), and for FINANCIAL `kind` (debt, headline, asset, income, unspecified) with a numeric `amount` in NOK, so that the debts listed beside a headline total never exceed it. `subject: animal` entries are drawn only by the genres that list the type in `animal_types` (a veterinary record's HEALTH findings). Genre ids added for particular kinds of document: `crime` (police, prosecution, court, restraining-order, forensics and clearance documents), `forensics`, `bank`, `debt` (debt counselling, inkasso, bank AML), `barnevern`, `school` and, for the veterinary documents, `vet_clinical` and `vet_inspection`; a genre draws them through `clause_genres`."
 }

@@ -27,7 +27,20 @@ second reason code covers the other pilot failure -- one police report framed an
 ethnicity clause as investigative material ("hun har romani bakgrunn ifølge egne
 opplysninger, hvilket har vært relevant for etterforskningen av hennes sosiale
 nettverk") -- which is content that should never be generated at all, whatever
-its labels say.
+its labels say. Pilot v4 showed the same failure outside the original five categories:
+a bank's money-laundering letter wrote "Vi ser at du er aktiv i Senterpartiet og kjent
+for sine kontroversielle uttalelser om innvandring, noe som kan være relevant for
+helhetsvurderingen". The framing test is therefore: *any* special category -- origin,
+religion, nationality, sexuality, immigration status, political view, health,
+disability, medication, trade-union membership -- presented as relevant to suspicion,
+risk, crime, credibility, or a financial or security assessment.
+
+A third reason code, MOTSIGELSE (`contradiction`), covers a sentence that denies,
+doubts or explains away a fact the record planted. The pilot's security-clearance letter
+wrote "Det foreligger ingen registrerte straffedomar" and then, in the next sentence,
+the seeded "Ho sonet ein dom for vald mot offentleg tenestemann, men denne finst ikkje
+i oppgjeve register": every label is correct and the document contradicts itself. The
+labels cannot see that, and a detector trained on it learns that a clause may be false.
 
 Two rules make this safe to act on:
 
@@ -60,9 +73,10 @@ from gendoc_backends import MANIFEST_SENTINEL
 AUDIT_OPEN = "<<<DOKUMENT>>>"
 AUDIT_CLOSE = "<<<SLUTT PÅ DOKUMENT>>>"
 
-REASON_CODES = {"SENSITIV": "unlabelled_sensitive", "RAMME": "sensitive_framing"}
+REASON_CODES = {"SENSITIV": "unlabelled_sensitive", "RAMME": "sensitive_framing",
+                "MOTSIGELSE": "contradiction"}
 
-_FINDING_RE = re.compile(r"^\s*(?:[-*\d.)\s]*)FUNN\s*\|\s*(SENSITIV|RAMME)\s*\|\s*(.+?)\s*$")
+_FINDING_RE = re.compile(r"^\s*(?:[-*\d.)\s]*)FUNN\s*\|\s*(SENSITIV|RAMME|MOTSIGELSE)\s*\|\s*(.+?)\s*$")
 
 # Below this many characters of residue -- the part of the quote no label
 # already covers -- a finding is not worth a repair pass: it is the model
@@ -78,9 +92,19 @@ atferdsmønster, økonomi eller gjeld, religion eller livssyn, politiske oppfatn
 fagforeningsmedlemskap, etnisitet eller opprinnelse, seksualitet, innvandringsstatus eller \
 familieforhold – og som IKKE står i listen over registrerte opplysninger.
 
-Oppgave B: Finn hver setning som nevner etnisitet, religion, nasjonalitet, seksualitet \
-eller innvandringsstatus OG samtidig knytter dette til mistanke, risiko, kriminalitet, \
-farlighet eller troverdighet. Begge delene må være til stede i samme setning.
+Oppgave B: Finn hver setning som nevner etnisitet, religion, nasjonalitet, seksualitet, \
+innvandringsstatus, politisk ståsted eller partitilhørighet, helse, funksjonsnedsettelse, \
+medisinbruk eller fagforeningsmedlemskap OG samtidig presenterer dette som relevant for \
+mistanke, risiko, kriminalitet, farlighet, troverdighet, eller for en økonomisk vurdering eller \
+sikkerhetsvurdering. Begge delene må være til stede i samme setning. En slik opplysning skal stå \
+som et nøytralt faktum, aldri som grunn til eller bevis i en vurdering. Det er IKKE et funn at en \
+helse- eller funksjonsopplysning begrunner behandling, tilrettelegging, støtte eller en ytelse.
+
+Oppgave C: Finn hver setning som benekter, motsier, betviler eller forklarer bort en av \
+opplysningene i listen over registrerte opplysninger. Eksempler på slike setninger er «det \
+foreligger ingen registrerte straffedommer» når en dom står i listen, og «men dette finnes ikke i \
+registeret» etter en oppgitt opplysning. Sitér setningen eller setningsdelen som benekter eller \
+forklarer bort. En setning som bare nevner opplysningen uten å tvile på den er ikke et funn.
 
 Dette skal IKKE regnes med, og er den vanligste feilen:
 - navn, alder, kjønn, adresse, postnummer, telefonnummer, e-post, saksnummer, datoer, \
@@ -110,6 +134,10 @@ FUNN|SENSITIV|brukar antidepressiva for å motverke depresjonssymptom knytt til 
 FUNN|SENSITIV|kjørte bil etter å ha konsumert alkohol
 FUNN|SENSITIV|har hatt kontakter med personer som er kjent for å drive med illegale aktiviteter
 FUNN|RAMME|hun har romani bakgrunn, hvilket har vært relevant for etterforskningen
+FUNN|RAMME|du er aktiv i Senterpartiet, noe som kan være relevant for helhetsvurderingen av mistanken
+FUNN|RAMME|hun bruker antidepressiva, noe som øker risikoen for at hun kan presses
+FUNN|MOTSIGELSE|Det foreligger ingen registrerte straffedommer mot henne
+FUNN|MOTSIGELSE|men denne finst ikkje i oppgjeve register
 
 Eksempler på setninger som IKKE skal med:
 - «Hun bor per dags dato på adressen Myrveien 102A, 3040 Drammen.»
@@ -117,23 +145,31 @@ Eksempler på setninger som IKKE skal med:
 - «Det innvilges oppholdstillatelse for søkeren.»
 - «Slik misbruk av tillit er alvorlig i et demokrati.»
 - «Vennlig hilsen, allmennlege.»
+- «Hun bruker antidepressiva, og legen har vurdert behandlingen som tilstrekkelig.»
+- «Han er medlem av Fellesforbundet.»
 
 Svar bare med linjer på dette formatet, én linje per funn:
 FUNN|SENSITIV|<ordrett sitat fra dokumentet>
 FUNN|RAMME|<ordrett sitat fra dokumentet>
+FUNN|MOTSIGELSE|<ordrett sitat fra dokumentet>
 
 Krav til sitatet: kopier tegn for tegn fra dokumentet, ikke omskriv, ikke forkort med «...», \
 og sitér bare den delen som ikke allerede er registrert. Skriv ordet INGEN alene på én \
 linje dersom du ikke finner noe. Ikke skriv forklaringer."""
 
 
-def build_audit_prompt(text: str, labelled_spans: Sequence[str], doc_seed: int) -> str:
+def build_audit_prompt(text: str, labelled_spans: Sequence[str], doc_seed: int,
+                       clauses: Sequence[Tuple[str, str]] = ()) -> str:
     """Build the G11 audit prompt for one generated document.
 
     Args:
         text: The document as it will be written, after marker stripping.
-        labelled_spans: Every span already in the document's `output`.
+        labelled_spans: Every span already in the document's `output`; Task C
+            (contradiction) reads the same list, since a denied value is a registered one.
         doc_seed: The document's seed, echoed into the mock manifest.
+        clauses: `(type, text)` of the planned judgement clauses. The model never sees
+            this: it goes after the manifest sentinel so `MockBackend`, which has no
+            language understanding, can tell which topic a denial is about.
 
     Returns:
         The prompt, with a machine-readable manifest after `MANIFEST_SENTINEL`
@@ -144,7 +180,7 @@ def build_audit_prompt(text: str, labelled_spans: Sequence[str], doc_seed: int) 
         f"{_AUDIT_TASK_NB}\n\n{AUDIT_OPEN}\n{text}\n{AUDIT_CLOSE}\n\n"
         f"Allerede registrerte opplysninger:\n{listed or '- (ingen)'}\n"
     )
-    manifest = [f"SEED|{doc_seed}", "AUDIT|1"]
+    manifest = [f"SEED|{doc_seed}", "AUDIT|1"] + [f"CLAUSE|{etype}|{clause}" for etype, clause in clauses]
     return body + "\n" + MANIFEST_SENTINEL + "\n" + "\n".join(manifest)
 
 
@@ -155,7 +191,7 @@ def parse_audit_reply(reply: str) -> List[Tuple[str, str]]:
         reply: Raw model output.
 
     Returns:
-        List of (`SENSITIV`/`RAMME`, quote) pairs in reply order. A reply of
+        List of (`SENSITIV`/`RAMME`/`MOTSIGELSE`, quote) pairs in reply order. A reply of
         `INGEN`, an empty reply or unparseable prose yields an empty list.
     """
     pairs: List[Tuple[str, str]] = []
@@ -249,12 +285,12 @@ def filter_audit_findings(
         if any(lo <= start and end <= hi for lo, hi in exempt):
             continue
         residue = _residue(text, start, end, covered)
-        # A RAMME finding is about how a sentence frames a fact, so the fact
-        # itself being labelled does not excuse it; only the substring test and
-        # a non-trivial length apply.
+        # A RAMME finding is about how a sentence frames a fact, and a MOTSIGELSE
+        # finding about a sentence that denies one, so the fact itself being labelled
+        # does not excuse either; only the substring test and a non-trivial length apply.
         if kind == "SENSITIV" and len(residue.strip()) < MIN_RESIDUE_CHARS:
             continue
-        if kind == "RAMME" and len(quote.strip()) < MIN_RESIDUE_CHARS:
+        if kind in ("RAMME", "MOTSIGELSE") and len(quote.strip()) < MIN_RESIDUE_CHARS:
             continue
         seen.add(quote)
         findings.append({
@@ -290,6 +326,7 @@ def audit_stats(pairs: Sequence[Tuple[str, str]], findings: Sequence[dict]) -> D
         "dropped_not_substring_or_covered": len(pairs) - len(findings),
         "unlabelled_sensitive": sum(1 for f in findings if f["reason"] == "unlabelled_sensitive"),
         "sensitive_framing": sum(1 for f in findings if f["reason"] == "sensitive_framing"),
+        "contradiction": sum(1 for f in findings if f["reason"] == "contradiction"),
     }
 
 

@@ -27,6 +27,18 @@ labelled, no negative text is planted more than twice in a 100-document benchmar
 run (and the training run stays on its own partition at one per document), and the
 leakage checker catches a negative shared between a training and a benchmark file.
 
+Record-level defects have cases of their own (41-51, and `record_checks`): a political view
+presented as relevant to a money-laundering suspicion is flagged by the G11 framing code and
+repaired; a denial of a planted conviction, and a conviction explained away, are flagged by the
+contradiction code; an HPR number written next to the patient, and a device identifier or a
+username written as "vår"/"vårt", fail G14; several distinct CRIMINAL clauses in a police
+document and several HEALTH findings in a veterinary record (Bokmål and Nynorsk) are all
+labelled and rejected by neither G6 nor G12; three HEALTH findings use one health-family
+slot, not three. `record_checks` adds the cast rules (a parent of 121 and a 19-year-old author
+are reported, repaired and, when they survive to the end of sampling, rejected before any
+prompt is built), the new clause-bank entries and their partition, and the replay of
+`data/synthetic/pilot_v4_train` through the audit prompt and the mock auditor.
+
 It also carries the checks that need no generation: the benchmark/training
 partition is disjoint, the leakage checker fires on an injected leak, and G13's
 thresholds reject the table dumps they were calibrated on while passing the gold
@@ -41,6 +53,7 @@ Run it from the repository root; it exits non-zero if any case fails or if
 from __future__ import annotations
 
 import argparse
+import collections
 import glob
 import json
 import os
@@ -55,6 +68,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import check_dataset_leakage as leakage  # noqa: E402
 import gendoc_audit as audit  # noqa: E402
+import gendoc_coherence as coherence  # noqa: E402
 import gendoc_data as data  # noqa: E402
 import gendoc_dataset as dataset_mod  # noqa: E402
 import gendoc_gates as gates  # noqa: E402
@@ -113,11 +127,31 @@ CASES: Dict[int, Tuple[str, Optional[str]]] = {
     38: ("vessel_invented", "G7_unplanned_pii"),
     39: ("firearms_as_case_number", "G14_roles"),
     40: ("vessel_as_firearms", "G14_roles"),
+    41: ("political_framing", None),
+    42: ("hpr_on_subject", "G14_roles"),
+    43: ("device_as_issuers_own", "G14_roles"),
+    44: ("contradiction_denial", None),
+    45: ("contradiction_explained_away", None),
+    46: ("multi_criminal_police", None),
+    47: ("multi_health_vet", None),
+    48: ("multi_health_vet_nn", None),
+    49: ("health_cap_typical", None),
+    50: ("health_cap_dense", None),
+    51: ("username_as_issuers_own", "G14_roles"),
 }
 
 # Cases that plan hard negatives, as the benchmark does. They need a plan with
 # `n_negatives` and a run config carrying a negative bank.
 _NEGATIVE_CASES = {30, 31, 32}
+
+# Cases that plan several instances of a type: idx -> (instances, profile, length band, type target, art9 cap, form).
+_MULTI_CASES = {
+    46: ({"CRIMINAL": 4}, "dense", (2800, 4000), 12, 2, "nb"),
+    47: ({"HEALTH": 3}, "dense", (2800, 4000), 12, 2, "nb"),
+    48: ({"HEALTH": 4}, "dense", (2800, 4000), 12, 2, "nn"),
+    49: ({"HEALTH": 3, "MEDICATION": 2}, "typical", (1600, 2800), 9, 1, "nb"),
+    50: ({"HEALTH": 3, "MEDICATION": 2}, "dense", (2800, 4000), 12, 2, "nb"),
+}
 
 # Which genre and plan shape each case needs. The slot-label cases need a
 # document with a seeded judgement clause; the checksum case needs a genre whose
@@ -132,11 +166,15 @@ _GENRE_FOR = {
     33: "nav_decision", 34: "nav_decision",
     35: "police_report", 36: "police_report", 37: "mattilsynet_inspection",
     38: "mattilsynet_inspection", 39: "police_report", 40: "mattilsynet_inspection",
+    41: "forsvaret_clearance", 42: "gp_referral", 43: "digital_forensics_report",
+    44: "police_report", 45: "police_report", 46: "police_report", 47: "vet_clinical_record",
+    48: "vet_clinical_record", 49: "gp_referral", 50: "gp_referral", 51: "digital_forensics_report",
 }
 
 # Types a case forces into its record so the injection has a planned value to work on.
 _FORCED_FOR = {35: ["FIREARMS_LICENSE"], 36: ["FIREARMS_LICENSE"], 37: ["VESSEL_REGISTRATION"],
-               38: ["VESSEL_REGISTRATION"], 39: ["FIREARMS_LICENSE"], 40: ["VESSEL_REGISTRATION"]}
+               38: ["VESSEL_REGISTRATION"], 39: ["FIREARMS_LICENSE"], 40: ["VESSEL_REGISTRATION"],
+               42: ["MEDICAL_LICENSE"], 43: ["DEVICE_ID"], 51: ["USERNAME"]}
 _DEFAULT_GENRES = ["gp_referral", "police_report", "nav_decision", "dismissal_letter",
                    "udi_decision"]
 
@@ -167,6 +205,7 @@ class InjectingMock(MockBackend):
     def __init__(self, states: Dict[int, gen.DocState], first_texts: Dict[int, str]) -> None:
         self.states = states
         self.first_texts = first_texts
+        self.neardup_base = ""
 
     def generate(self, prompts, **kwargs):
         outputs = super().generate(prompts, **kwargs)
@@ -250,6 +289,26 @@ class InjectingMock(MockBackend):
             value = next(line.split("|", 2)[2] for line in _manifest(prompt).splitlines()
                          if line.startswith("VALUE|VESSEL_REGISTRATION|"))
             return text + f" Våpenkortnummeret er {value}.", True
+        if name == "political_framing":
+            return (text + " Vi ser at du er aktiv i Senterpartiet og kjent for sine kontroversielle "
+                           "uttalelser om innvandring, noe som kan være relevant for helhetsvurderingen."), True
+        if name == "hpr_on_subject":
+            subject = self.states[idx].record.person
+            hpr = next(line.split("|", 2)[2] for line in _manifest(prompt).splitlines()
+                       if line.startswith("VALUE|MEDICAL_LICENSE|"))
+            return text + f" {subject.full_name}, født i 1971, med hpr-nummer {hpr}.", True
+        if name == "device_as_issuers_own":
+            device = next(line.split("|", 2)[2] for line in _manifest(prompt).splitlines()
+                          if line.startswith("VALUE|DEVICE_ID|"))
+            return text + f" Ved henvendelse til vår enhetsidentifikator {device} mottok vi en melding.", True
+        if name == "username_as_issuers_own":
+            user = next(line.split("|", 2)[2] for line in _manifest(prompt).splitlines()
+                        if line.startswith("VALUE|USERNAME|"))
+            return text + f" Kontoen er registrert på vårt brukernavn {user} i systemet.", True
+        if name == "contradiction_denial":
+            return text + " Det foreligger ingen registrerte straffedommer mot vedkommende.", True
+        if name == "contradiction_explained_away" and clauses:
+            return text.replace(clauses[0], clauses[0] + ", men denne finst ikkje i oppgjeve register", 1), True
         if name == "negative_elaboration":
             negative = self.states[idx].record.planted_negatives[0].text
             return text + f" Det ble notert at vedkommende {negative} {MOCK_ELABORATION_CUE}.", True
@@ -278,11 +337,18 @@ class InjectingMock(MockBackend):
             return text + " Naboen bor i Storgata 3, 9008 Tromsø.", True
         if name == "wrong_dob":
             return text + " Vedkommende er født 01.01.1950.", True
-        if name == "neardup" and self.states[0].result and self.states[0].result.get("text"):
-            # Doc 0's accepted text plus doc 16's own literals on one line: every
-            # planned value is present, so only G6 can reject it.
-            return (self.states[0].result["text"] + "\n"
-                    + " og ".join(_values(prompt) + clauses) + "."), True
+        # Finalised means accepted and audited clean: only those documents' n-grams are in G6's
+        # reference set.
+        accepted = [s.result["text"] for s in self.states.values()
+                    if s.result and s.result.get("text") and s.audit_log
+                    and not any(entry["kept"] for entry in s.audit_log)]
+        if name == "neardup" and accepted:
+            # The longest accepted text so far plus doc 16's own literals on one line: every
+            # planned value is present, so only G6 can reject it. The longest, because G6
+            # does not count a document's seeded clauses and a short base would share too
+            # little of its prose to reach the threshold.
+            self.neardup_base = max(accepted, key=len)
+            return (self.neardup_base + "\n" + " og ".join(_values(prompt) + clauses) + "."), True
         if name == "audit_elaboration":
             return text + f" Pasienten {MOCK_ELABORATION_CUE}.", True
         if name == "audit_framing":
@@ -303,15 +369,28 @@ def build_plans() -> List[gen.DocPlan]:
         genre = _GENRE_FOR.get(idx, _DEFAULT_GENRES[idx % len(_DEFAULT_GENRES)])
         pii_free = name.startswith("pii_free")
         forced = ["HEALTH"] if idx in (5, 6, 18, 21, 25) else list(_FORCED_FOR.get(idx, []))
+        multi = _MULTI_CASES.get(idx)
         plans.append(gen.DocPlan(
             n_negatives=2 if idx in _NEGATIVE_CASES else 0,
-            idx=idx, genre=genre, variant="prose_letter", form="nb",
-            length_band=(800, 1600) if pii_free else (1600, 2800),
-            forced_types=forced, profile="pii_free" if pii_free else "typical",
-            type_target=0 if pii_free else (14 if idx in (26, 28) else 8), art9_cap=1,
-            pii_free=pii_free,
+            idx=idx, genre=genre, variant="prose_letter", form=multi[5] if multi else "nb",
+            length_band=multi[2] if multi else ((800, 1600) if pii_free else (1600, 2800)),
+            forced_types=forced, profile=multi[1] if multi else ("pii_free" if pii_free else "typical"),
+            type_target=multi[3] if multi else (0 if pii_free else (14 if idx in (26, 28) else 8)),
+            art9_cap=multi[4] if multi else 1, pii_free=pii_free,
+            instances=dict(multi[0]) if multi else {},
         ))
     return plans
+
+
+_ANIMAL_HEALTH: set = set()
+
+
+def _animal_health_texts() -> set:
+    """The texts of the bank's animal-subject HEALTH clauses, for the veterinary cases."""
+    if not _ANIMAL_HEALTH:
+        bank = data.load_clause_bank("data/synthetic/clause_bank.json")
+        _ANIMAL_HEALTH.update(e["text"] for e in bank["HEALTH"] if e.get("subject") == "animal")
+    return _ANIMAL_HEALTH
 
 
 def _first_failure(state: gen.DocState) -> Optional[str]:
@@ -397,6 +476,42 @@ def _check(state: gen.DocState) -> Tuple[bool, str]:
                 f"kept={kept} overruled={overruled} audit_repairs={state.audit_repairs_total}"
         return (base and state.audit_repairs_total == 1 and MOCK_ELABORATION_CUE not in result["text"]), \
             f"audit_repairs={state.audit_repairs_total} cue_removed={MOCK_ELABORATION_CUE not in result['text']}"
+    if name in ("political_framing", "contradiction_denial", "contradiction_explained_away"):
+        reasons = [f["reason"] for entry in state.audit_log for f in entry["findings"]]
+        want = "sensitive_framing" if name == "political_framing" else "contradiction"
+        gone = {"political_framing": "Senterpartiet", "contradiction_denial": "ingen registrerte straffedommer",
+                "contradiction_explained_away": "finst ikkje i oppgjeve register"}[name]
+        return (want in reasons and state.audit_repairs_total == 1 and accepted
+                and gone not in result.get("text", "")), \
+            f"reasons={reasons} audit_repairs={state.audit_repairs_total} phrase_removed={gone not in result.get('text', '')}"
+    if name in ("hpr_on_subject", "device_as_issuers_own", "username_as_issuers_own"):
+        kinds = [h["kind"] for e in state.gate_log if e["stage"] == "G14_roles" for h in e["detail"]]
+        want = {"hpr_on_subject": "wrong_owner"}.get(name, "issuer_identifier")
+        return (failure == "G14_roles" and want in kinds and accepted and state.attempt == 2), \
+            f"G14 kinds={kinds} attempt={state.attempt}"
+    if name.startswith("multi_") or name.startswith("health_cap"):
+        etype = "CRIMINAL" if name == "multi_criminal_police" else "HEALTH"
+        asked = state.plan.instances[etype]
+        planned = [pv for pv in state.record.planned if pv.type == etype and pv.value_kind == "clause"]
+        located = [pv.value for pv in planned if pv.value in result.get("output", {}).get(etype, [])]
+        family = collections.Counter(pv.type for pv in state.record.planned if pv.type in genres_mod.HEALTH_FAMILY)
+        rejected_by = [e["stage"] for e in state.gate_log if not e["ok"] and e["stage"] in ("G6_near_duplicate", "G12_repetition")]
+        topics = [pv.topic for pv in planned]
+        detail = (f"asked={asked} planned={len(planned)} labelled={len(located)} distinct_topics={len(set(topics))} "
+                  f"G6/G12_rejections={rejected_by} health_family={dict(family)}")
+        # A typical document's item budget leaves room for one or two further clauses, not three.
+        floor = 2 if name == "health_cap_typical" else min(asked, 3)
+        base = (accepted and len(planned) >= floor and len(located) == len(planned)
+                and len(set(topics)) == len(topics) and not rejected_by)
+        if name == "health_cap_typical":
+            return base and len(family) == 1 and family["HEALTH"] >= 2, detail
+        if name == "health_cap_dense":
+            return (base and len(family) == genres_mod.health_family_cap("dense")
+                    and sum(family.values()) > genres_mod.health_family_cap("dense")), detail
+        if name == "multi_health_vet" or name == "multi_health_vet_nn":
+            animal = all(pv.value in _animal_health_texts() for pv in planned)
+            return base and animal, detail + f" all_animal_clauses={animal}"
+        return base, detail
     if name in ("firearms_valid", "vessel_valid"):
         etype = "FIREARMS_LICENSE" if name == "firearms_valid" else "VESSEL_REGISTRATION"
         planned = [pv.value for pv in state.record.planned if pv.type == etype]
@@ -1122,7 +1237,8 @@ def mock_dataset_run(dataset: str, n: int, seed: int, taxonomy_index, clause_ban
     Returns:
         `{"docs": accepted documents with id/text_input/output, "meta": the planted negatives
         per document, "ledger": the run's reuse report, "states": every state, "stats": run stats,
-        "plans": the plans}`.
+        "plans": the plans, "coherence_log": the cast-coherence report of every record sampled,
+        "coherence_rejected": records refused before generation}`.
     """
     import random
     mode = dataset_mod.MODES[dataset]
@@ -1162,7 +1278,8 @@ def mock_dataset_run(dataset: str, n: int, seed: int, taxonomy_index, clause_ban
             {"text": n_.text, "template": n_.template, "type": n_.type}
             for n_ in st.record.planted_negatives]})
     return {"docs": docs, "meta": planted, "ledger": config.negative_ledger.report(),
-            "states": states, "stats": stats, "plans": plans}
+            "states": states, "stats": stats, "plans": plans, "coherence_log": config.coherence_log,
+            "coherence_rejected": config.coherence_rejected}
 
 
 def negative_checks(taxonomy_index, clause_bank, partition, out_dir: str, types_config: str) -> bool:
@@ -1345,6 +1462,478 @@ def negative_checks(taxonomy_index, clause_bank, partition, out_dir: str, types_
     return ok
 
 
+# ---------------------------------------------------------------------------
+# Record-level checks: several instances of a type, possible people, special categories
+# ---------------------------------------------------------------------------
+
+def _bank_entries(clause_bank: dict) -> List[Tuple[str, dict, "re.Pattern"]]:
+    """Return `(type, entry, pattern)` for every clause entry; a pattern matches the entry's text
+    with its name placeholders filled, so a planted clause can be traced back to its bank entry."""
+    out = []
+    for etype, entries in clause_bank.items():
+        if etype == "negatives":
+            continue
+        for entry in entries:
+            pattern = re.escape(entry["text"])
+            pattern = re.sub(r"\\\{(?:PERSON|PERSON_M|PERSON_F|SURNAME_FAM|SURNAME_ORG)\\\}", r".+?", pattern)
+            out.append((etype, entry, re.compile("^" + pattern + "$")))
+    return out
+
+
+def _entry_of(index, etype: str, form: str, text: str) -> Optional[dict]:
+    return next((e for t, e, rx in index if t == etype and e["form"] == form and rx.match(text)), None)
+
+
+def record_checks(taxonomy_index, clause_bank: dict, partition: dict, out_dir: str) -> bool:
+    """The checks for several instances of a type, the cast-coherence rules and the special categories."""
+    import collections
+    import random
+    ok = True
+
+    def report(name: str, passed: bool, detail: str) -> None:
+        nonlocal ok
+        ok &= passed
+        print(f"{'PASS' if passed else 'FAIL'} record {name:<34} {detail}")
+
+    public_figures = set(data.PUBLIC_FIGURES)
+    place_names = {p for _c, p in data.POSTAL_PAIRS}
+    agency_names = set(data.AGENCY_NAMES)
+    index = _bank_entries(clause_bank)
+
+    # -- the bank and its partition ----------------------------------------------------
+    new = [(t, e) for t, entries in clause_bank.items() if t != "negatives"
+           for e in entries if e.get("origin") == "multi_v6"]
+    nn_share = sum(1 for _t, e in new if e["form"] == "nn") / max(1, len(new))
+    no_topic = [e["text"] for t, e in new if not e.get("topic")]
+    batch = partition.get("clause_batches", {}).get("multi_v6", {})
+    bench_new = {t for v in partition["clauses"].values() for t in v} & {e["text"] for _t, e in new}
+    train_new = {t for v in partition.get("clauses_train", {}).values() for t in v}
+    batch_texts = {e["text"] for _t, e in new}
+    old_texts = {e["text"] for t, entries in clause_bank.items() if t != "negatives"
+                 for e in entries if e.get("origin") != "multi_v6"}
+    report("new_clauses_cover_types_and_nynorsk", nn_share >= 0.35 and not no_topic
+           and {t for t, _e in new} >= {"CRIMINAL", "HEALTH", "MEDICATION", "BEHAVIORAL_PATTERN",
+                                         "FINANCIAL", "ECONOMIC_STATUS"},
+           f"entries={len(new)} nn_share={nn_share:.2f} without_topic={no_topic[:2]} "
+           f"by_type={dict(collections.Counter(t for t, _e in new))}")
+    report("new_clauses_partitioned_about_a_quarter",
+           bench_new.isdisjoint(train_new) and (bench_new | train_new) == batch_texts
+           and train_new.isdisjoint(old_texts) and 0.2 <= len(bench_new) / max(1, len(batch_texts)) <= 0.32
+           and batch.get("benchmark") == len(bench_new) and batch.get("train") == len(train_new),
+           f"benchmark={len(bench_new)} train={len(train_new)} share={len(bench_new) / max(1, len(batch_texts)):.3f}")
+    # Run again, the extension must refuse and leave the old assignments alone.
+    try:
+        dataset_mod.extend_clauses(partition, clause_bank, "multi_v6")
+        refused = False
+    except ValueError:
+        refused = True
+    fresh = dataset_mod.extend_clauses({**partition, "clause_batches": {}}, clause_bank, "multi_v6")
+    report("clause_extension_deterministic_and_idempotent", refused and fresh["clauses"] == partition["clauses"],
+           f"second_run_refused={refused} same_assignments_on_rerun={fresh['clauses'] == partition['clauses']}")
+
+    # New entries obey the v2 boundary rules that can be tested mechanically.
+    determiner = re.compile(r"^(?:en|et|ei|ein|eit|den|det|de)\b", re.IGNORECASE)
+    linking = re.compile(r"^(?:er|var|har|hadde|blir|ble)\b")
+    bad = [e["text"] for _t, e in new if determiner.match(e["text"]) or linking.match(e["text"])
+           or e["text"][-1] in ".,;:!?" or e["text"] != e["text"].strip()]
+    report("new_clauses_follow_boundary_rules", not bad, f"leading determiner/linking verb or final punctuation: {bad[:3]}")
+
+    # -- supply: three or four compatible clauses for the main cases -------------------
+    from datetime import date
+    main_cases = [("police_report", "CRIMINAL"), ("gp_referral", "HEALTH"), ("gp_referral", "MEDICATION"),
+                  ("vet_clinical_record", "HEALTH"), ("debt_counselling", "FINANCIAL"),
+                  ("debt_counselling", "ECONOMIC_STATUS"), ("barnevern_concern", "BEHAVIORAL_PATTERN"),
+                  ("school_incident", "BEHAVIORAL_PATTERN")]
+    thin = []
+    supply_cells = {}
+    for dataset in ("train", "benchmark"):
+        bank = dataset_mod.select_clause_bank(clause_bank, partition, dataset)
+        for genre, etype in main_cases:
+            spec = genres_mod.GENRES[genre]
+            for form in ("nb", "nn"):
+                youth = spec.get("age_profile") == "youth"
+                person = gen.Person("Test", "Person", "F", date(2026 - (11 if youth else 40), 3, 3))
+                subject = gen._Subject(person, genre, form, set(spec["clause_genres"]),
+                                       animal_types=set(spec.get("animal_types", ())))
+                fits = [e for e in bank.get(etype, []) if gen._clause_fits(e, subject, etype) and not e.get("as_type")]
+                chosen: List[dict] = []
+                for entry in sorted(fits, key=lambda e: e["text"]):
+                    if gen.clauses_compatible(chosen, entry) and not (
+                            entry.get("group") and any(c.get("group") == entry["group"] for c in chosen)):
+                        chosen.append(entry)
+                supply_cells[(dataset, genre, etype, form)] = len(chosen)
+                if len(chosen) < 3:
+                    thin.append((dataset, genre, etype, form, len(chosen)))
+    report("bank_supplies_three_compatible_clauses", not thin,
+           f"cells={len(supply_cells)} min={min(supply_cells.values())} thin={thin[:4]}")
+
+    # -- clauses_compatible: contradictions and repeats are refused -----------------------
+    a = {"text": "dømt for vold i 2010", "topic": "violence"}
+    cases = [
+        ("same_topic", [a], {"text": "siktet for grov vold i 2021", "topic": "violence"}, False),
+        ("also_topic", [{"text": "anmeldt for trusler med kniv", "topic": "threat", "also": ["weapon"]}],
+         {"text": "ulovlig våpenbesittelse", "topic": "weapon"}, False),
+        ("text_contained", [a], {"text": "dømt for vold i 2010 og 2011", "topic": "other"}, False),
+        ("shared_six_word_run", [{"text": "han ble dømt for grov vold mot en nabo i 2010", "topic": "x"}],
+         {"text": "dømt for grov vold mot en nabo igjen", "topic": "y"}, False),
+        ("headline_floor", [{"text": "gjeld på over 700 000 NOK", "topic": "debt_total", "kind": "headline", "amount": 700000},
+                            {"text": "studielån på 340 000 NOK hos Lånekassen", "topic": "student_loan", "kind": "debt", "amount": 340000}],
+         {"text": "forbrukslån på 450 000 NOK hos Nordea", "topic": "consumer_loan", "kind": "debt", "amount": 450000}, False),
+        ("as_type_never_extra", [a], {"text": "gift med Kari Hansen", "topic": "spouse", "as_type": "MARITAL_STATUS"}, False),
+        ("distinct_is_fine", [a], {"text": "tiltalt for innbrudd i en bolig i 2021", "topic": "burglary"}, True),
+        ("short_shared_stem_is_fine", [{"text": "dømt for vold i 2010", "topic": "violence"}],
+         {"text": "dømt for heleri i 2018", "topic": "receiving"}, True),
+    ]
+    wrong = [name for name, chosen, cand, want in cases if gen.clauses_compatible(chosen, cand) != want]
+    report("clauses_compatible_rules", not wrong, f"cases={len(cases)} wrong={wrong}")
+
+    # -- means, psychiatric condition and status cannot contradict across types -------------
+    person = gen.Person("Test", "Person", "F", date(1986, 3, 3))
+    spec = genres_mod.GENRES["debt_counselling"]
+    subject = gen._Subject(person, "debt_counselling", "nb", set(spec["clause_genres"]))
+    rich = next(e for e in clause_bank["ECONOMIC_STATUS"] if e.get("polarity") == "rich" and e["form"] == "nb")
+    poor_fin = next(e for e in clause_bank["FINANCIAL"] if e.get("polarity") == "poor" and e["form"] == "nb"
+                    and "nav_decision" in e["genres"])
+    gen._commit_entry(subject, "ECONOMIC_STATUS", rich)
+    poor_blocked = not gen._clause_fits(poor_fin, subject, "FINANCIAL")
+    subject2 = gen._Subject(person, "gp_referral", "nb", {"gp_referral"})
+    depression = next(e for e in clause_bank["HEALTH"] if e.get("topic") == "depression" and e["form"] == "nb")
+    anxiety = next(e for e in clause_bank["HEALTH"] if e.get("topic") == "anxiety" and e["form"] == "nb")
+    antidepressant = next(e for e in clause_bank["MEDICATION"] if e.get("topic") == "depression" and e["form"] == "nb")
+    antipsychotic = next(e for e in clause_bank["MEDICATION"] if e.get("topic") == "psychosis" and e["form"] == "nb")
+    gen._commit_entry(subject2, "HEALTH", depression)
+    report("subject_state_blocks_contradictions",
+           poor_blocked and not gen._clause_fits(anxiety, subject2, "HEALTH")
+           and gen._clause_fits(antidepressant, subject2, "MEDICATION")
+           and not gen._clause_fits(antipsychotic, subject2, "MEDICATION"),
+           f"rich_means_blocks_poor_debt={poor_blocked} second_psychiatric_condition_blocked=True "
+           f"matching_medication_allowed=True")
+
+    # -- many records: every extra instance is distinct, compatible and in budget --------------
+    problems: List[str] = []
+    multi_docs = 0
+    extras_total = 0
+    shortfalls = collections.Counter()
+    for dataset in ("train", "benchmark"):
+        bank = dataset_mod.select_clause_bank(clause_bank, partition, dataset)
+        bank.pop("negatives")
+        data.use_pools(dataset_mod.select_pools(partition, dataset))
+        try:
+            for seed in range(260):
+                genre = sorted(genres_mod.MULTI_PROPENSITY)[seed % len(genres_mod.MULTI_PROPENSITY)]
+                profile = ("typical", "dense", "case_file", "dense")[seed % 4]
+                form = "nn" if seed % 3 == 0 else "nb"
+                length = {"typical": (1600, 2800), "dense": (2800, 4000), "case_file": (3600, 4600)}[profile]
+                plan = gen.DocPlan(
+                    idx=seed, genre=genre, variant="prose_letter", form=form, length_band=length,
+                    forced_types=[], profile=profile, type_target={"typical": 8, "dense": 14, "case_file": 22}[profile],
+                    art9_cap=2, instances={t: 4 for t in genres_mod.MULTI_PROPENSITY[genre]})
+                rec = gen.sample_record(random.Random(seed), seed, plan, "seeded", taxonomy_index, bank,
+                                        public_figures, dataset=dataset)
+                if rec.pii_free:
+                    continue
+                by_type = collections.defaultdict(list)
+                for pv in rec.planned:
+                    if pv.value_kind == "clause" and pv.type in clause_bank:
+                        by_type[pv.type].append(pv)
+                states = {"psych": {}, "general_condition": {}, "cause": {}, "behaviour": {}, "children": {},
+                          "partner": {}, "intoxication": {}, "infection": {}, "musculoskeletal": {}}
+                polarities = set()
+                for etype, pvs in by_type.items():
+                    entries = [_entry_of(index, etype, form, pv.value) for pv in pvs]
+                    if any(e is None for e in entries):
+                        problems.append(("untraceable", seed, etype))
+                        continue
+                    topics = [t for e in entries for t in gen._entry_topics(e)]
+                    if len(pvs) >= 2:
+                        multi_docs += 1
+                        extras_total += len(pvs) - 1
+                    if len(set(topics)) != len(topics):
+                        problems.append(("repeated_topic", seed, etype, topics))
+                    texts = [pv.value.lower() for pv in pvs]
+                    for i in range(len(texts)):
+                        for j in range(i + 1, len(texts)):
+                            if texts[i] in texts[j] or texts[j] in texts[i] or gen._shares_word_run(texts[i], texts[j]):
+                                problems.append(("repeated_words", seed, etype, texts[i], texts[j]))
+                    for e in entries:
+                        if e.get("polarity"):
+                            polarities.add(e["polarity"])
+                        if e.get("group") in states:
+                            states[e["group"]].setdefault(e["topic"], 0)
+                    headlines = [e["amount"] for e in entries if e.get("kind") == "headline"]
+                    if headlines and sum(e.get("amount", 0) for e in entries if e.get("kind") == "debt") > min(headlines):
+                        problems.append(("debt_above_headline", seed))
+                for group, seen in states.items():
+                    if len(seen) > 1:
+                        problems.append(("two_topics_in_one_group", seed, group, sorted(seen)))
+                if len(polarities) > 1:
+                    problems.append(("means_contradict", seed, sorted(polarities)))
+                if len(rec.planned) + len(rec.planted_negatives) > genres_mod.item_budget(profile, length[1]) + 12:
+                    problems.append(("over_item_budget", seed, len(rec.planned)))
+                for etype, n in rec.instances_planned.items():
+                    shortfalls[etype] += max(0, n - rec.instances_realised.get(etype, 1 if any(
+                        pv.type == etype for pv in rec.planned) else 0))
+        finally:
+            data.use_pools(data.full_pools())
+    report("extra_instances_distinct_and_consistent", not problems and multi_docs > 100,
+           f"types_with_2plus_instances={multi_docs} extras={extras_total} problems={problems[:3]}")
+
+    # -- caps count categories, not instances ----------------------------------------------
+    bank = dataset_mod.select_clause_bank(clause_bank, partition, "train")
+    bank.pop("negatives")
+    typical = gen.DocPlan(idx=0, genre="gp_referral", variant="prose_letter", form="nb", length_band=(1600, 2800),
+                          forced_types=[], profile="typical", type_target=9, art9_cap=1,
+                          instances={"HEALTH": 3, "MEDICATION": 2})
+    dense = gen.DocPlan(idx=1, genre="gp_referral", variant="prose_letter", form="nb", length_band=(2800, 4000),
+                        forced_types=[], profile="dense", type_target=12, art9_cap=2,
+                        instances={"HEALTH": 3, "MEDICATION": 2})
+    got = {}
+    for name, plan in (("typical", typical), ("dense", dense)):
+        for seed in range(40):
+            rec = gen.sample_record(random.Random(seed), seed, plan, "seeded", taxonomy_index, bank, public_figures)
+            fam = collections.Counter(pv.type for pv in rec.planned if pv.type in genres_mod.HEALTH_FAMILY)
+            if fam.get("HEALTH", 0) >= 3:
+                got.setdefault(name, (len(fam), sum(fam.values()), dict(fam)))
+                break
+    cap_ok = ("typical" in got and got["typical"][0] == 1 and got["typical"][1] >= 3
+              and "dense" in got and got["dense"][0] <= genres_mod.health_family_cap("dense") < got["dense"][1])
+    report("caps_count_categories_not_instances", cap_ok,
+           f"typical(cap {genres_mod.health_family_cap('typical')}): {got.get('typical')} "
+           f"dense(cap {genres_mod.health_family_cap('dense')}): {got.get('dense')}")
+
+    # -- G6 and G12 do not reject several clauses that share words -----------------------------
+    stems = ["dømt for vold mot offentlig tjenestemann i 2010", "dømt for dokumentfalsk i 2014",
+             "dømt for heleri i 2018", "dømt for farlig kjøring i 2023"]
+    frames = " ".join(f"Videre er det opplyst at vedkommende {c}." for c in stems)
+    text = frames + " " + frames.replace("Videre er det opplyst", "Det er også opplyst")
+    plain = gates.repetition_share(text)
+    exempt = gates.repetition_share(text, exempt=stems)
+    prose_a = "Saken gjelder en kontroll i Oslo sentrum. Opplysningene er hentet fra politiets register. "
+    prose_b = "Rapporten omhandler en anmeldelse fra nabolaget. Opplysningene stammer fra tidligere saker hos politiet. "
+    doc_a = prose_a + " ".join(f"Han er {c}." for c in stems)
+    doc_b = prose_b + " ".join(f"Han er {c}." for c in stems)
+    sim_plain = gates.jaccard(gates.word_ngrams(doc_a), gates.word_ngrams(doc_b))
+    sim_exempt = gates.jaccard(gates.word_ngrams(doc_a, exempt=stems), gates.word_ngrams(doc_b, exempt=stems))
+    looping = ("Han er dømt for heleri i 2018. " * 6 + "Saken følges opp av ansvarlig enhet. ")
+    report("g12_g6_do_not_count_shared_clauses",
+           plain > 0.06 >= exempt and sim_plain >= 0.5 > sim_exempt
+           and gates.repetition_share(looping, exempt=["dømt for heleri i 2018"]) > 0.06,
+           f"G12 share {plain:.3f}->{exempt:.3f} (limit 0.06); G6 similarity {sim_plain:.2f}->{sim_exempt:.2f}; "
+           "a clause looped six times is still caught")
+
+    # -- the cast: possible ages, and a record that breaks the rules is refused --------------------
+    cm = coherence.Member
+    broken = coherence.check(93, [cm("parent", 121), cm("author", 19), cm("child", 6), cm("spouse", 30), cm("officer", 70)])
+    rules = sorted({rule for rule, _role, _age in broken})
+    clean = coherence.check(40, [cm("parent", 68), cm("author", 25), cm("author", 67), cm("child", 12), cm("spouse", 36),
+                                 cm("physician", 52)])
+    report("coherence_check_names_the_violations",
+           {"parent_too_old", "professional_age", "child_gap", "spouse_age"} <= set(rules) and not clean,
+           f"rules={rules} clean_cast_violations={clean}")
+    rng = random.Random(4)
+    fixed, rep = coherence.enforce_cast(93, [cm("parent", 121), cm("author", 19), cm("child", 6), cm("officer", 70)], rng)
+    flipped_ok = fixed[0] is not None and fixed[0].role == "child" and 93 - fixed[0].age >= coherence.MIN_PARENT_GAP
+    report("coherence_repairs_parent_and_professionals",
+           flipped_ok and not coherence.check(93, [m for m in fixed if m]) and rep.flipped == 1 and rep.fixed == 3,
+           f"{rep.notes}")
+    young = coherence.enforce_cast(12, [cm("child", 5)], random.Random(1))
+    report("coherence_drops_an_impossible_member", young[0] == [None] and young[1].dropped == 1,
+           f"subject 12 cannot have a child: dropped={young[1].dropped}")
+
+    # A record whose cast is impossible is refused and sampled again before any prompt exists.
+    plan = gen.DocPlan(idx=3, genre="psychologist_note", variant="prose_letter", form="nb", length_band=(1600, 2800),
+                       forced_types=[], profile="typical", type_target=8, art9_cap=1)
+    config = gen.GenerationConfig(strategy="seeded", invalid_checksum_rate=0.0, retries=1, near_dup_threshold=0.7,
+                                  g7_policy="reject", dataset="train")
+    state = gen.DocState(plan)
+    real_sample = gen.sample_record
+    calls = []
+
+    def poisoned(rng, doc_seed, plan_, *args, **kwargs):
+        rec = real_sample(rng, doc_seed, plan_, *args, **kwargs)
+        calls.append(doc_seed)
+        if len(calls) == 1:
+            rec.parties.append(gen.Party(gen.Person("Ole", "Fredriksen", "M", gen.date(1905, 5, 5)), "parent",
+                                         "forelder"))
+            rec.parties.append(gen.Party(gen.Person("Kari", "Tester", "F", gen.date(2007, 5, 5)), "author", "saksbehandler",
+                                         staff=True))
+        return rec
+
+    gen.sample_record = poisoned
+    try:
+        record = gen.new_attempt_record(state, 11, taxonomy_index, bank, public_figures, config)
+    finally:
+        gen.sample_record = real_sample
+    report("incoherent_record_rejected_before_generation",
+           len(calls) == 2 and config.coherence_rejected == 1 and not gen.check_record_coherence(record),
+           f"samples={len(calls)} rejected={config.coherence_rejected} violations_in_first="
+           f"{[r for r, _a, _b in coherence.check(40, [cm('parent', 121), cm('author', 19)])]}")
+
+    # -- the finished mock runs: how many plans needed fixing --------------------------------------
+    run = mock_dataset_run("train", 120, 3, taxonomy_index, clause_bank, partition)
+    summary = coherence.summarise(run["coherence_log"], run["coherence_rejected"])
+    leftovers = [st.plan.idx for st in run["states"] if st.record and gen.check_record_coherence(st.record)]
+    report("mock_run_casts_are_possible", not leftovers,
+           f"records={summary['records_checked']} with_a_violation={summary['records_with_a_violation']} "
+           f"ages_redrawn={summary['fixed_by_redrawing_an_age']} parents_flipped="
+           f"{summary['fixed_by_turning_a_parent_into_a_child']} dropped={summary['fixed_by_dropping_the_member']} "
+           f"rejected={summary['rejected_and_resampled']} by_rule={summary['violations_by_rule']}")
+
+    # Many documents stay at one instance, and the repeated ones fit the section planner's limit.
+    docs_by_id = {d["id"]: d for d in run["docs"]}
+    shares = {}
+    for etype in ("CRIMINAL", "HEALTH", "BEHAVIORAL_PATTERN", "FINANCIAL"):
+        counts = [len(d["output"][etype]) for d in run["docs"] if etype in d["output"]]
+        shares[etype] = (sum(1 for c in counts if c == 1) / max(1, len(counts)), sum(1 for c in counts if c >= 2))
+    bench_run = mock_dataset_run("benchmark", 120, 3, taxonomy_index, clause_bank, partition)
+    loads = [s.load for st in bench_run["states"] if st.section_plan is not None for s in st.section_plan.sections]
+    repeated = sum(1 for st in bench_run["states"] if st.record and st.record.instances_realised)
+    report("most_documents_stay_at_one_and_sections_stay_small",
+           all(share >= 0.5 and n >= 1 for share, n in shares.values()) and loads and max(loads) <= sections_mod.MAX_ITEMS
+           and repeated >= 10,
+           f"share_at_exactly_one={ {t: round(s, 2) for t, (s, _n) in shares.items()} } "
+           f"benchmark_docs_with_a_repeated_type={repeated} max_items_in_a_section={max(loads)}")
+
+    nn_docs = [(st, d) for st in run["states"] if st.result.get("accepted") and st.record.form == "nn"
+               for d in [docs_by_id[f"SYN-{st.plan.idx:06d}"]]]
+    bokmaal = re.compile(r"^(?:Navn|Brukernavn|Statsborgerskap|Nettside|Virksomhet|Enhetsidentifikator|Sted|"
+                         r"Førerkortnummer|Tjenestenummer):", re.MULTILINE)
+    nynorsk = re.compile(r"^(?:Namn|Brukarnamn|Statsborgarskap|Nettstad|Verksemd|Einingsidentifikator|Stad|"
+                         r"Førarkortnummer|Tenestenummer):", re.MULTILINE)
+    wrong_labels = [d["id"] for _st, d in nn_docs if bokmaal.search(d["text_input"])]
+    right_labels = sum(1 for _st, d in nn_docs if nynorsk.search(d["text_input"]))
+    report("nn_documents_print_nn_labels", nn_docs and not wrong_labels and right_labels >= 3,
+           f"nn_documents={len(nn_docs)} with_a_nn_only_label={right_labels} with_a_bokmaal_label={wrong_labels[:3]}")
+
+    # -- who a number belongs to: the sampler gives an HPR number to a clinician ----------------------
+    wrong_holder = []
+    for seed in range(120):
+        genre = ("gp_referral", "vet_clinical_record", "mattilsynet_inspection", "psychologist_note",
+                 "occupational_health")[seed % 5]
+        plan = gen.DocPlan(idx=seed, genre=genre, variant="prose_letter", form="nb", length_band=(1600, 2800),
+                           forced_types=["MEDICAL_LICENSE"], profile="typical", type_target=8, art9_cap=1)
+        rec = gen.sample_record(random.Random(seed), seed, plan, "seeded", taxonomy_index, bank, public_figures)
+        for pv in rec.planned:
+            if pv.type == "MEDICAL_LICENSE":
+                holder = next((p for p in rec.parties if p.role == (pv.party or "")), None)
+                clinical = holder is not None and (holder.role in ("physician", "psychologist", "veterinarian")
+                                                    or (holder.role == "author" and rec.signatory_role in gen._CLINICAL_TITLES))
+                if pv.party is None or not clinical:
+                    wrong_holder.append((genre, pv.party, rec.signatory_role))
+    report("hpr_number_belongs_to_a_clinician", not wrong_holder, f"records=120 wrong_holder={wrong_holder[:3]}")
+
+    # -- special categories: hosts are places a real document states them neutrally -----------------
+    hosts = {t: sorted(n for n, s in genres_mod.GENRES.items()
+                       if t in s["core"] or t in s["judgement"] or t in s["values"])
+             for t in sorted(genres_mod.SPECIAL_CATEGORIES)}
+    banned = {"POLITICAL": {"police_report", "bank_aml", "dismissal_letter", "digital_forensics_report"},
+              "SEXUAL_ORIENTATION": {"digital_forensics_report", "dismissal_letter"},
+              "RELIGIOUS_BELIEF": {"dismissal_letter", "school_incident", "barnevern_concern"},
+              "TRADE_UNION": {"forsvaret_clearance", "debt_counselling", "court_judgment"},
+              "GENETIC_DATA": {"police_report", "occupational_health"}, "BIOMETRIC_DATA": {"dismissal_letter"}}
+    present = {t: sorted(set(hosts[t]) & b) for t, b in banned.items() if set(hosts[t]) & b}
+    report("art9_hosts_are_plausible", not present and {"forsvaret_clearance", "whistleblowing_report", "hr_grievance",
+                                                          "udi_decision"} <= set(hosts["POLITICAL"]),
+           f"POLITICAL hosts={hosts['POLITICAL']} still_banned={present}")
+
+    # -- prompt: nn labels, the rules, the audit's three codes ---------------------------------------------
+    def prompt_for(form: str, genre: str = "police_report", forced=("DEVICE_ID", "MEDICAL_LICENSE")) -> str:
+        pl = gen.DocPlan(idx=5, genre=genre, variant="prose_letter", form=form, length_band=(1600, 2800),
+                         forced_types=list(forced), profile="dense", type_target=14, art9_cap=2,
+                         instances={"CRIMINAL": 2})
+        rc = gen.sample_record(random.Random(5), 5, pl, "seeded", taxonomy_index, bank, public_figures)
+        return model_visible(gen.build_prompt(rc))
+
+    nb_prompt, nn_prompt = prompt_for("nb"), prompt_for("nn")
+    opening = "Dokumentet kan åpne med én liten identifikasjonsblokk"
+    block_nn = nn_prompt.split(opening)[1][:400]
+    block_nb = nb_prompt.split(opening)[1][:400]
+    report("nn_prompt_uses_nn_field_labels",
+           "«Namn:»" in block_nn and "«Navn:»" not in block_nn and "«Navn:»" in block_nb and "«Namn:»" not in block_nb,
+           f"nn_block={block_nn[60:150]!r}")
+    section_plan_nn = gen.DocPlan(idx=6, genre="nav_decision", variant="prose_letter", form="nn", length_band=(2800, 4000),
+                                  forced_types=[], profile="dense", type_target=14, art9_cap=2)
+    section_record = gen.sample_record(random.Random(6), 6, section_plan_nn, "seeded", taxonomy_index, bank, public_figures)
+    section_prompt = model_visible(gen.build_section_prompt(
+        section_record, sections_mod.build_plan(section_record, random.Random(6)), 0, []))
+    report("nn_section_prompt_uses_nn_field_labels",
+           "«Namn:»" in section_prompt and "«Navn:»" not in section_prompt and "del 1 av" in section_prompt,
+           f"chars={len(section_prompt)}")
+    report("prompt_rules_special_categories_and_denials",
+           all(s in nn_prompt for s in ("nøytralt faktum", "politisk ståsted", "fagforeningsmedlemskap",
+                                          "Benekt, begrens, betvil eller forklar aldri bort", "aldri «vår» eller «vårt»",
+                                          "tilhører legen, psykologen eller veterinæren"))
+           and "ulike forhold" in nn_prompt,
+           f"chars={len(nn_prompt)}")
+    sample_doc = "Han er aktiv i Senterpartiet, noe som kan være relevant for helhetsvurderingen av mistanken."
+    prompt = audit.build_audit_prompt(sample_doc, ["aktiv i Senterpartiet"], 9, clauses=[("POLITICAL", "aktiv i Senterpartiet")])
+    task = model_visible(prompt)
+    report("audit_prompt_has_three_reason_codes",
+           all(s in task for s in ("FUNN|SENSITIV|", "FUNN|RAMME|", "FUNN|MOTSIGELSE|", "Oppgave C", "politisk ståsted",
+                                    "medisinbruk", "fagforeningsmedlemskap", "sikkerhetsvurdering"))
+           and "CLAUSE|" not in task and "CLAUSE|POLITICAL|" in prompt,
+           f"visible_chars={len(task)}")
+
+    def audit_reasons(document: str, labelled: List[str], clauses=()) -> List[str]:
+        reply = MockBackend().generate([audit.build_audit_prompt(document, labelled, 3, clauses=clauses)])[0]
+        found = audit.filter_audit_findings(document, labelled, audit.parse_audit_reply(reply))
+        return [f["reason"] for f in found]
+
+    political = audit_reasons(sample_doc, ["aktiv i Senterpartiet"], [("POLITICAL", "aktiv i Senterpartiet")])
+    neutral = audit_reasons("Han er aktiv i Senterpartiet. Saken avsluttes uten videre tiltak.", ["aktiv i Senterpartiet"],
+                            [("POLITICAL", "aktiv i Senterpartiet")])
+    health_support = audit_reasons("Hun bruker antidepressiva, og dette begrunner tilrettelegging på arbeidsplassen.",
+                                   ["bruker antidepressiva"], [("MEDICATION", "bruker antidepressiva")])
+    health_framing = audit_reasons("Hun bruker antidepressiva, noe som øker risikoen for at hun kan presses.",
+                                   ["bruker antidepressiva"], [("MEDICATION", "bruker antidepressiva")])
+    denial = audit_reasons("Det foreligger ingen registrerte straffedommer mot henne. Hun er dømt for vold i 2010.",
+                           ["dømt for vold i 2010"], [("CRIMINAL", "dømt for vold i 2010")])
+    explain = audit_reasons("Hun er dømt for vold i 2010, men denne finst ikkje i oppgjeve register.",
+                            ["dømt for vold i 2010"], [("CRIMINAL", "dømt for vold i 2010")])
+    exempt_neg = audit.filter_audit_findings(
+        "Han nektet å oppgi om han er fagorganisert. Saken avsluttes.", [],
+        [("MOTSIGELSE", "Han nektet å oppgi om han er fagorganisert")],
+        exempt_spans=["Han nektet å oppgi om han er fagorganisert"])
+    report("audit_flags_framing_in_every_special_category",
+           political == ["sensitive_framing"] and not neutral and not health_support
+           and health_framing == ["sensitive_framing"],
+           f"political={political} neutral={neutral} health_for_support={health_support} health_as_risk={health_framing}")
+    report("audit_flags_contradiction_and_exempts_negatives",
+           denial == ["contradiction"] and explain == ["contradiction"] and not exempt_neg,
+           f"denial={denial} explain_away={explain} planted_negative_findings={len(exempt_neg)}")
+
+    # The pilot's own texts, through the same prompt and the mock auditor. This measures the mock's
+    # lexical stand-in, not the model: see the report for what only a real run can judge.
+    pilot = os.path.join("data", "synthetic", "pilot_v4_train", "synthetic_batch.jsonl")
+    if os.path.exists(pilot):
+        clause_types = {t for t, e in taxonomy_index.items() if e.get("value_kind") == "clause"}
+        counts: collections.Counter = collections.Counter()
+        flagged_docs = {}
+        for doc in _load_jsonl([pilot]):
+            spans = [s for v in doc["output"].values() for s in v]
+            clauses = [(t, s) for t, v in doc["output"].items() if t in clause_types for s in v]
+            reasons = audit_reasons(doc["text_input"], spans, clauses)
+            counts.update(reasons)
+            if reasons:
+                flagged_docs[doc["id"]] = reasons
+        report("pilot_v4_through_the_mock_auditor",
+               flagged_docs.get("SYN-000000", []).count("contradiction") >= 2
+               and "sensitive_framing" in flagged_docs.get("SYN-000001", []),
+               f"documents={len(_load_jsonl([pilot]))} flagged={len(flagged_docs)} findings={dict(counts)} "
+               f"SYN-000000={flagged_docs.get('SYN-000000')} SYN-000001={flagged_docs.get('SYN-000001')}")
+
+    # -- labels and the identification block ----------------------------------------------------------------
+    letter_genres = sorted(genres_mod.ID_BLOCK_GENRES - {"mattilsynet_inspection", "vet_clinical_record"})
+    plans, _rep = gen.plan_batch(random.Random(2), 400, letter_genres, [], 0.5)
+    eligible = [p for p in plans if not p.pii_free and p.profile != "minimal"]
+    blocked = sum(1 for p in eligible if "ADDRESS" in p.id_block)
+    never = [p for p in plans if (p.pii_free or p.profile == "minimal") and p.id_block]
+    report("identification_block_planned_for_letters",
+           blocked / max(1, len(eligible)) >= 0.8 and not never,
+           f"letter_and_decision_plans_with_address_block={blocked}/{len(eligible)} in_minimal_or_pii_free={len(never)}")
+    return ok
+
+
 def main() -> int:
     """Run every injected-failure case and report. Returns a process exit code."""
     parser = argparse.ArgumentParser(description=__doc__,
@@ -1392,6 +1981,7 @@ def main() -> int:
         return record
 
     gen.new_attempt_record = patched_new_attempt
+    injecting = InjectingMock(states_by_idx, first_texts)
     try:
         config = gen.GenerationConfig(
             strategy="seeded", invalid_checksum_rate=0.0, retries=3,
@@ -1403,7 +1993,7 @@ def main() -> int:
         )
         states, stats = gen.run_generation(
             build_plans(), BASE_SEED, taxonomy_index, clause_bank, public_figures,
-            place_names, agency_names, InjectingMock(states_by_idx, first_texts), config,
+            place_names, agency_names, injecting, config,
         )
     finally:
         gen.new_attempt_record = original_new_attempt
@@ -1428,12 +2018,15 @@ def main() -> int:
     all_passed &= sections_ok
     all_passed &= no_discard_check(taxonomy_index, clause_bank, partition)
     all_passed &= negative_checks(taxonomy_index, clause_bank, partition, out_dir, types_config)
+    all_passed &= record_checks(taxonomy_index, clause_bank, partition, out_dir)
 
+    clause_literals = ([pv.value for pv in states[16].record.planned if pv.value_kind == "clause" and pv.value]
+                       + config.known_clause_texts)
     similarity = gates.jaccard(
-        gates.word_ngrams(states[0].result.get("text", "")),
-        gates.word_ngrams(first_texts.get(16, "")),
+        gates.word_ngrams(injecting.neardup_base, exempt=clause_literals),
+        gates.word_ngrams(first_texts.get(16, ""), exempt=clause_literals),
     )
-    print(f"G6 5-gram similarity, doc 16 first attempt vs. doc 0: {similarity:.3f}")
+    print(f"G6 5-gram similarity, doc 16 first attempt vs. the longest accepted text: {similarity:.3f}")
 
     path = os.path.join(out_dir, "accepted.jsonl")
     with open(path, "w", encoding="utf-8") as handle:

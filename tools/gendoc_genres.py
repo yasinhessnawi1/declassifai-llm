@@ -24,6 +24,17 @@ profile draws a genre from `PII_FREE_GENRES` (circulars, procedural notices,
 statute extracts) and plans nothing, so its label set is empty and the
 unplanned-PII sweep becomes the whole gate.
 
+**A judgement type may be planned more than once in a document.** Pilot v4's 39 accepted
+documents carried every clause-level type exactly once, 100% of the time, while the gold
+set's inspection template averages 5.3 CRIMINAL spans and its concern-report template
+8.1 HEALTH spans per document: a detector trained on one-of-each learns to find one and
+stop. `MULTI_PROPENSITY` says, per genre, which types a real document of that kind
+repeats (offences in a police report, findings in a clinical or veterinary record, debts
+in a debt-counselling note, observations in a child-welfare or school document),
+`draw_instance_counts` draws how many from a profile-dependent distribution that keeps
+most documents at one, and `item_budget` bounds the total so the extra instances still fit
+the section planner's seven-items-per-section limit.
+
 Genres are grouped by the domains of the Section 4 table. Clause-bank entries
 carry the five original genre ids in their `genres` list, so each genre here
 declares `clause_genres`: the clause-bank genre ids whose clauses are plausible
@@ -124,6 +135,11 @@ AGE_PROFILES: Dict[str, List[Tuple[int, int, float]]] = {
     "youth": [(6, 12, 0.34), (13, 15, 0.36), (16, 18, 0.30)],
     "young_adult": [(18, 24, 0.55), (25, 34, 0.31), (35, 49, 0.14)],
     "family": [(24, 34, 0.32), (35, 44, 0.34), (45, 54, 0.24), (55, 64, 0.10)],
+    # Anyone acting in a professional capacity -- author, caseworker, physician,
+    # psychologist, vet, lawyer, officer, teacher, employer contact. Pilot v4 drew
+    # them from "working" (18-29 for 22% of them) and printed a 19-year-old
+    # security-clearance author and a 23-year-old police officer.
+    "professional": [(25, 34, 0.28), (35, 49, 0.40), (50, 67, 0.32)],
 }
 
 
@@ -241,7 +257,7 @@ GENRES: Dict[str, dict] = {
                    "DRIVER_LICENSE": 0.5, "FAX_NUMBER": 0.3, "LOCATION": 0.3},
         "judgement": {"DISABILITY": 2.0, "MEDICATION": 1.4, "BEHAVIORAL_PATTERN": 1.0,
                       "ECONOMIC_STATUS": 0.6, "TRADE_UNION": 0.8, "FAMILY_RELATION": 0.6,
-                      "AGE_INFO": 0.4, "GENETIC_DATA": 0.4},
+                      "AGE_INFO": 0.4},
         "cast_roles": ["physician", "employer_contact", "caseworker"],
         "age_profile": "working", "density_factor": 0.95,
         "subject_age": (18, 67),
@@ -273,7 +289,7 @@ GENRES: Dict[str, dict] = {
         "title_nb": "Anmeldelse / politirapport",
         "title_nn": "Melding / politirapport",
         "variants": VARIANTS,
-        "clause_genres": ["police_report"],
+        "clause_genres": ["police_report", "crime"],
         "core": ["PERSON", "NATIONAL_ID", "DATE_TIME", "CRIMINAL"],
         "values": {"CASE_NUMBER": 1.8, "ADDRESS": 1.4, "PHONE": 1.0, "LICENSE_PLATE": 1.0,
                    "LOCATION": 0.8, "AGE": 0.6, "DEVICE_ID": 0.5, "GENDER": 0.6,
@@ -283,8 +299,8 @@ GENRES: Dict[str, dict] = {
                    "FIREARMS_LICENSE": 0.5},
         "judgement": {"BEHAVIORAL_PATTERN": 3.0, "FAMILY_RELATION": 1.2, "EMPLOYMENT": 1.0,
                       "HEALTH": 1.0, "BIOMETRIC_DATA": 1.0, "ECONOMIC_STATUS": 0.7,
-                      "FINANCIAL": 0.6, "POLITICAL": 0.4, "IMMIGRATION_STATUS": 0.8,
-                      "AGE_INFO": 0.4, "GENETIC_DATA": 0.3, "MEDICATION": 0.5},
+                      "FINANCIAL": 0.6, "IMMIGRATION_STATUS": 0.8,
+                      "AGE_INFO": 0.4, "MEDICATION": 0.5},
         "cast_roles": ["witness", "co_suspect", "counterparty", "officer", "lawyer"],
         "age_profile": "working", "density_factor": 1.35,
         "foreign_subject_p": 0.15,
@@ -296,7 +312,7 @@ GENRES: Dict[str, dict] = {
         "title_nb": "Påtaleavgjørelse",
         "title_nn": "Påtaleavgjerd",
         "variants": VARIANTS,
-        "clause_genres": ["police_report"],
+        "clause_genres": ["police_report", "crime"],
         "core": ["PERSON", "NATIONAL_ID", "DATE_TIME", "CASE_NUMBER", "CRIMINAL"],
         "values": {"ADDRESS": 1.4, "AGE": 0.6, "GENDER": 0.5, "LICENSE_PLATE": 0.7,
                    "PHONE": 0.6, "DRIVER_LICENSE": 0.6, "LOCATION": 0.6,
@@ -317,7 +333,7 @@ GENRES: Dict[str, dict] = {
         "title_nb": "Sammendrag av dom",
         "title_nn": "Samandrag av dom",
         "variants": VARIANTS,
-        "clause_genres": ["police_report", "dismissal_letter"],
+        "clause_genres": ["police_report", "dismissal_letter", "crime"],
         "core": ["PERSON", "DATE_TIME", "CASE_NUMBER"],
         "values": {"NATIONAL_ID": 1.2, "ADDRESS": 1.0, "AGE": 0.7, "GENDER": 0.5,
                    "ORGANIZATION": 0.8, "LOCATION": 0.7, "ORG_NUMBER": 0.5,
@@ -328,7 +344,7 @@ GENRES: Dict[str, dict] = {
                    "VESSEL_REGISTRATION": 0.3},
         "judgement": {"CRIMINAL": 2.4, "BEHAVIORAL_PATTERN": 1.6, "FINANCIAL": 1.2,
                       "ECONOMIC_STATUS": 1.0, "FAMILY_RELATION": 1.0, "EMPLOYMENT": 1.0,
-                      "HEALTH": 0.8, "TRADE_UNION": 0.4, "AGE_INFO": 0.4,
+                      "HEALTH": 0.8, "AGE_INFO": 0.4,
                       "IMMIGRATION_STATUS": 0.4, "DISABILITY": 0.4},
         "cast_roles": ["counterparty", "lawyer", "witness"],
         "age_profile": "adult", "density_factor": 1.25,
@@ -340,7 +356,7 @@ GENRES: Dict[str, dict] = {
         "title_nb": "Vedtak om besøksforbud",
         "title_nn": "Vedtak om besøksforbod",
         "variants": VARIANTS,
-        "clause_genres": ["police_report"],
+        "clause_genres": ["police_report", "crime"],
         "core": ["PERSON", "NATIONAL_ID", "DATE_TIME", "CASE_NUMBER", "BEHAVIORAL_PATTERN"],
         "values": {"ADDRESS": 1.6, "PHONE": 0.8, "AGE": 0.5, "GENDER": 0.5,
                    "LOCATION": 0.8, "DATE_OF_BIRTH": 0.4, "SOCIAL_MEDIA": 0.5,
@@ -359,15 +375,14 @@ GENRES: Dict[str, dict] = {
         "title_nb": "Rapport om undersøkelse av elektroniske spor",
         "title_nn": "Rapport om undersøking av elektroniske spor",
         "variants": VARIANTS,
-        "clause_genres": ["police_report"],
+        "clause_genres": ["police_report", "crime", "forensics"],
         "core": ["PERSON", "DATE_TIME", "CASE_NUMBER", "DEVICE_ID"],
         "values": {"NATIONAL_ID": 1.0, "IP_ADDRESS": 1.8, "USERNAME": 1.6,
                    "SOCIAL_MEDIA": 1.4, "EMAIL": 1.2, "URL": 1.4, "PASSWORD": 1.0,
                    "PHONE": 1.0, "ADDRESS": 0.7, "CRYPTO": 0.7, "CREDIT_CARD": 0.5,
                    "AGE": 0.4, "GENDER": 0.4, "LOCATION": 0.4, "ORGANIZATION": 0.4},
         "judgement": {"CRIMINAL": 2.2, "BEHAVIORAL_PATTERN": 1.6, "FINANCIAL": 0.8,
-                      "SEXUAL_ORIENTATION": 0.4, "POLITICAL": 0.5, "ECONOMIC_STATUS": 0.5,
-                      "HEALTH": 0.4, "FAMILY_RELATION": 0.5},
+                      "ECONOMIC_STATUS": 0.5, "HEALTH": 0.4, "FAMILY_RELATION": 0.5},
         "cast_roles": ["co_suspect", "officer", "witness"],
         "age_profile": "working", "density_factor": 1.4,
         "foreign_subject_p": 0.1,
@@ -420,7 +435,7 @@ GENRES: Dict[str, dict] = {
         "title_nb": "Journalnotat fra økonomisk rådgivning",
         "title_nn": "Journalnotat frå økonomisk rådgjeving",
         "variants": VARIANTS,
-        "clause_genres": ["nav_decision"],
+        "clause_genres": ["nav_decision", "debt"],
         "core": ["PERSON", "NATIONAL_ID", "DATE_TIME", "ECONOMIC_STATUS"],
         "values": {"BANK_ACCOUNT": 1.8, "ADDRESS": 1.2, "PHONE": 1.0, "CASE_NUMBER": 0.8,
                    "IBAN": 0.8, "CREDIT_CARD": 0.7, "TAX_ID": 0.6, "EMAIL": 0.6,
@@ -430,7 +445,7 @@ GENRES: Dict[str, dict] = {
                    "VESSEL_REGISTRATION": 0.3},
         "judgement": {"FINANCIAL": 2.6, "EMPLOYMENT": 1.4, "FAMILY_RELATION": 1.2,
                       "HEALTH": 1.0, "BEHAVIORAL_PATTERN": 0.9, "DISABILITY": 0.7,
-                      "MEDICATION": 0.4, "AGE_INFO": 0.3, "TRADE_UNION": 0.3},
+                      "MEDICATION": 0.4, "AGE_INFO": 0.3},
         "cast_roles": ["caseworker", "spouse", "creditor_contact", "child"],
         "age_profile": "working", "density_factor": 1.15,
         "foreign_subject_p": 0.12,
@@ -464,7 +479,7 @@ GENRES: Dict[str, dict] = {
         "title_nb": "Inkassovarsel",
         "title_nn": "Inkassovarsel",
         "variants": VARIANTS,
-        "clause_genres": ["nav_decision"],
+        "clause_genres": ["nav_decision", "debt"],
         "core": ["PERSON", "ADDRESS", "DATE_TIME", "CASE_NUMBER", "FINANCIAL"],
         "values": {"NATIONAL_ID": 1.0, "BANK_ACCOUNT": 1.8, "ORGANIZATION": 1.4,
                    "ORG_NUMBER": 1.0, "IBAN": 0.9, "PHONE": 0.8, "EMAIL": 0.7,
@@ -485,7 +500,7 @@ GENRES: Dict[str, dict] = {
         "title_nb": "Forespørsel om kundeopplysninger etter hvitvaskingsloven",
         "title_nn": "Førespurnad om kundeopplysningar etter kvitvaskingslova",
         "variants": VARIANTS,
-        "clause_genres": ["nav_decision", "police_report"],
+        "clause_genres": ["nav_decision", "police_report", "bank", "debt"],
         "core": ["PERSON", "NATIONAL_ID", "DATE_TIME", "BANK_ACCOUNT"],
         "values": {"CASE_NUMBER": 1.2, "IBAN": 1.6, "ADDRESS": 1.2, "CREDIT_CARD": 1.2,
                    "CRYPTO": 1.2, "TAX_ID": 1.0, "ORG_NUMBER": 0.9, "ORGANIZATION": 0.9,
@@ -495,7 +510,7 @@ GENRES: Dict[str, dict] = {
                    "VESSEL_REGISTRATION": 0.3},
         "judgement": {"FINANCIAL": 2.4, "ECONOMIC_STATUS": 1.4, "EMPLOYMENT": 1.2,
                       "CRIMINAL": 1.0, "IMMIGRATION_STATUS": 0.7, "BEHAVIORAL_PATTERN": 0.7,
-                      "FAMILY_RELATION": 0.7, "POLITICAL": 0.4},
+                      "FAMILY_RELATION": 0.7},
         "cast_roles": ["counterparty", "lawyer", "creditor_contact", "officer"],
         "age_profile": "working", "density_factor": 1.3,
         "foreign_subject_p": 0.2,
@@ -528,7 +543,7 @@ GENRES: Dict[str, dict] = {
         "title_nb": "Avviksmelding om hendelse i skoletiden",
         "title_nn": "Avviksmelding om hending i skuletida",
         "variants": VARIANTS,
-        "clause_genres": ["police_report", "gp_referral"],
+        "clause_genres": ["police_report", "gp_referral", "school"],
         "core": ["PERSON", "DATE_TIME", "ORGANIZATION", "BEHAVIORAL_PATTERN"],
         "values": {"AGE": 1.2, "STUDENT_ID": 1.4, "NATIONAL_ID": 0.8, "GENDER": 0.7,
                    "PHONE": 0.9, "EMAIL": 0.8, "ADDRESS": 0.6, "SOCIAL_MEDIA": 1.2,
@@ -536,7 +551,7 @@ GENRES: Dict[str, dict] = {
                    "PASSWORD": 0.5, "CASE_NUMBER": 0.6, "LOCATION": 0.3},
         "judgement": {"HEALTH": 1.2, "FAMILY_RELATION": 1.4, "CRIMINAL": 0.8,
                       "DISABILITY": 0.8, "ACADEMIC_RECORD": 1.2, "AGE_INFO": 0.6,
-                      "MEDICATION": 0.5, "ECONOMIC_STATUS": 0.4, "RELIGIOUS_BELIEF": 0.4},
+                      "MEDICATION": 0.5, "ECONOMIC_STATUS": 0.4},
         "cast_roles": ["parent", "teacher", "guardian", "witness"],
         "age_profile": "youth", "density_factor": 1.2,
         "foreign_subject_p": 0.15,
@@ -568,7 +583,7 @@ GENRES: Dict[str, dict] = {
         "title_nb": "Bekymringsmelding til barneverntjenesten",
         "title_nn": "Uromelding til barnevernstenesta",
         "variants": VARIANTS,
-        "clause_genres": ["police_report", "nav_decision", "gp_referral"],
+        "clause_genres": ["police_report", "nav_decision", "gp_referral", "barnevern"],
         "core": ["PERSON", "DATE_TIME", "FAMILY_RELATION", "BEHAVIORAL_PATTERN"],
         "values": {"NATIONAL_ID": 1.4, "AGE": 1.2, "ADDRESS": 1.2, "GENDER": 0.7,
                    "PHONE": 1.0, "CASE_NUMBER": 1.0, "ORGANIZATION": 0.7,
@@ -576,8 +591,7 @@ GENRES: Dict[str, dict] = {
                    "SOCIAL_MEDIA": 0.4, "LOCATION": 0.4, "MARITAL_STATUS": 0.5},
         "judgement": {"HEALTH": 1.6, "ECONOMIC_STATUS": 1.4, "MEDICATION": 0.9,
                       "CRIMINAL": 1.0, "DISABILITY": 0.8, "ACADEMIC_RECORD": 0.8,
-                      "AGE_INFO": 0.6, "IMMIGRATION_STATUS": 0.6, "RELIGIOUS_BELIEF": 0.4,
-                      "EMPLOYMENT": 0.8},
+                      "AGE_INFO": 0.6, "IMMIGRATION_STATUS": 0.6, "EMPLOYMENT": 0.8},
         "cast_roles": ["child", "parent", "guardian", "teacher", "caseworker", "physician"],
         "age_profile": "family", "density_factor": 1.3,
         "foreign_subject_p": 0.15,
@@ -588,7 +602,7 @@ GENRES: Dict[str, dict] = {
         "title_nb": "Gjennomgang av tiltaksplan",
         "title_nn": "Gjennomgang av tiltaksplan",
         "variants": VARIANTS,
-        "clause_genres": ["nav_decision", "gp_referral", "police_report"],
+        "clause_genres": ["nav_decision", "gp_referral", "police_report", "barnevern"],
         "core": ["PERSON", "DATE_TIME", "CASE_NUMBER", "FAMILY_RELATION"],
         "values": {"NATIONAL_ID": 1.2, "AGE": 1.0, "ADDRESS": 1.0, "PHONE": 0.9,
                    "GENDER": 0.6, "ORGANIZATION": 0.8, "EMAIL": 0.6, "STUDENT_ID": 0.5,
@@ -639,8 +653,7 @@ GENRES: Dict[str, dict] = {
                    "MARITAL_STATUS": 0.2, "INSURANCE_NUMBER": 0.3},
         "judgement": {"BEHAVIORAL_PATTERN": 3.0, "HEALTH": 1.2, "TRADE_UNION": 1.0,
                       "CRIMINAL": 0.6, "DISABILITY": 0.6, "ECONOMIC_STATUS": 0.4,
-                      "FAMILY_RELATION": 0.5, "RELIGIOUS_BELIEF": 0.3,
-                      "SEXUAL_ORIENTATION": 0.3, "POLITICAL": 0.3, "BIOMETRIC_DATA": 0.2},
+                      "FAMILY_RELATION": 0.5},
         "cast_roles": ["employer_contact", "lawyer", "witness"],
         "age_profile": "working", "density_factor": 1.0,
         "subject_age": (19, 66),
@@ -768,7 +781,7 @@ GENRES: Dict[str, dict] = {
         "judgement": {"IMMIGRATION_STATUS": 2.2, "FAMILY_RELATION": 1.6, "EMPLOYMENT": 1.0,
                       "ECONOMIC_STATUS": 0.8, "ACADEMIC_RECORD": 0.6, "HEALTH": 0.5,
                       "ETHNICITY": 0.6, "RELIGIOUS_BELIEF": 0.5, "BIOMETRIC_DATA": 0.5,
-                      "FINANCIAL": 0.5},
+                      "POLITICAL": 0.4, "FINANCIAL": 0.5},
         "cast_roles": ["spouse", "child", "lawyer", "caseworker"],
         "age_profile": "working", "density_factor": 1.15,
         "foreign_subject_p": 1.0,
@@ -780,15 +793,16 @@ GENRES: Dict[str, dict] = {
         "title_nb": "Klinisk journal fra veterinær",
         "title_nn": "Klinisk journal frå veterinær",
         "variants": VARIANTS,
-        "clause_genres": ["nav_decision"],
+        "clause_genres": ["nav_decision", "vet_clinical"],
+        "animal_types": ["HEALTH"],
         "core": ["PERSON", "DATE_TIME", "ANIMAL_INFO"],
         "values": {"ADDRESS": 1.4, "PHONE": 1.4, "EMAIL": 0.9, "MEDICAL_LICENSE": 1.2,
                    "NATIONAL_ID": 0.6, "INSURANCE_NUMBER": 1.2, "ORGANIZATION": 0.8,
                    "CASE_NUMBER": 0.7, "BANK_ACCOUNT": 0.6, "LOCATION": 0.4,
                    "ORG_NUMBER": 0.4, "AGE": 0.2, "GENDER": 0.2, "LICENSE_PLATE": 0.2,
                    "FIREARMS_LICENSE": 0.2},
-        "judgement": {"ECONOMIC_STATUS": 0.5, "EMPLOYMENT": 0.6, "FAMILY_RELATION": 0.6,
-                      "BEHAVIORAL_PATTERN": 0.4, "AGE_INFO": 0.3},
+        "judgement": {"HEALTH": 2.6, "ECONOMIC_STATUS": 0.5, "EMPLOYMENT": 0.6,
+                      "FAMILY_RELATION": 0.6, "BEHAVIORAL_PATTERN": 0.4, "AGE_INFO": 0.3},
         "cast_roles": ["veterinarian", "spouse"],
         "age_profile": "adult", "density_factor": 1.0,
         "foreign_subject_p": 0.08,
@@ -799,7 +813,8 @@ GENRES: Dict[str, dict] = {
         "title_nb": "Vedtak om pålegg etter tilsyn med dyrehold",
         "title_nn": "Vedtak om pålegg etter tilsyn med dyrehald",
         "variants": VARIANTS,
-        "clause_genres": ["nav_decision", "police_report"],
+        "clause_genres": ["nav_decision", "police_report", "vet_inspection"],
+        "animal_types": ["HEALTH"],
         "core": ["PERSON", "ADDRESS", "DATE_TIME", "CASE_NUMBER", "ANIMAL_INFO"],
         "values": {"ORG_NUMBER": 1.2, "NATIONAL_ID": 0.8, "PHONE": 1.0, "EMAIL": 0.8,
                    "ORGANIZATION": 0.9, "LICENSE_PLATE": 0.8, "FAX_NUMBER": 0.6,
@@ -822,7 +837,7 @@ GENRES: Dict[str, dict] = {
         "title_nb": "Vurdering av sikkerhetsklarering",
         "title_nn": "Vurdering av sikkerheitsklarering",
         "variants": VARIANTS,
-        "clause_genres": ["police_report", "nav_decision", "dismissal_letter"],
+        "clause_genres": ["police_report", "nav_decision", "dismissal_letter", "crime"],
         "core": ["PERSON", "NATIONAL_ID", "DATE_TIME", "MILITARY_ID"],
         "values": {"CASE_NUMBER": 1.4, "ADDRESS": 1.2, "NATIONALITY": 1.0,
                    "PASSPORT": 0.8, "PHONE": 0.8, "EMAIL": 0.7, "IDENTITY_CARD": 0.6,
@@ -832,7 +847,7 @@ GENRES: Dict[str, dict] = {
                    "FIREARMS_LICENSE": 0.3},
         "judgement": {"ECONOMIC_STATUS": 1.6, "CRIMINAL": 1.4, "FAMILY_RELATION": 1.2,
                       "EMPLOYMENT": 1.2, "FINANCIAL": 1.0, "HEALTH": 0.8,
-                      "BEHAVIORAL_PATTERN": 0.8, "MEDICATION": 0.5, "TRADE_UNION": 0.4,
+                      "BEHAVIORAL_PATTERN": 0.8, "MEDICATION": 0.5, "POLITICAL": 0.5,
                       "ACADEMIC_RECORD": 0.6, "IMMIGRATION_STATUS": 0.5},
         "cast_roles": ["spouse", "parent", "officer", "employer_contact"],
         "age_profile": "working", "density_factor": 1.2,
@@ -885,6 +900,134 @@ SPECIAL_CATEGORIES = {
 # unrelated conditions in a document about money.
 HEALTH_FAMILY = {"HEALTH", "DISABILITY", "MEDICATION", "GENETIC_DATA", "BIOMETRIC_DATA"}
 
+
+# Types a document may plan more than once. Every one is a clause type whose real
+# documents list several distinct instances (an offence, a finding, a debt, an
+# observation, a relative) or, for ANIMAL_INFO, a value type for which a herd or a pair of
+# pets is several descriptors. None is an Art. 9 special category: those stay at one, and
+# the Art. 9 and health-family caps count categories (`SPECIAL_CATEGORIES`,
+# `HEALTH_FAMILY` membership of the types drawn), never instances, so three HEALTH
+# findings use one health-family slot.
+MULTI_INSTANCE_TYPES = (
+    "CRIMINAL", "HEALTH", "MEDICATION", "BEHAVIORAL_PATTERN", "FINANCIAL", "ECONOMIC_STATUS",
+    "FAMILY_RELATION", "ANIMAL_INFO",
+)
+
+# How readily a genre repeats a type, 0..1. Anything not listed is planned once.
+MULTI_PROPENSITY: Dict[str, Dict[str, float]] = {
+    "police_report": {"CRIMINAL": 1.0, "BEHAVIORAL_PATTERN": 0.5, "HEALTH": 0.2},
+    "prosecution_decision": {"CRIMINAL": 1.0},
+    "court_judgment": {"CRIMINAL": 1.0, "FINANCIAL": 0.3, "BEHAVIORAL_PATTERN": 0.4},
+    "restraining_order": {"CRIMINAL": 0.8, "BEHAVIORAL_PATTERN": 1.0},
+    "digital_forensics_report": {"CRIMINAL": 0.8, "BEHAVIORAL_PATTERN": 0.4},
+    "gp_referral": {"HEALTH": 1.0, "MEDICATION": 0.8},
+    "hospital_discharge": {"HEALTH": 1.0, "MEDICATION": 0.8},
+    "psychologist_note": {"HEALTH": 0.8, "MEDICATION": 0.5, "FAMILY_RELATION": 0.3},
+    "occupational_health": {"HEALTH": 0.8, "MEDICATION": 0.5},
+    "sickness_followup": {"HEALTH": 0.8, "MEDICATION": 0.5},
+    "nav_decision": {"FINANCIAL": 0.7, "HEALTH": 0.6, "ECONOMIC_STATUS": 0.3, "FAMILY_RELATION": 0.3},
+    "debt_counselling": {"FINANCIAL": 1.0, "ECONOMIC_STATUS": 0.6},
+    "inkasso_notice": {"FINANCIAL": 1.0, "ECONOMIC_STATUS": 0.3},
+    "tax_assessment": {"FINANCIAL": 0.8},
+    "bank_aml": {"FINANCIAL": 0.8, "CRIMINAL": 0.7, "ECONOMIC_STATUS": 0.3},
+    "housing_application": {"ECONOMIC_STATUS": 0.4, "FINANCIAL": 0.5, "FAMILY_RELATION": 0.3},
+    "barnevern_concern": {"BEHAVIORAL_PATTERN": 1.0, "FAMILY_RELATION": 0.8, "HEALTH": 0.3},
+    "barnevern_care_plan": {"BEHAVIORAL_PATTERN": 1.0, "FAMILY_RELATION": 0.8, "HEALTH": 0.3},
+    "school_incident": {"BEHAVIORAL_PATTERN": 1.0},
+    "udi_decision": {"FAMILY_RELATION": 0.4},
+    "udi_correspondence": {"FAMILY_RELATION": 0.4},
+    "dismissal_letter": {"BEHAVIORAL_PATTERN": 0.8},
+    "whistleblowing_report": {"BEHAVIORAL_PATTERN": 0.8, "FINANCIAL": 0.4},
+    "hr_grievance": {"BEHAVIORAL_PATTERN": 0.8},
+    "forsvaret_clearance": {"CRIMINAL": 0.5, "FINANCIAL": 0.5, "ECONOMIC_STATUS": 0.3},
+    "vet_clinical_record": {"HEALTH": 1.0, "ANIMAL_INFO": 0.6},
+    "mattilsynet_inspection": {"HEALTH": 1.0, "ANIMAL_INFO": 0.7, "BEHAVIORAL_PATTERN": 0.6,
+                               "CRIMINAL": 0.4},
+}
+
+# Chance that a type with propensity 1.0 is planned more than once, by density profile.
+# Most documents stay at one so that "always several" is not learned either; a short
+# document has no room for a list, a case file does.
+MULTI_BASE_P: Dict[str, float] = {
+    "pii_free": 0.0, "minimal": 0.0, "light": 0.20, "typical": 0.45, "dense": 0.65, "case_file": 0.75,
+}
+# Given that a type is repeated: the weight of 2, 3 and 4 instances, and the most a profile takes.
+MULTI_COUNT_WEIGHTS: Dict[int, float] = {2: 0.55, 3: 0.30, 4: 0.15}
+MULTI_MAX_BY_PROFILE: Dict[str, int] = {"light": 2, "typical": 3, "dense": 4, "case_file": 4}
+
+# Planned items (values, clauses, names, dates, planted negatives) a document of each
+# profile may hold, extra clause instances included. Measured before instances existed, a
+# document's items had median 8 (light), 13-14 (typical), 23-25 (dense) and 36-37 (case
+# file), so each ceiling leaves room for about three to a dozen further clauses; a case file
+# stays under the section planner's eight sections of seven (`gendoc_sections.MAX_SECTIONS
+# * MAX_ITEMS` = 56) with room for a repair.
+PROFILE_ITEM_BUDGET: Dict[str, int] = {
+    "pii_free": 0, "minimal": 6, "light": 12, "typical": 17, "dense": 34, "case_file": 50,
+}
+
+
+def item_budget(profile: str, length_max: int) -> int:
+    """Return how many planned items one document may hold, extra clause instances included.
+
+    Args:
+        profile: Density profile name.
+        length_max: Upper bound of the document's length band, in characters.
+
+    Returns:
+        The smaller of the profile's budget and what the length can carry at about
+        eighty characters an item.
+    """
+    return min(PROFILE_ITEM_BUDGET[profile], max(6, length_max // 80))
+
+
+def draw_instance_counts(rng: random.Random, genre: str, profile: str) -> Dict[str, int]:
+    """Draw how many instances of each repeatable type a document plans.
+
+    The draw happens at plan time, so it is a batch property like density: every retry
+    of a document keeps the counts it was planned with, and a run can report the
+    histogram it aimed for. Only counts above one are returned.
+
+    Args:
+        rng: Run-level RNG.
+        genre: Genre id.
+        profile: Density profile name.
+
+    Returns:
+        `{type: count}` with count in 2..4, empty for most documents.
+    """
+    base = MULTI_BASE_P.get(profile, 0.0)
+    cap = MULTI_MAX_BY_PROFILE.get(profile, 1)
+    counts: Dict[str, int] = {}
+    for etype in sorted(MULTI_PROPENSITY.get(genre, {})):
+        # The roll is always taken, so adding a genre or a type to the table does not
+        # shift the draws of the types after it.
+        roll_repeat, roll_count = rng.random(), rng.random()
+        if cap < 2 or roll_repeat >= base * MULTI_PROPENSITY[genre][etype]:
+            continue
+        options = [(n, w) for n, w in MULTI_COUNT_WEIGHTS.items() if n <= cap]
+        roll_count *= sum(w for _n, w in options)
+        for n, w in options:
+            roll_count -= w
+            if roll_count <= 0:
+                break
+        counts[etype] = n
+    return counts
+
+
+# Genres that are letters, decisions or reports about a named person, and so open with an
+# identification block that carries the person's address. The gold set has an address
+# block in nearly every such document; pilot v4's generated ones had it in a quarter. A
+# circular, a contract text with no data subject and a PII-free or minimal document are
+# not in the set or are excluded by profile in `generate_documents.plan_batch`.
+ID_BLOCK_GENRES = {
+    "gp_referral", "hospital_discharge", "occupational_health", "psychologist_note",
+    "police_report", "prosecution_decision", "court_judgment", "restraining_order",
+    "nav_decision", "sickness_followup", "debt_counselling", "tax_assessment", "inkasso_notice",
+    "bank_aml", "ppt_assessment", "school_incident", "admission_decision", "barnevern_concern",
+    "barnevern_care_plan", "employment_contract", "dismissal_letter", "hr_grievance",
+    "housing_application", "tenancy_dispute", "udi_decision", "udi_correspondence",
+    "forsvaret_clearance", "mattilsynet_inspection", "vet_clinical_record",
+}
 
 # Types that only a non-Norwegian subject can coherently carry. Coverage
 # scheduling forces them, so the sampler makes the subject foreign rather than
@@ -947,7 +1090,8 @@ FIELD_LABELS_NN: Dict[str, str] = {
     "PERSON": "Namn", "ORGANIZATION": "Verksemd", "LICENSE_PLATE": "Køyretøy, reg.nr.",
     "DRIVER_LICENSE": "Førarkortnummer", "USERNAME": "Brukarnamn",
     "NATIONALITY": "Statsborgarskap", "URL": "Nettstad", "MILITARY_ID": "Tenestenummer",
-    "ANIMAL_INFO": "Dyrehald", "LOCATION": "Stad", "DEVICE_ID": "Eininga sin identifikator",
+    "ANIMAL_INFO": "Dyrehald", "LOCATION": "Stad", "DEVICE_ID": "Einingsidentifikator",
+    "SOCIAL_MEDIA": "Konto i sosiale medium",
 }
 
 
@@ -1003,7 +1147,9 @@ def genres_hosting(etype: str, clause_bank: Optional[dict] = None) -> List[str]:
     `gp_referral`, and the bank held no BIOMETRIC_DATA clause for `gp_referral`
     at all: the scheduler forced the type into that genre and the sampler dropped
     it silently. With a `clause_bank`, a clause type is hosted only where the bank
-    holds at least one entry in each written form.
+    holds at least one entry in each written form, of the subject the genre draws:
+    a person's clause, or for the types a genre lists in `animal_types` (the findings
+    of a veterinary record) an animal's.
 
     Args:
         etype: Entity type name.
@@ -1029,8 +1175,10 @@ def genres_hosting(etype: str, clause_bank: Optional[dict] = None) -> List[str]:
                 # twelve-year-old.
                 band_lo, band_hi = (0, 17) if spec.get("age_profile") == "youth" else spec.get(
                     "subject_age", (18, 120))
+                want_subject = "animal" if etype in spec.get("animal_types", ()) else "person"
                 forms = {e["form"] for e in clause_bank[etype]
                          if genres & set(e.get("genres", []))
+                         and e.get("subject", "person") == want_subject
                          and e.get("age_range", [18, 120])[0] <= band_hi
                          and e.get("age_range", [18, 120])[1] >= band_lo}
                 if not {"nb", "nn"} <= forms:
