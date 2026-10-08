@@ -111,6 +111,9 @@ def main() -> None:
         help="which of the corpus's types to trust (default: the v2 images of the 7 "
              "legacy types scoring >=0.91)",
     )
+    parser.add_argument("--corpus-max", type=int, default=None,
+                        help="cap the corpus documents taken (random, seeded), e.g. for a "
+                             "first run that has to fit in a day of GPU time")
     parser.add_argument("--val-share", type=float, default=0.05)
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
@@ -147,6 +150,9 @@ def main() -> None:
                 "types": sorted(types),
                 "source": "corpus",
             })
+        if args.corpus_max is not None and len(corpus) > args.corpus_max:
+            random.Random(args.seed).shuffle(corpus)
+            corpus = corpus[: args.corpus_max]
         print(f"corpus (-> train)       : {len(corpus):,} documents "
               f"({len(types)} types, {dropped:,} held out as gold/slice)")
 
