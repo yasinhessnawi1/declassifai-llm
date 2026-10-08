@@ -1041,6 +1041,7 @@ def sample_record(
 
     date_lo, date_hi = genres_mod.PROFILES[plan.profile]["dates"]
 
+    plate_contrast_wanted = False
     for etype in chosen:
         entry = taxonomy_index.get(etype)
         if entry is None:
@@ -1138,6 +1139,10 @@ def sample_record(
             hint = f"organisasjonsnummeret til {employer}"
         elif etype == "FIREARMS_LICENSE":
             field = genres_mod.field_label_variant(rng, etype, form)
+            if ident.is_plate_shaped_firearms(value):
+                # A plate-shaped number is only a firearms number by its label (B20).
+                field = rng.choice(["Våpenkortnummer", "Lisensnummer"])
+                plate_contrast_wanted = True
             hint = (f"hovedpersonens våpenkort- eller lisensnummer for {ident.firearm_description(rng, form)}; "
                     "våpenet kan beskrives i teksten, men beskrivelsen er ikke en del av nummeret")
         elif etype == "VESSEL_REGISTRATION":
@@ -1146,6 +1151,14 @@ def sample_record(
                     "fartøyets navn kan nevnes i teksten, men er ikke en del av merket")
         planned.append(PlannedValue(etype, tier(etype), "value", value, None, field,
                                     checksum_valid, hint=hint))
+
+    # A plate-shaped firearms number teaches "label decides" best with a real road
+    # plate in the same document to contrast it with.
+    if (plate_contrast_wanted and rng.random() < 0.5
+            and not any(pv.type == "LICENSE_PLATE" for pv in planned)):
+        planned.append(PlannedValue("LICENSE_PLATE", tier("LICENSE_PLATE"), "value",
+                                    ident.vehicle_reg(rng), None, label("LICENSE_PLATE"),
+                                    None, hint="registreringsnummeret til hovedpersonens bil"))
 
     if "MARITAL_STATUS" in chosen and not any(pv.type == "MARITAL_STATUS" for pv in planned):
         marital = subject.marital

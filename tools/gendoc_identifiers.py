@@ -329,15 +329,19 @@ PLATE_RE = re.compile(r"\b[A-Z]{2}\s?\d{5}\b")
 # registered object decides the type, not the shape. The generators therefore keep
 # the three shape families apart so that a detector trained on the output cannot
 # learn the shape as the answer: a road plate is always two letters, a space and
-# five digits; a firearms number is never that shape (the spec's own example,
-# `HG12345`, is a card number *and* plate-shaped, which is exactly the ambiguity to
-# keep out of generated data); a vessel mark always has a hyphen or is one letter
-# plus five digits.
+# five digits; a vessel mark always has a hyphen or is one letter plus five digits.
+# One firearms shape deliberately overlaps the plate: two letters and five digits
+# written solid (`HG12345`, the spec's own example and the form gold and the slice
+# use under `våpenkortnummer`/`lisensnummer`). ANNOTATION_SPEC B20 says the label,
+# not the shape, decides the type, and a detector only learns that from data where
+# the same shape appears under both labels. So about one firearms number in six
+# takes this shape, always under an explicit firearms label, and the sampler often
+# plants a road plate in the same document so the contrast is local.
 
 _FIREARM_LETTERS = "HWVRJBKLMNPSTU"
 
 FIREARMS_RE = re.compile(
-    r"[A-Z]\d{6,7}|[A-Z]{2}\d{6}|[A-Z]{2}\d{4}|\d{6,7}"
+    r"[A-Z]\d{6,7}|[A-Z]{2}\d{5,6}|[A-Z]{2}\d{4}|\d{6,7}"
     r"|(?:19|20)\d{2}-\d{6}|[A-Z]{2}-(?:19|20)\d{2}-\d{4}"
 )
 
@@ -369,13 +373,16 @@ def firearms_license_number(rng: random.Random) -> str:
     The gold set prints these as a letter and six or seven digits (`W0987654`,
     `H123456`), two letters and six digits (`WA123456`), a bare six or seven
     digit number (`123456`), a year and six digits (`2018-475963`), a permit ID
-    (`HR-2024-4321`), and two letters with four digits for a register entry
-    (`AB1234`). The two-letters-and-five-digits shape is left out on purpose,
-    see the block comment above.
+    (`HR-2024-4321`), two letters with four digits for a register entry
+    (`AB1234`), and, in about one case in six, the plate-shaped `HG12345`, which
+    the caller must print under an explicit firearms label (see the block comment
+    above and `is_plate_shaped_firearms`).
     """
-    roll = rng.random()
     letter = lambda: rng.choice(_FIREARM_LETTERS)  # noqa: E731
     digits = lambda n: "".join(str(rng.randint(0, 9)) for _ in range(n))  # noqa: E731
+    if rng.random() < 0.17:
+        return letter() + letter() + str(rng.randint(1, 9)) + digits(4)
+    roll = rng.random()
     if roll < 0.22:
         return letter() + str(rng.randint(1, 9)) + digits(5)
     if roll < 0.36:
@@ -393,9 +400,24 @@ def firearms_license_number(rng: random.Random) -> str:
     return f"{letter()}{rng.choice('RSTK')}-{rng.randint(2015, 2025)}-{rng.randint(1000, 9999)}"
 
 
+def is_plate_shaped_firearms(value: str) -> bool:
+    """Return whether a firearms number has the solid two-letters-five-digits shape.
+
+    Such a value reads as a road plate on shape alone, so it must be printed
+    under an explicit firearms label (`Våpenkortnummer`, `Lisensnummer`).
+    """
+    return re.fullmatch(r"[A-Z]{2}\d{5}", value) is not None
+
+
 def is_valid_firearms_license(value: str) -> bool:
-    """Return whether a value is one of the shapes `firearms_license_number` generates."""
-    return FIREARMS_RE.fullmatch(value) is not None and PLATE_RE.fullmatch(value) is None
+    """Return whether a value is one of the shapes `firearms_license_number` generates.
+
+    The spaced plate form (`DK 45778`) is never a firearms number; the solid
+    form (`HG12345`) is, see `is_plate_shaped_firearms`.
+    """
+    if " " in value:
+        return False
+    return FIREARMS_RE.fullmatch(value) is not None
 
 
 def vessel_registration_mark(rng: random.Random) -> str:

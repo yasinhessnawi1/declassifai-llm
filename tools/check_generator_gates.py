@@ -571,13 +571,19 @@ def registry_identifier_checks(clause_bank: dict, gold_v2_glob: str) -> bool:
     firearms = [ident.firearms_license_number(rng) for _ in range(4000)]
     vessels = [ident.vessel_registration_mark(rng) for _ in range(4000)]
     plates = [ident.vehicle_reg(rng) for _ in range(4000)]
+    # The one intended overlap: solid plate-shaped firearms numbers (`HG12345`),
+    # about one in six, which only their firearms label distinguishes (B20).
+    plate_shaped = [v for v in firearms if ident.is_plate_shaped_firearms(v)]
     crossed = (
-        [v for v in firearms if ident.PLATE_RE.fullmatch(v) or ident.VESSEL_RE.fullmatch(v)]
+        [v for v in firearms if (ident.PLATE_RE.fullmatch(v) and not ident.is_plate_shaped_firearms(v))
+         or ident.VESSEL_RE.fullmatch(v)]
         + [v for v in vessels if ident.PLATE_RE.fullmatch(v) or ident.FIREARMS_RE.fullmatch(v)]
-        + [v for v in plates if ident.FIREARMS_RE.fullmatch(v) or ident.VESSEL_RE.fullmatch(v)])
-    report("registry_shapes_disjoint", not crossed and len(set(firearms)) > 1000 and len(set(vessels)) > 1000,
-           f"firearms={len(set(firearms))} vessels={len(set(vessels))} crossed={crossed[:3]} "
-           f"samples={firearms[:3]} {vessels[:3]}")
+        + [v for v in plates if ident.is_valid_firearms_license(v) or ident.VESSEL_RE.fullmatch(v)])
+    share = len(plate_shaped) / len(firearms)
+    report("registry_shapes_disjoint", not crossed and 0.12 <= share <= 0.22
+           and len(set(firearms)) > 1000 and len(set(vessels)) > 1000,
+           f"firearms={len(set(firearms))} vessels={len(set(vessels))} plate_shaped_share={share:.3f} "
+           f"crossed={crossed[:3]} samples={firearms[:3]} {vessels[:3]}")
     report("g4_format_check", all(ident.is_valid_firearms_license(v) for v in firearms)
            and all(ident.is_valid_vessel_registration(v) for v in vessels)
            and not ident.is_valid_firearms_license("DK 45778") and not ident.is_valid_vessel_registration("DK 45778")
