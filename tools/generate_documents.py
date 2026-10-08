@@ -13,7 +13,8 @@ PII in the same slot, teaching position instead of language. Each failure mode
 gets its own gate (G7, G11, and the placement randomisation checked indirectly
 by G6 and G9) rather than being left to hope.
 
-Pipeline per document:
+Pipeline per document (a whole-document call; dense and case-file documents, and
+any plan of more than about ten items, are written in sections instead, see below):
 
     plan_batch -> sample_record -> build_prompt -> backend.generate (batched)
         -> marker check, truncation, G0 placeholders, length
@@ -26,6 +27,19 @@ Pipeline per document:
            belief or sexuality as relevant to suspicion triggers one targeted
            repair, then a regeneration)
         -> accept, or retry with a new record
+
+**Long documents are written in sections.** Pilot v4 asked Qwen3.5-9B for a whole
+dense or case-file document in one call, and the model is reliable with about eight
+values per call and falls apart at twenty. 6 of 26 such documents were accepted, so
+the "hard" benchmark was easier than planned. `tools/gendoc_sections.py` plans three
+to eight sections per document (neutral, genre-realistic roles and headings, never
+one that names a category, or no visible headings at all), assigns at most seven
+planned items to each, and `run_generation` writes one section per call, batched
+across documents, each from the text of the sections before it. G0, G2, G7, G9, G13
+and G14 run on the section, and a failure repairs or regenerates that section alone;
+G1, G3, G4, G6, G12 across sections, G11 and the total length run on the joined text,
+and a failure there that can be traced to one section regenerates that section.
+Labels are still found by exact search over the joined text.
 
 then, over the whole accepted batch: G1 (schema validation via
 `tools/validate_labels.py`), G5 (genre/form/length/type distribution vs the
@@ -61,9 +75,14 @@ employer pools, fixed in `data/synthetic/benchmark_partition.json`
 (`tools/gendoc_dataset.py`), so no string a benchmark scores on was generated into
 training data; `tools/check_dataset_leakage.py` verifies that on finished files.
 The benchmark also leans on `difficulty: hard` clauses and on dense and case-file
-documents, and plants hard negatives -- near-miss sentences such as "nektet å oppgi
-om han er fagorganisert" -- that must stay verbatim and unlabelled, recorded in the
-metadata as `planted_negatives`. Benchmark ids are `SYB-`, training ids `SYN-`.
+documents, and plants one to three hard negatives per document -- near-miss sentences
+such as "men han ville ikke si om han er fagorganisert" -- that must stay verbatim
+and unlabelled, recorded in the metadata as `planted_negatives`. The training set
+plants zero or one, from its own share of the negatives. A negative's pronoun
+placeholders are filled from the subject, and no negative text is planted more than
+twice in a run (`NegativeLedger`): pilot v4 planted 37 negatives from 13 distinct
+texts, and a model memorises a sentence it sees every tenth document. Benchmark ids
+are `SYB-`, training ids `SYN-`.
 
 Usage:
     python3 tools/generate_documents.py --backend hf --model Qwen/Qwen3.5-9B \\
@@ -97,6 +116,7 @@ import gendoc_dataset as dataset_mod
 import gendoc_gates as gates
 import gendoc_genres as genres_mod
 import gendoc_identifiers as ident
+import gendoc_sections as sections_mod
 from gendoc_backends import DRAFT_CLOSE, DRAFT_OPEN, MANIFEST_SENTINEL, build_backend
 from validate_labels import load_types as validate_labels_load_types  # noqa: E402
 
@@ -143,6 +163,7 @@ class PlannedValue:
     checksum_valid: Optional[bool] = None
     difficulty: Optional[str] = None
     hint: Optional[str] = None  # whose value this is / where it belongs, for the prompt
+    party: Optional[str] = None  # "author" or a cast role for a person other than the subject; None = subject
 
 
 @dataclass
@@ -151,17 +172,25 @@ class PlantedNegative:
 
     Attributes:
         type: The type it is a near-miss for (the bank's `negatives` key).
-        text: The sentence, exactly as the document must contain it.
+        text: The sentence after pronoun filling, exactly as the document must
+            contain it.
         why_not: The annotation-spec reason it is not a disclosure.
         also_labelled: `{TYPE: substring}` for a real value of another type inside
             the text (a case number that happens to contain "LO"); that substring
             is labelled as its own type, the near-miss reading is the one left alone.
+        template: The bank text before `{PRON}`/`{POSS}`/`{OBJ}` were filled; the
+            per-run reuse cap counts templates, so "han" and "hun" fills of one
+            sentence are one sentence.
     """
 
     type: str
     text: str
     why_not: str
     also_labelled: Dict[str, str] = field(default_factory=dict)
+    template: str = ""
+
+    def __post_init__(self) -> None:
+        self.template = self.template or self.text
 
 
 @dataclass
@@ -754,10 +783,68 @@ def _age_for_forced_clauses(rng: random.Random, forced_clauses: Sequence[str], s
     return None, None
 
 
+_SHARED_RUN_WORDS = 6
+
+
+def _shares_word_run(a: str, b: str, n: int = _SHARED_RUN_WORDS) -> bool:
+    """Whether two texts have a run of `n` consecutive words in common."""
+    def runs(text: str) -> Set[Tuple[str, ...]]:
+        words = text.lower().split()
+        return {tuple(words[i:i + n]) for i in range(len(words) - n + 1)}
+    return bool(runs(a) & runs(b))
+
+
+class NegativeLedger:
+    """Counts how often each negative template is planted in one run.
+
+    Pilot v4 planted 37 negatives in accepted documents and used 13 distinct
+    texts; one was planted seven times. A model that sees the same sentence in
+    every tenth document memorises it, and the near-miss stops being a trap and
+    becomes a pattern. The ledger is the run-wide state `_plant_negatives` needs
+    to keep any one text at or under `cap`: it is consulted when a record is
+    sampled, and a retry hands back the previous attempt's claims first so a
+    document that is regenerated does not use up its texts twice.
+
+    Attributes:
+        cap: Maximum plantings of one template in the run.
+        used: Template -> plantings currently claimed.
+    """
+
+    def __init__(self, cap: int = dataset_mod.NEGATIVE_CAP_PER_RUN) -> None:
+        self.cap = cap
+        self.used: collections.Counter = collections.Counter()
+
+    def available(self, template: str) -> bool:
+        """Whether `template` may be planted once more."""
+        return self.used[template] < self.cap
+
+    def claim(self, template: str) -> None:
+        """Record one planting of `template`."""
+        self.used[template] += 1
+
+    def release(self, negatives: Sequence["PlantedNegative"]) -> None:
+        """Give back the claims of a record that is being replaced or discarded."""
+        for neg in negatives:
+            if self.used[neg.template] > 0:
+                self.used[neg.template] -= 1
+            if not self.used[neg.template]:
+                del self.used[neg.template]
+
+    def report(self) -> dict:
+        """Return the distinct templates in use, the maximum reuse and the reuse histogram."""
+        counts = [c for c in self.used.values() if c > 0]
+        return {
+            "cap": self.cap, "distinct_templates": len(counts), "plantings": sum(counts),
+            "max_reuse": max(counts, default=0),
+            "reuse_histogram": dict(sorted(collections.Counter(counts).items())),
+        }
+
+
 def _plant_negatives(rng: random.Random, plan: "DocPlan", spec: dict, person: Person, form: str,
                      clause_types: Set[str], negative_bank: dict,
-                     literals: Sequence[str] = ()) -> List[PlantedNegative]:
-    """Choose the hard negatives to plant in one benchmark document.
+                     literals: Sequence[str] = (),
+                     ledger: Optional[NegativeLedger] = None) -> List[PlantedNegative]:
+    """Choose the hard negatives to plant in one document.
 
     A negative is only planted where it reads as an ordinary sentence of the
     genre (its `genres` meet the genre's clause genres, its form, the
@@ -765,6 +852,14 @@ def _plant_negatives(rng: random.Random, plan: "DocPlan", spec: dict, person: Pe
     imitates: "nektet å oppgi om han er fagorganisert" in a document that also
     says he is a union member is a contradiction, not a near-miss. At most one
     negative per type, so a document does not read as a list of refusals.
+
+    The text is filled from the subject (`{PRON}`, `{POSS}`, `{OBJ}`) before it
+    is compared with the planned values or planted, so what the document must
+    contain, what G2 searches for and what the metadata records are one string.
+    Among the eligible texts the least-used ones come first, which spreads the
+    plantings over the whole pool instead of letting chance repeat a text; a text
+    already at the ledger's cap is not eligible, so the document falls back to a
+    different text or plants fewer.
 
     Args:
         rng: Seeded RNG.
@@ -777,12 +872,14 @@ def _plant_negatives(rng: random.Random, plan: "DocPlan", spec: dict, person: Pe
         literals: The document's planned value strings. A negative that contains
             one is skipped: the value would be located inside the near-miss, and
             the near-miss would stop being unlabelled.
+        ledger: The run's reuse ledger; None applies no cap. Chosen texts are
+            claimed on it.
 
     Returns:
         The planted negatives, possibly fewer than requested.
     """
     genres = set(spec["clause_genres"])
-    options: List[Tuple[str, dict]] = []
+    options: List[Tuple[str, dict, str]] = []
     for etype, entries in negative_bank.items():
         if etype in clause_types:
             continue
@@ -801,21 +898,33 @@ def _plant_negatives(rng: random.Random, plan: "DocPlan", spec: dict, person: Pe
             lo, hi = entry.get("age_range", [18, 120])
             if not lo <= person.age() <= hi:
                 continue
-            if any(re.search(r"(?<!\w)" + re.escape(v) + r"(?!\w)", entry["text"])
+            if ledger is not None and not ledger.available(entry["text"]):
+                continue
+            filled = dataset_mod.fill_pronouns(entry["text"], person.gender, form)
+            if any(re.search(r"(?<!\w)" + re.escape(v) + r"(?!\w)", filled)
                    for v in literals if len(v) >= 3):
                 continue
-            options.append((etype, entry))
+            options.append((etype, entry, filled))
     chosen: List[PlantedNegative] = []
     used_types: Set[str] = set()
     rng.shuffle(options)
-    for etype, entry in options:
+    if ledger is not None:
+        options.sort(key=lambda option: ledger.used[option[1]["text"]])
+    for etype, entry, filled in options:
         if len(chosen) >= plan.n_negatives:
             break
         if etype in used_types:
             continue
+        # Two refusals that open alike ("men han ønsket ikke å svare på spørsmål om
+        # ...") repeat a long word run inside one document, which G12 reads as the
+        # model looping; the second is skipped for a different one.
+        if any(_shares_word_run(filled, other.text) for other in chosen):
+            continue
         used_types.add(etype)
-        chosen.append(PlantedNegative(etype, entry["text"], entry.get("why_not", ""),
-                                      dict(entry.get("also_labelled") or {})))
+        chosen.append(PlantedNegative(etype, filled, entry.get("why_not", ""),
+                                      dict(entry.get("also_labelled") or {}), template=entry["text"]))
+        if ledger is not None:
+            ledger.claim(entry["text"])
     return chosen
 
 
@@ -823,7 +932,7 @@ def sample_record(
     rng: random.Random, doc_seed: int, plan: "DocPlan", strategy: str,
     taxonomy_index: Dict[str, dict], clause_bank: dict, public_figures: Set[str],
     negative_bank: Optional[dict] = None, difficulty_weights: Optional[Dict[str, float]] = None,
-    dataset: str = "train",
+    dataset: str = "train", negative_ledger: Optional[NegativeLedger] = None,
 ) -> Record:
     """Sample a coherent, genre-realistic typed record for one document.
 
@@ -856,6 +965,8 @@ def sample_record(
         difficulty_weights: Relative weight of a clause entry by `difficulty`;
             None draws uniformly.
         dataset: "train" or "benchmark", recorded on the record.
+        negative_ledger: The run's reuse ledger for planted negatives; None
+            applies no cap.
 
     Returns:
         A `Record` with `planned` fully populated (empty for a PII-free plan).
@@ -1052,7 +1163,8 @@ def sample_record(
                         else (f"{party.label}, som skriver dokumentet" if party.role == "author"
                               else f"{party.label} i saken"))
                 planned.append(PlannedValue("PERSON", tier(etype), "value", party.person.full_name,
-                                            None, label(etype), hint=hint))
+                                            None, label(etype), hint=hint,
+                                            party=None if party.is_subject else party.role))
             continue
         if etype == "ADDRESS":
             planned.append(PlannedValue(etype, tier(etype), "value", street_address, None, label(etype),
@@ -1150,7 +1262,8 @@ def sample_record(
             hint = (f"registreringsmerket til {ident.vessel_description(rng, form)}, som hovedpersonen eier; "
                     "fartøyets navn kan nevnes i teksten, men er ikke en del av merket")
         planned.append(PlannedValue(etype, tier(etype), "value", value, None, field,
-                                    checksum_valid, hint=hint))
+                                    checksum_valid, hint=hint,
+                                    party="author" if hint and hint.startswith("HPR-nummeret til") else None))
 
     # A plate-shaped firearms number teaches "label decides" best with a real road
     # plate in the same document to contrast it with.
@@ -1208,13 +1321,14 @@ def sample_record(
             planned_types.add(etype)
             planned.append(PlannedValue(
                 etype, tier(etype), "value", value, None, genres_mod.field_label(etype, form),
-                checksum_valid, hint=f"tilhører {party.label} {party.person.full_name}"))
+                checksum_valid, hint=f"tilhører {party.label} {party.person.full_name}",
+                party=party.role))
 
     negatives: List[PlantedNegative] = []
     if plan.n_negatives and negative_bank:
         literals = [pv.value for pv in planned if pv.value]
         negatives = _plant_negatives(rng, plan, spec, person, form, set(clause_texts), negative_bank,
-                                     literals)
+                                     literals, negative_ledger)
     realised = {pv.type for pv in planned}
     dropped = [t for t in plan.forced_types if t not in realised]
     return Record(doc_seed, genre, plan.variant, form, length_band, person, parties, planned,
@@ -1307,6 +1421,42 @@ def build_prompt(record: Record, rng: Optional[random.Random] = None) -> str:
     if record.pii_free:
         return _build_pii_free_prompt(record, header)
 
+    subject_line = _subject_line(record)
+    manifest = [f"SEED|{record.doc_seed}", f"META|form={record.form}"]
+    value_lines, clause_lines, negative_lines, item_manifest, marked = _item_blocks(
+        record, record.planned, record.planted_negatives, rng)
+    manifest += item_manifest
+    planned_types = {pv.type for pv in record.planned}
+    rules = _prompt_rules(record, planned_types, marked)
+
+    prompt = f"{header}\n\n{subject_line}\n\nVerdier som skal stå ordrett:\n" + "\n".join(value_lines)
+    if clause_lines:
+        prompt += ("\n\nOpplysninger som skal stå ordrett inne i løpende setninger:\n"
+                   + "\n".join(clause_lines))
+    if negative_lines:
+        prompt += _NEGATIVE_INTRO + "\n".join(negative_lines)
+    prompt += "\n\nRegler:\n" + "\n".join(f"{i}. {r}" for i, r in enumerate(rules, 1))
+    return prompt + "\n" + MANIFEST_SENTINEL + "\n" + "\n".join(manifest)
+
+
+_NEGATIVE_INTRO = (
+    "\n\nNøytrale formuleringer som også skal stå ordrett inne i løpende setninger. "
+    "De sier ikke noe om personens helse, tro, tilhørighet, opprinnelse, seksualitet "
+    "eller straffbare forhold. Utdyp dem ikke, forklar dem ikke og knytt dem ikke til "
+    "noen diagnose, medlemskap eller lovbrudd. Hver formulering begynner med liten "
+    "forbokstav og skal stå midt i en setning, etter en hovedsetning eller et komma, ikke som en "
+    "egen setning med stor forbokstav. Mangler formuleringen subjekt, er hovedpersonen subjektet: "
+    "sett «han», «hun» eller «ho» rett foran, ikke et innskutt ledd:\n")
+
+
+def _subject_line(record: Record) -> str:
+    """Describe the data subject, the signatory, the employer and the cast for a prompt.
+
+    Shared by the whole-document prompt and every section prompt: a section is
+    written without seeing the other sections' lists, so it needs the same facts
+    about who the document is about (name, gender and pronouns, age, role) to stay
+    coherent with them.
+    """
     person = record.person
     gender_word = ("kvinne" if person.gender == "F" else "mann")
     subject_line = (
@@ -1328,11 +1478,26 @@ def build_prompt(record: Record, rng: Optional[random.Random] = None) -> str:
         )
         subject_line += (f" Andre personer som er nevnt i saken: {listed}. "
                          "Bruk bare disse navnene, og bare om disse personene.")
+    return subject_line
 
-    value_lines, clause_lines, negative_lines = [], [], []
-    manifest = [f"SEED|{record.doc_seed}", f"META|form={record.form}"]
+
+def _item_blocks(record: Record, planned: Sequence[PlannedValue],
+                 negatives: Sequence[PlantedNegative], rng: random.Random):
+    """Format planned items and planted negatives as prompt lines plus mock-manifest lines.
+
+    Args:
+        record: The record (only its strategy-independent facts are used).
+        planned: The planned values and clauses to list, in order.
+        negatives: The planted negatives to list.
+        rng: RNG for clause order and position hints.
+
+    Returns:
+        `(value_lines, clause_lines, negative_lines, manifest_lines, marked)`
+        where `marked` says whether any clause uses the marked strategy.
+    """
+    value_lines, clause_lines, negative_lines, manifest = [], [], [], []
     marked = False
-    for pv in record.planned:
+    for pv in planned:
         if pv.value_kind == "value":
             # The value leads and its kind trails, so the list does not read as a
             # `Label: value` table the model would copy: pilot v3 mirrored the
@@ -1350,20 +1515,43 @@ def build_prompt(record: Record, rng: Optional[random.Random] = None) -> str:
             )
             manifest.append(f"CLAUSE_MARKED|{pv.type}")
     rng.shuffle(clause_lines)
-    for neg in record.planted_negatives:
+    for neg in negatives:
         hint = ("som et direkte sitat fra personen selv, i anførselstegn"
                 if _FIRST_PERSON_RE.match(neg.text) else rng.choice(_POSITION_HINTS))
         negative_lines.append(f"- «{neg.text}» – {hint}")
         manifest.append(f"NEGATIVE|{neg.type}|{neg.text}")
+    return value_lines, clause_lines, negative_lines, manifest, marked
 
+
+def _prompt_rules(record: Record, planned_types: Set[str], marked: bool, *,
+                  first_part: bool = True, section: bool = False) -> List[str]:
+    """Return the numbered rules of a generation prompt.
+
+    Every rule a whole-document prompt carries is carried by a section prompt too:
+    no added personal facts, no tables, no category labels, clauses never extended.
+    What changes with a section is scope -- the identification block belongs to the
+    first section alone, the "no case number" rules follow the section's own types,
+    and the model is told to write only this part.
+
+    Args:
+        record: The record.
+        planned_types: Types of the items this prompt asks for.
+        marked: Whether any clause is a marked one.
+        first_part: False for a section after the first, which opens no
+            identification block.
+        section: True for a section prompt.
+
+    Returns:
+        The rules in order, without numbering.
+    """
     named = ", ".join(p.person.full_name for p in record.parties) or "ingen"
     rules = [
         "ALLE oppgitte verdier og opplysninger skal brukes ORDRETT, tegn for tegn, uten omskriving "
         "eller endret bøyning.",
         "Opplysningene om personene skal flettes inn i vanlige, hele setninger i brødteksten – "
-        "ikke i tabeller, ikke som punkter i en liste og ikke rett etter en feltetikett eller overskrift "
-        "(unntaket er den lille identifikasjonsblokken beskrevet nedenfor). "
-        "Ingen overskrift eller etikett i dokumentet får nevne hva slags opplysning det er "
+        "ikke i tabeller, ikke som punkter i en liste og ikke rett etter en feltetikett eller overskrift"
+        + (" (unntaket er den lille identifikasjonsblokken beskrevet nedenfor). " if first_part else ". ")
+        + "Ingen overskrift eller etikett i dokumentet får nevne hva slags opplysning det er "
         "(for eksempel helse, atferd, religion, fagforening, seksuell legning, økonomi, familie, etnisitet).",
         f"Navngi ingen andre enn disse: {named}. Skriv ikke om denne regelen i dokumentet. "
         "Ikke finn på andre personnavn, "
@@ -1374,15 +1562,24 @@ def build_prompt(record: Record, rng: Optional[random.Random] = None) -> str:
         "oppgitt, skriv «samme dag» eller «tre uker senere» inne i en setning – aldri som verdien "
         "i et datofelt og aldri etter en overskrift som «Dato».",
         "Ikke bruk plassholdere som [NAVN] eller [DATO], og ikke skriv noe på engelsk.",
-        "Dokumentet kan åpne med én liten identifikasjonsblokk på høyst fem linjer. Hver linje har en "
-        "etikett som sier hva verdien er («Navn:», «Fødselsnummer:», «Adresse:», «Saksnummer:», "
-        "«Dato:»), og blokken har bare hovedpersonens egne verdier fra listen ovenfor. Finn ikke på "
-        "et saksnummer eller en referanse som ikke står i listen, og sett aldri et nummer under "
-        "etiketten for en annen slags nummer (et tjenestenummer eller en enhetsidentifikator er "
-        "aldri et saksnummer). Alt annet – andre personers navn og nummer, telefon, e-post, "
-        "kontonumre, datoer, virksomheter – står i løpende setninger, i signaturen eller i en "
-        "kontaktlinje på slutten av brevet. Aldri en tabell eller liste med flere enn fem rader, og "
-        "ingen tabell for noe annet enn identifikasjon.",
+    ]
+    if first_part:
+        rules.append(
+            "Dokumentet kan åpne med én liten identifikasjonsblokk på høyst fem linjer. Hver linje har en "
+            "etikett som sier hva verdien er («Navn:», «Fødselsnummer:», «Adresse:», «Saksnummer:», "
+            "«Dato:»), og blokken har bare hovedpersonens egne verdier fra listen ovenfor. Finn ikke på "
+            "et saksnummer eller en referanse som ikke står i listen, og sett aldri et nummer under "
+            "etiketten for en annen slags nummer (et tjenestenummer eller en enhetsidentifikator er "
+            "aldri et saksnummer). Alt annet – andre personers navn og nummer, telefon, e-post, "
+            "kontonumre, datoer, virksomheter – står i løpende setninger, i signaturen eller i en "
+            "kontaktlinje på slutten av brevet. Aldri en tabell eller liste med flere enn fem rader, og "
+            "ingen tabell for noe annet enn identifikasjon.")
+    else:
+        rules.append(
+            "Denne delen har ingen identifikasjonsblokk, ingen tabell og ingen liste med feltetiketter. "
+            "Alt står i løpende setninger. Finn ikke på et saksnummer eller en referanse som ikke står i "
+            "listen, og sett aldri et nummer under etiketten for en annen slags nummer.")
+    rules += [
         "Hver verdi står under én etikett, og bare én gang som felt. Gjenta aldri det samme nummeret "
         "under to etiketter (for eksempel både «Fødselsnummer» og «Statlig ID»); i teksten kan en "
         "verdi gjentas naturlig.",
@@ -1400,9 +1597,9 @@ def build_prompt(record: Record, rng: Optional[random.Random] = None) -> str:
         "stå som nøytrale personopplysninger. De skal ALDRI knyttes til mistanke, risiko, "
         "kriminalitet, farlighet eller troverdighet.",
     ]
-    planned_types = {pv.type for pv in record.planned}
+    where = "denne delen" if section else "dette dokumentet"
     if "CASE_NUMBER" not in planned_types:
-        rules.append("Dette dokumentet har ikke noe saksnummer og ingen referanse. Skriv ingen linje "
+        rules.append(f"{where.capitalize()} har ikke noe saksnummer og ingen referanse. Skriv ingen linje "
                      "eller setning med «Saksnummer», «Sak nr.», «Sak» foran et nummer, «Vår ref.» "
                      "eller «Deres ref.».")
     for etype, word in (("MILITARY_ID", "tjenestenummer"), ("IDENTITY_CARD", "ID-kortnummer"),
@@ -1421,23 +1618,19 @@ def build_prompt(record: Record, rng: Optional[random.Random] = None) -> str:
     if marked:
         rules.append("For markerte setninger: skriv ⟦TYPE: setning⟧ nøyaktig én gang per type, "
                      "uten andre ⟦ ⟧ tegn i teksten for øvrig.")
-    rules.append("Skriv dokumentet slik en saksbehandler ville skrevet det. Kommenter aldri "
-                 "instruksjonene, og skriv ikke setninger som «ingen ytterligere "
-                 "personopplysninger foreligger» eller «X er den eneste personen som nevnes».")
-    rules.append("Ikke gjenta verdiene i en liste eller et felt til slutt i dokumentet.")
-    rules.append("Svar bare med selve dokumentet, uten kommentarer før eller etter.")
-
-    prompt = f"{header}\n\n{subject_line}\n\nVerdier som skal stå ordrett:\n" + "\n".join(value_lines)
-    if clause_lines:
-        prompt += ("\n\nOpplysninger som skal stå ordrett inne i løpende setninger:\n"
-                   + "\n".join(clause_lines))
-    if negative_lines:
-        prompt += ("\n\nNøytrale formuleringer som også skal stå ordrett inne i løpende setninger. "
-                   "De sier ikke noe om personens helse, tro, tilhørighet, opprinnelse, seksualitet "
-                   "eller straffbare forhold. Utdyp dem ikke, forklar dem ikke og knytt dem ikke til "
-                   "noen diagnose, medlemskap eller lovbrudd:\n" + "\n".join(negative_lines))
-    prompt += "\n\nRegler:\n" + "\n".join(f"{i}. {r}" for i, r in enumerate(rules, 1))
-    return prompt + "\n" + MANIFEST_SENTINEL + "\n" + "\n".join(manifest)
+    if not section:
+        rules.append("Skriv dokumentet slik en saksbehandler ville skrevet det. Kommenter aldri "
+                     "instruksjonene, og skriv ikke setninger som «ingen ytterligere "
+                     "personopplysninger foreligger» eller «X er den eneste personen som nevnes».")
+        rules.append("Ikke gjenta verdiene i en liste eller et felt til slutt i dokumentet.")
+        rules.append("Svar bare med selve dokumentet, uten kommentarer før eller etter.")
+    else:
+        rules.append("Skriv delen slik en saksbehandler ville skrevet den. Kommenter aldri "
+                     "instruksjonene, og skriv ikke setninger som «ingen ytterligere "
+                     "personopplysninger foreligger» eller «X er den eneste personen som nevnes».")
+        rules.append("Ikke gjenta verdiene i en liste eller et felt til slutt i delen.")
+        rules.append("Svar bare med selve delen, uten kommentarer før eller etter.")
+    return rules
 
 
 def _build_pii_free_prompt(record: Record, header: str) -> str:
@@ -1527,6 +1720,103 @@ def build_repair_prompt(record: Record, draft: str, missing: List[str]) -> str:
     )
     manifest = [f"SEED|{record.doc_seed}", "REPAIR|1"] + [f"MISSING|{m}" for m in missing]
     return prompt + "\n" + MANIFEST_SENTINEL + "\n" + "\n".join(manifest)
+
+
+_CONTINUATION_DESC = ("løpende tekst i hele setninger, som fortsettelsen av et dokument der de "
+                      "tidligere delene allerede er skrevet")
+
+
+def build_section_prompt(record: Record, plan: "sections_mod.SectionPlan", k: int,
+                         previous: Sequence[str], rng: Optional[random.Random] = None) -> str:
+    """Build the prompt for section `k` of a sectioned document.
+
+    The call carries the genre, form and register; the facts about the subject
+    and the cast that every section needs to stay coherent; what is already
+    written (truncated from the oldest end, the first section always kept); the
+    section's role and heading; and only this section's values, clauses and
+    negatives, verbatim. Every rule of the whole-document prompt applies. The model
+    is told to write this section only, to repeat or summarise nothing, and to
+    close the document only if this is the last section.
+
+    Args:
+        record: The record being realised.
+        plan: The document's section plan.
+        k: Which section to write.
+        previous: Accepted texts of sections 0..k-1.
+        rng: RNG for clause order and position hints; defaults to one seeded
+            from the record and the section.
+
+    Returns:
+        The prompt, with a machine-readable manifest after `MANIFEST_SENTINEL`
+        (`SECTION|k|n|kind`, `HEADING|...`, then this section's items) that
+        `MockBackend` reads to fill exactly one section.
+    """
+    section = plan.sections[k]
+    n = len(plan.sections)
+    rng = rng or random.Random(record.doc_seed ^ 0x5EC7 ^ (k * 7919) ^ (section.attempts * 104729))
+    nb = record.form == "nb"
+    genre_spec = genres_mod.GENRES[record.genre]
+    title = genre_spec["title_nb"] if nb else genre_spec["title_nn"]
+    lo_words = max(25, round(section.chars[0] / 6.5 / 5) * 5)
+    hi_words = max(lo_words + 15, round(section.chars[1] * 0.85 / 6.5 / 5) * 5)
+    variant = _VARIANT_DESC[record.variant] if k == 0 else _CONTINUATION_DESC
+    if nb:
+        header = (f"Du skriver del {k + 1} av {n} av et offisielt norsk dokument av typen '{title}'. "
+                  f"Form: {variant}. Skriv utelukkende på bokmål, med korrekt og naturlig register for en "
+                  "norsk offentlig etat eller virksomhet. Hele dokumentet blir omtrent "
+                  f"{record.length_band[0]}–{record.length_band[1]} tegn; denne delen skal være omtrent "
+                  f"{lo_words}–{hi_words} ord, aldri mer enn {hi_words} ord.")
+    else:
+        header = (f"Du skriv del {k + 1} av {n} av eit offisielt norsk dokument av typen '{title}'. "
+                  f"Form: {variant}. Skriv utelukkande på nynorsk, med korrekt og naturleg register for eit "
+                  "norsk offentleg organ eller ei verksemd. Heile dokumentet blir om lag "
+                  f"{record.length_band[0]}–{record.length_band[1]} teikn; denne delen skal vere om lag "
+                  f"{lo_words}–{hi_words} ord, aldri meir enn {hi_words} ord.")
+
+    items = [record.planned[i] for i in section.items]
+    negatives = [record.planted_negatives[i] for i in section.negatives]
+    value_lines, clause_lines, negative_lines, item_manifest, marked = _item_blocks(
+        record, items, negatives, rng)
+    last = k == n - 1
+    role = [f"Denne delen er {section.desc}."]
+    if section.heading is not None:
+        role.append(f"Første linje i svaret er overskriften «{section.heading}», skrevet nøyaktig slik og alene "
+                    "på linjen, uten nummer og uten kolon. Bruk ingen andre overskrifter i delen.")
+    else:
+        role.append("Delen har ingen overskrift: skriv den som løpende avsnitt, uten overskrifter og uten "
+                    "nummerering.")
+    role.append("Skriv bare denne delen. Ikke gjenta, omskriv eller oppsummer det som står i tidligere deler, "
+                "og ikke skriv noen hilsen, signatur, avslutning eller oppsummering"
+                + (" – bortsett fra at dette er siste del, så dokumentet avsluttes her på den måten sjangeren krever."
+                   if last else " – dokumentet fortsetter i neste del."))
+    if not items and not negatives:
+        role.append("Denne delen har ingen oppgitte verdier: skriv nøytral saksbehandlingstekst som passer til "
+                    "rollen, uten nye personopplysninger.")
+
+    context = sections_mod.previous_context(previous)
+    parts = [header, _subject_line(record), " ".join(role)]
+    if context:
+        parts.append("Det som allerede er skrevet i tidligere deler (skal ikke gjentas; fortsett der teksten "
+                     f"slutter):\n<<<TIDLIGERE>>>\n{context}\n<<<SLUTT PÅ TIDLIGERE>>>")
+    if value_lines:
+        parts.append("Verdier som skal stå ordrett i denne delen:\n" + "\n".join(value_lines))
+    if clause_lines:
+        parts.append("Opplysninger som skal stå ordrett inne i løpende setninger i denne delen:\n"
+                     + "\n".join(clause_lines))
+    if negative_lines:
+        parts.append(_NEGATIVE_INTRO.strip("\n") + "\n" + "\n".join(negative_lines))
+    rules = _prompt_rules(record, {pv.type for pv in items}, marked, first_part=k == 0, section=True)
+    rules.append("Bruk bare personer, verdier og opplysninger som står i listen for denne delen eller i tidligere "
+                 "deler; ikke legg til noe nytt om noen.")
+    parts.append("Regler:\n" + "\n".join(f"{i}. {r}" for i, r in enumerate(rules, 1)))
+    manifest = [f"SEED|{record.doc_seed}", f"META|form={record.form}",
+                f"SECTION|{k}|{n}|{section.kind}"]
+    if section.heading is not None:
+        manifest.append(f"HEADING|{section.heading}")
+    if last:
+        manifest.append("LAST|1")
+    manifest += item_manifest
+    return "\n\n".join(parts) + "\n" + MANIFEST_SENTINEL + "\n" + "\n".join(manifest)
 
 
 # ---------------------------------------------------------------------------
@@ -1665,6 +1955,11 @@ class GenerationConfig:
     dataset: str = "train"
     difficulty_weights: Optional[Dict[str, float]] = None
     negative_bank: Dict[str, List[dict]] = field(default_factory=dict)
+    negative_cap: int = dataset_mod.NEGATIVE_CAP_PER_RUN
+    negative_ledger: Optional[NegativeLedger] = None
+    sectioning: str = "auto"  # "auto", "off" or "always"; see gendoc_sections.needs_sections
+    section_retries: int = 3  # generations per section: the first and two regenerations
+    section_join_redos: int = 2  # sections regenerated because the joined document failed
 
 
 @dataclass
@@ -1709,6 +2004,9 @@ class DocState:
     audit_seconds: float = 0.0
     audit_log: List[dict] = field(default_factory=list)
     result: Optional[dict] = None
+    section_plan: Optional["sections_mod.SectionPlan"] = None
+    queued: Set[int] = field(default_factory=set)  # sections with a job queued or in flight
+    section_calls: int = 0
 
 
 def _doc_seed(base_seed: int, idx: int, attempt: int) -> int:
@@ -1721,13 +2019,19 @@ def new_attempt_record(state: DocState, base_seed: int, taxonomy_index: Dict[str
     state.attempt += 1
     state.repairs = 0
     state.audit_repairs = 0
+    state.section_plan = None
+    state.queued = set()
     plan = state.plan
+    if config.negative_ledger is None:
+        config.negative_ledger = NegativeLedger(config.negative_cap)
+    if state.record is not None:
+        config.negative_ledger.release(state.record.planted_negatives)
     doc_seed = _doc_seed(base_seed, plan.idx, state.attempt)
     rng = random.Random(doc_seed)
     record = sample_record(
         rng, doc_seed, plan, config.strategy, taxonomy_index, clause_bank, public_figures,
         negative_bank=config.negative_bank, difficulty_weights=config.difficulty_weights,
-        dataset=config.dataset,
+        dataset=config.dataset, negative_ledger=config.negative_ledger,
     )
     for pv in record.planned:
         if pv.tier == "A" and pv.checksum_valid is not None and rng.random() < config.invalid_checksum_rate:
@@ -1998,6 +2302,124 @@ def evaluate_candidate(
     return "accepted", None
 
 
+def _document_literals(record: Record) -> List[str]:
+    """Every literal string the record plants anywhere: values, seeded clauses, negatives."""
+    literals = [pv.value for pv in record.planned
+                if pv.value is not None and (pv.value_kind == "value" or pv.strategy == "seeded")]
+    return literals + [neg.text for neg in record.planted_negatives]
+
+
+def evaluate_section(
+    state: DocState, k: int, raw_text: str, finished: bool, *, taxonomy_index: Dict[str, dict],
+    place_names: Set[str], agency_names: Set[str], config: GenerationConfig,
+) -> Tuple[str, Optional[List[str]]]:
+    """Run the per-section gates on one generated (or repaired) section.
+
+    The gates that look at one passage run here, so a failure is attributed to its
+    section and only that section is repaired or regenerated: the model's output
+    is complete, G0 placeholders, G2 that this section's own values and negatives
+    are present, G9 that no heading or label names a category, G13 and G14 on the
+    section's fields and identifiers, G7 that nothing unplanned appeared. The gates
+    that need the whole document (G1, G3, G4, G6, G12 across sections, G11, the
+    total length) run on the joined text in `evaluate_candidate`.
+
+    Args:
+        state: The document's state; `state.section_plan` is the plan.
+        k: Index of the section.
+        raw_text: Backend output for the section.
+        finished: Whether the backend stopped on end-of-sequence.
+        taxonomy_index: Type name -> taxonomy entry.
+        place_names: Known place names (G7).
+        agency_names: Known agency names (G7).
+        config: Run configuration.
+
+    Returns:
+        ("ok", None) with the section's `raw` and `text` set; ("repair", missing
+        values) when a repair of this section is allowed; ("retry", None) when the
+        section must be regenerated. Every failure is appended to `state.gate_log`
+        with the section's index.
+    """
+    record, plan = state.record, state.section_plan
+    section = plan.sections[k]
+    tag = {"attempt": state.attempt, "section": k, "section_attempt": section.attempts,
+           "repair": section.repairs, "scope": "section"}
+
+    def fail(stage: str, detail) -> Tuple[str, None]:
+        entry = {**tag, "stage": stage, "ok": False, "detail": detail}
+        state.gate_log.append(entry)
+        section.log.append(entry)
+        return "retry", None
+
+    text, heading_problems = sections_mod.normalise_section(raw_text, section.heading)
+    section.draft = text
+    if not finished:
+        return fail("G10_truncated", "generation hit the token budget before end of sequence")
+    if config.strategy == "seeded":
+        if "⟦" in text or "⟧" in text:
+            return fail("marker_leak", "marker characters in a seeded-strategy section")
+        clean, marked_spans = text, {}
+    else:
+        clean, marked_spans, marker_ok, marker_err = strip_markers(text, set(taxonomy_index))
+        if not marker_ok:
+            return fail("marker", marker_err)
+    if heading_problems:
+        return fail("G9_slot", [{"kind": "category_heading", "clause": None, "line": p["heading"]}
+                                for p in heading_problems])
+    placeholders_ok, placeholder_hits = gates.gate_placeholders(clean)
+    if not placeholders_ok:
+        return fail("G0_placeholder", placeholder_hits)
+    section_max = min(config.hard_max_chars, 2 * section.chars[1] + 800)
+    length_ok, length = gates.gate_length(clean, section_max)
+    if not length_ok:
+        return fail("G10_length", {"length": length, "section_max": section_max})
+    repetition_ok, repetition = gates.gate_internal_repetition(clean, config.repetition_threshold)
+    if not repetition_ok:
+        return fail("G12_repetition", {"repeat_8gram_share": repetition,
+                                       "threshold": config.repetition_threshold})
+
+    planned = [record.planned[i] for i in section.items]
+    negatives = [record.planted_negatives[i] for i in section.negatives]
+    literals = [pv.value for pv in planned
+                if pv.value is not None and (pv.value_kind == "value" or pv.strategy == "seeded")]
+    negative_texts = [neg.text for neg in negatives]
+    g2_ok, g2_missing = gates.gate_verbatim(literals + negative_texts, clean)
+    missing_marks = [pv.type for pv in planned if pv.strategy == "marked" and pv.type not in marked_spans]
+    if not g2_ok or missing_marks:
+        entry = {**tag, "stage": "G2_verbatim", "ok": False,
+                 "detail": {"missing_values": g2_missing, "missing_marked_types": missing_marks}}
+        state.gate_log.append(entry)
+        section.log.append(entry)
+        if (not missing_marks and len(g2_missing) <= config.repair_max_missing
+                and section.repairs < config.max_repairs):
+            return "repair", g2_missing
+        return "retry", None
+
+    clauses = [pv.value for pv in planned if pv.value_kind == "clause" and pv.value]
+    clauses += [span for spans in marked_spans.values() for span in spans]
+    slot_ok, slot_hits = gates.gate_slot_labels(clean, clauses + negative_texts)
+    if not slot_ok:
+        return fail("G9_slot", slot_hits)
+    tabular_ok, tabular_hits = gates.gate_tabular_dump(clean, literals + negative_texts)
+    if not tabular_ok:
+        return fail("G13_tabular", tabular_hits)
+    everything = _document_literals(record)
+    roles_ok, role_hits = gates.gate_identifier_roles(
+        clean, [(pv.type, pv.value) for pv in planned if pv.value_kind == "value"], everything)
+    if not roles_ok:
+        return fail("G14_roles", role_hits)
+    covered = everything + [sub for neg in record.planted_negatives for sub in neg.also_labelled.values()]
+    _g7_ok, g7_findings = gates.gate_unplanned_pii(clean, covered, place_names, agency_names)
+    rejecting = [f for f in g7_findings if f["action"] == "reject"]
+    if rejecting and config.g7_policy == "reject":
+        return fail("G7_unplanned_pii", rejecting)
+
+    entry = {**tag, "stage": "section_accepted", "ok": True}
+    state.gate_log.append(entry)
+    section.log.append(entry)
+    section.raw, section.text = text, clean
+    return "ok", None
+
+
 def _token_budget(config: GenerationConfig, max_chars: int) -> int:
     # Norwegian runs ~2.6 characters per token under the Qwen tokenizer. The
     # model overshoots its band by 20-40%, and overshoot is accepted, so the
@@ -2014,13 +2436,24 @@ def run_generation(
 ) -> Tuple[List[DocState], dict]:
     """Generate every planned document, `config.batch_size` prompts per backend call.
 
-    A job is one of four kinds, and jobs of different kinds never share a
+    A job is one of several kinds, and jobs of different kinds never share a
     backend call because they need different sampling: a fresh attempt (a new
     record from the attempt's doc seed, at the run temperature), a G2 repair of
     the current draft (lower temperature, so the repair stays close to the
     draft), a G11 content audit of an otherwise-accepted document (temperature
     0, because the same document must audit the same way every time), and a G11
     repair that deletes or neutralises what the audit found.
+
+    A document with more than about ten planned items, and every dense or
+    case-file document, is generated in sections instead (`gendoc_sections`):
+    `section` jobs write one section each, in order, from the sections before it;
+    `section_repair` repairs one section's missing values; `section_audit_repair`
+    repairs one section's G11 findings. A section that fails its own gates is
+    repaired or regenerated alone, up to `config.section_retries` times, and only
+    then does the document get a new record. When all sections are in, the joined
+    text goes through `evaluate_candidate` (G1-bound checks, G3, G4, G6, G12 across
+    sections, the total length) and, if it fails in a way that can be traced to one
+    section, that section alone is regenerated.
 
     Jobs from different documents share a call. Each document's record, prompt
     and gate outcome depend only on its own seed and outputs, so batching
@@ -2048,11 +2481,40 @@ def run_generation(
     """
     states = [DocState(plan) for plan in plans]
     queue: collections.deque = collections.deque()
-    for st in states:
-        new_attempt_record(st, base_seed, taxonomy_index, clause_bank, public_figures, config)
-        queue.append((st, "fresh", None))
+    if config.negative_ledger is None:
+        config.negative_ledger = NegativeLedger(config.negative_cap)
     accepted_ngrams: List[Set[Tuple[str, ...]]] = []
     stats: collections.Counter = collections.Counter()
+
+    def _purge(st: DocState) -> None:
+        """Drop the document's queued jobs: they belong to a record that is being replaced."""
+        for job in [j for j in queue if j[0] is st]:
+            queue.remove(job)
+
+    def _begin(st: DocState) -> None:
+        """Sample the next record and queue its first job: the whole text or section 0."""
+        _purge(st)
+        new_attempt_record(st, base_seed, taxonomy_index, clause_bank, public_figures, config)
+        rec = st.record
+        n_items = len(rec.planned) + len(rec.planted_negatives)
+        if sections_mod.needs_sections(st.plan.profile, n_items, rec.pii_free, config.sectioning):
+            st.section_plan = sections_mod.build_plan(rec, random.Random(rec.doc_seed ^ 0x5EC7))
+            stats["sectioned_attempts"] += 1
+            _advance(st)
+        else:
+            queue.append((st, "fresh", None))
+
+    def _advance(st: DocState) -> None:
+        """Queue the next section that still needs writing, or join and gate the document."""
+        plan = st.section_plan
+        for sec in plan.sections:
+            if not sec.done and sec.index not in st.queued:
+                st.queued.add(sec.index)
+                sec.repairs = 0
+                queue.append((st, "section", sec.index))
+                return
+        if not st.queued:
+            _join_and_gate(st)
 
     def _finalize(st: DocState) -> None:
         accepted_ngrams.append(st.result["ngrams"])
@@ -2061,18 +2523,101 @@ def run_generation(
 
     def _retry_or_give_up(st: DocState, reason: str) -> None:
         if st.attempt < config.retries:
-            new_attempt_record(st, base_seed, taxonomy_index, clause_bank, public_figures, config)
-            queue.append((st, "fresh", None))
+            _begin(st)
         else:
+            _purge(st)
             st.result = {"accepted": False, "reason": reason}
+            if st.record is not None:
+                config.negative_ledger.release(st.record.planted_negatives)
             if progress:
                 progress(st)
+
+    def _redo_section(st: DocState, k: int, reason: str) -> bool:
+        """Regenerate section k alone; False when its attempts or the join redos are used up."""
+        plan = st.section_plan
+        sec = plan.sections[k]
+        if sec.attempts >= config.section_retries:
+            return False
+        sec.done = False
+        st.queued.add(k)
+        queue.append((st, "section", k))
+        stats["section_regenerations"] += 1
+        stats[f"section_regenerations_{reason}"] += 1
+        return True
+
+    def _section_failed(st: DocState, k: int) -> None:
+        st.queued.discard(k)
+        if not _redo_section(st, k, "gate"):
+            stats["section_gave_up"] += 1
+            _retry_or_give_up(st, "section_failure")
+
+    def _join_and_gate(st: DocState) -> None:
+        """All sections are in: run the document-level gates on the joined text."""
+        plan = st.section_plan
+        joined = sections_mod.join_sections([s.raw for s in plan.sections])
+        outcome, _ = evaluate_candidate(
+            st, joined, True, taxonomy_index=taxonomy_index, public_figures=public_figures,
+            place_names=place_names, agency_names=agency_names, config=config,
+            accepted_ngrams=accepted_ngrams)
+        if outcome == "accepted":
+            if config.audit:
+                queue.appendleft((st, "audit", None))
+            else:
+                _finalize(st)
+            return
+        k = _attribute_failure(st)
+        if (k is not None and plan.redos_after_join < config.section_join_redos
+                and plan.sections[k].attempts < config.section_retries):
+            plan.redos_after_join += 1
+            stats["join_redos"] += 1
+            _redo_section(st, k, "joined")
+        else:
+            _retry_or_give_up(st, "gate_failure")
+
+    def _attribute_failure(st: DocState) -> Optional[int]:
+        """Trace the joined document's last gate failure to the one section that caused it."""
+        plan = st.section_plan
+        failures = [e for e in st.gate_log if not e.get("ok") and "section" not in e]
+        if not failures:
+            return None
+        stage, detail = failures[-1]["stage"], failures[-1]["detail"]
+        texts = [s.text for s in plan.sections]
+        spans = sections_mod.section_spans(texts)
+
+        def containing(needle: str) -> Optional[int]:
+            return next((i for i, t in enumerate(texts) if needle and needle in t), None)
+
+        if stage == "G12_repetition":
+            return sections_mod.repeated_section(texts)
+        if stage == "G10_length":
+            return max(range(len(texts)), key=lambda i: len(texts[i]))
+        if stage == "G7_unplanned_pii" and isinstance(detail, list) and detail:
+            return sections_mod.section_at(spans, detail[0].get("start", -1))
+        if stage == "G9_slot" and isinstance(detail, list) and detail:
+            return containing(detail[0].get("line", "")[:60])
+        if stage == "G14_roles" and isinstance(detail, list) and detail:
+            return containing(str(detail[0].get("value", "")))
+        if stage == "G3_name_collision" and isinstance(detail, list) and detail:
+            return containing(str(detail[0]))
+        if stage == "G13_tabular":
+            return max(range(len(texts)), key=lambda i: sum(
+                1 for line in texts[i].split("\n")
+                if gates.is_table_line(line) or gates.is_field_line(line)))
+        return None
 
     def _covered_spans(st: DocState) -> List[str]:
         return [v for vals in st.result["output"].values() for v in vals]
 
     def _exempt_spans(st: DocState) -> List[str]:
         return [neg.text for neg in st.record.planted_negatives]
+
+    def _section_keep(st: DocState, k: int) -> List[str]:
+        sec = st.section_plan.sections[k]
+        return ([st.record.planned[i].value for i in sec.items if st.record.planned[i].value]
+                + [st.record.planted_negatives[j].text for j in sec.negatives])
+
+    for st in states:
+        _begin(st)
 
     while queue:
         kind = queue[0][1]
@@ -2087,6 +2632,23 @@ def run_generation(
             elif kind == "repair":
                 prompts.append(build_repair_prompt(st.record, st.last_text, payload))
                 budgets.append(_token_budget(config, max(st.record.length_band[1], len(st.last_text))))
+            elif kind == "section":
+                sec = st.section_plan.sections[payload]
+                sec.attempts += 1
+                previous = [s.text for s in st.section_plan.sections[:payload]]
+                prompts.append(build_section_prompt(st.record, st.section_plan, payload, previous))
+                budgets.append(_token_budget(config, sec.chars[1]))
+            elif kind == "section_repair":
+                k, missing = payload
+                sec = st.section_plan.sections[k]
+                prompts.append(build_repair_prompt(st.record, sec.draft, missing))
+                budgets.append(_token_budget(config, max(sec.chars[1], len(sec.draft))))
+            elif kind == "section_audit_repair":
+                k, findings, _attempt = payload
+                sec = st.section_plan.sections[k]
+                prompts.append(audit.build_audit_repair_prompt(
+                    sec.text, findings, _section_keep(st, k), st.record.form, st.record.doc_seed))
+                budgets.append(_token_budget(config, max(sec.chars[1], len(sec.text))))
             elif kind == "audit":
                 prompts.append(audit.build_audit_prompt(
                     st.result["text"], _covered_spans(st) + _exempt_spans(st), st.record.doc_seed))
@@ -2097,10 +2659,18 @@ def run_generation(
                     st.result["text"], payload, keep, st.record.form, st.record.doc_seed))
                 budgets.append(_token_budget(config, max(st.record.length_band[1],
                                                          len(st.result["text"]))))
-        call_seed = hash(tuple(st.record.doc_seed * 10 + st.repairs + 3 * st.audit_repairs
-                              for st, _k, _p in jobs)) & 0x7FFFFFFF
+
+        def _salt(st: DocState, payload) -> int:
+            k = payload if isinstance(payload, int) else (payload[0] if isinstance(payload, tuple) else 0)
+            sec = st.section_plan.sections[k] if st.section_plan is not None and kind.startswith("section") else None
+            return (st.record.doc_seed * 10 + st.repairs + 3 * st.audit_repairs
+                    + (k * 17 + sec.attempts * 31 + sec.repairs * 7 if sec else 0))
+
+        call_seed = hash(tuple(_salt(st, payload) for st, _k, payload in jobs)) & 0x7FFFFFFF
         temperature = {
             "fresh": config.temperature, "repair": config.repair_temperature,
+            "section": config.temperature, "section_repair": config.repair_temperature,
+            "section_audit_repair": config.repair_temperature,
             "audit": 0.0, "audit_repair": config.repair_temperature,
         }[kind]
         started = time.time()
@@ -2113,8 +2683,11 @@ def run_generation(
         if kind == "audit":
             stats["audit_seconds"] += elapsed
 
-        for (st, _k, _payload), text, finished in zip(jobs, texts, finished_flags):
+        for (st, _k, payload), text, finished in zip(jobs, texts, finished_flags):
             share = elapsed / len(jobs)
+            if kind == "section_audit_repair" and (
+                    payload[2] != st.attempt or (st.result is not None and not st.result.get("accepted"))):
+                continue  # the document was given a new record, or given up, since this job was queued
             if kind == "audit":
                 st.audit_seconds += share
                 st.audit_calls += 1
@@ -2138,7 +2711,19 @@ def run_generation(
                 if st.audit_repairs < config.max_audit_repairs:
                     st.audit_repairs += 1
                     st.audit_repairs_total += 1
-                    queue.appendleft((st, "audit_repair", findings))
+                    if st.section_plan is None:
+                        queue.appendleft((st, "audit_repair", findings))
+                        continue
+                    texts_now = [s.text for s in st.section_plan.sections]
+                    spans = sections_mod.section_spans(texts_now)
+                    by_section: Dict[int, List[dict]] = collections.defaultdict(list)
+                    for f in findings:
+                        idx = sections_mod.section_at(spans, f["start"])
+                        by_section[idx if idx is not None else len(spans) - 1].append(f)
+                    for idx, fs in sorted(by_section.items()):
+                        st.queued.add(idx)
+                        st.section_plan.sections[idx].audit_repairs += 1
+                        queue.appendleft((st, "section_audit_repair", (idx, fs, st.attempt)))
                 else:
                     stats["audit_regenerations"] += 1
                     _retry_or_give_up(st, "audit_findings_remain")
@@ -2146,6 +2731,32 @@ def run_generation(
 
             st.gen_seconds += share
             st.generate_calls += 1
+
+            if kind in ("section", "section_repair", "section_audit_repair"):
+                k = payload if kind == "section" else payload[0]
+                sec = st.section_plan.sections[k]
+                st.section_calls += 1
+                outcome, missing = evaluate_section(
+                    st, k, text, finished, taxonomy_index=taxonomy_index, place_names=place_names,
+                    agency_names=agency_names, config=config)
+                if kind == "section_repair":
+                    stats["section_repairs_succeeded" if outcome == "ok" else "section_repairs_failed"] += 1
+                if kind == "section_audit_repair":
+                    stats["section_audit_repairs_gated_ok" if outcome == "ok"
+                          else "section_audit_repairs_gated_fail"] += 1
+                if outcome == "ok":
+                    sec.done = True
+                    st.queued.discard(k)
+                    _advance(st)
+                elif outcome == "repair":
+                    sec.repairs += 1
+                    sec.repairs_total += 1
+                    queue.appendleft((st, "section_repair", (k, missing)))
+                else:
+                    sec.done = False
+                    _section_failed(st, k)
+                continue
+
             outcome, missing = evaluate_candidate(
                 st, text, finished, taxonomy_index=taxonomy_index, public_figures=public_figures,
                 place_names=place_names, agency_names=agency_names, config=config,
@@ -2234,6 +2845,12 @@ def write_sample_dump(path: str, records: List[dict], n: int, rng: random.Random
         if r.get("clause_extensions"):
             lines.append(f"\n**Clause labels extended over a completing date:** "
                          f"{r['clause_extensions']}")
+        state = r["state"]
+        if state.section_plan is not None:
+            lines.append("\n**Sections:** " + "; ".join(
+                f"{s.index + 1}. {s.role_heading if s.heading else '(flowing)'} "
+                f"[{s.kind}, {s.load} items, {s.attempts} call(s), {s.repairs_total} repair(s)]"
+                for s in state.section_plan.sections))
         if rec.planted_negatives:
             lines.append("\n**Planted hard negatives (verbatim in the text, unlabelled by design):**")
             for neg in rec.planted_negatives:
@@ -2711,6 +3328,59 @@ def coverage_report(
     }
 
 
+def sectioning_report(accepted: List[dict], states: List[DocState], plans: List[DocPlan]) -> dict:
+    """Report how much of the batch was generated in sections and how the sections fared.
+
+    The number that matters is the acceptance rate of the dense and case-file
+    profiles: pilot v4 accepted 6 of 26 of them, and a benchmark whose large
+    documents are lost is easier than planned. Section-level failures are counted
+    apart from document-level ones so a run shows where the retries went.
+
+    Args:
+        accepted: Accepted document dicts.
+        states: Every document state.
+        plans: Every plan.
+
+    Returns:
+        The sectioning section of the gate report.
+    """
+    sectioned = [r for r in accepted if r["state"].section_plan is not None]
+    per_profile = {}
+    for profile in sorted({p.profile for p in plans}):
+        wanted = [st for st in states if st.plan.profile == profile]
+        got = [st for st in wanted if st.result and st.result.get("accepted")]
+        per_profile[profile] = {
+            "planned": len(wanted), "accepted": len(got),
+            "sectioned_accepted": sum(1 for st in got if st.section_plan is not None)}
+    section_events = [e for st in states for e in st.gate_log if e.get("scope") == "section"]
+    doc_events = [e for st in states for e in st.gate_log if not e.get("ok") and "section" not in e]
+    loads = [s.load for r in sectioned for s in r["state"].section_plan.sections]
+    return {
+        "accepted_sectioned": len(sectioned),
+        "accepted_total": len(accepted),
+        "sectioned_share_of_accepted": round(len(sectioned) / len(accepted), 3) if accepted else 0.0,
+        "sections_per_doc": dict(sorted(collections.Counter(
+            len(r["state"].section_plan.sections) for r in sectioned).items())),
+        "items_per_section": {"max": max(loads, default=0), "mean": round(sum(loads) / len(loads), 2)
+                              if loads else None,
+                              "over_cap": sum(1 for n in loads if n > sections_mod.MAX_ITEMS)},
+        "headings_visible_share": round(sum(1 for r in sectioned
+                                            if r["state"].section_plan.headings_visible) / len(sectioned), 3)
+        if sectioned else None,
+        "per_profile": per_profile,
+        "section_failure_stages": dict(collections.Counter(
+            e["stage"] for e in section_events if not e.get("ok"))),
+        "joined_failure_stages": dict(collections.Counter(e["stage"] for e in doc_events)),
+        "section_calls": sum(st.section_calls for st in states),
+        "section_attempts": sum(s.attempts for st in states if st.section_plan for s in st.section_plan.sections),
+        "section_repairs": sum(s.repairs_total for st in states if st.section_plan
+                               for s in st.section_plan.sections),
+        "redos_after_join": sum(st.section_plan.redos_after_join for st in states if st.section_plan),
+        "headline_headings": dict(collections.Counter(
+            s.role_heading for r in sectioned for s in r["state"].section_plan.sections).most_common(20)),
+    }
+
+
 def density_report(accepted: List[dict], plans: List[DocPlan]) -> dict:
     """Report the realised density distribution: types, distinct spans and length.
 
@@ -2796,9 +3466,17 @@ def negatives_report(accepted: List[dict], states: List[DocState], plans: List[D
                 if re.search(r"(?<!\w)" + re.escape(span) + r"(?!\w)", neg.text) or neg.text in span:
                     labelled_by_mistake.append({"id": doc_id, "type": etype, "span": span,
                                                 "negative": neg.text})
+    template_use = collections.Counter(neg.template for _doc, neg in planted)
     return {
         "planned": sum(p.n_negatives for p in plans),
         "planted_in_accepted_documents": len(planted),
+        "distinct_templates": len(template_use),
+        "max_reuse_of_one_text": max(template_use.values(), default=0),
+        "reuse_histogram": dict(sorted(collections.Counter(template_use.values()).items())),
+        "per_document": dict(sorted(collections.Counter(
+            len(r["record"].planted_negatives) for r in accepted).items())),
+        "by_form": dict(collections.Counter(r["record"].form for r in accepted
+                                            for _neg in r["record"].planted_negatives)),
         "kept_verbatim": sum(1 for doc_id, neg in planted
                              if neg.text in next(r for r in accepted if r["id"] == doc_id)["text"]),
         "labelled_by_mistake": labelled_by_mistake,
@@ -2921,6 +3599,16 @@ def main() -> int:
                              "bank and name pools (see tools/gendoc_dataset.py)")
     parser.add_argument("--partition", default=dataset_mod.PARTITION_PATH,
                         help="benchmark/training partition file")
+    parser.add_argument("--sectioning", choices=["auto", "off", "always"], default="auto",
+                        help="auto: generate dense and case-file documents, and any plan with more than "
+                             f"{sections_mod.SECTION_ITEM_THRESHOLD} planned items, in sections of at most "
+                             f"{sections_mod.MAX_ITEMS} items, one model call each; off: whole documents "
+                             "only; always: section every document that plans something")
+    parser.add_argument("--section-retries", type=int, default=3,
+                        help="generations of one section (the first and its regenerations) before the "
+                             "document is given a new record")
+    parser.add_argument("--negative-cap", type=int, default=dataset_mod.NEGATIVE_CAP_PER_RUN,
+                        help="most times one negative text may be planted in the run")
     parser.add_argument("--no-audit", dest="audit", action="store_false",
                         help="skip the G11 content audit (a second model pass per document)")
     parser.add_argument("--max-audit-repairs", type=int, default=1,
@@ -2969,6 +3657,7 @@ def main() -> int:
         g7_policy=args.g7_policy, batch_size=args.batch_size, max_repairs=args.max_repairs,
         audit=args.audit, max_audit_repairs=args.max_audit_repairs,
         dataset=args.dataset, difficulty_weights=mode.difficulty_weights, negative_bank=negative_bank,
+        negative_cap=args.negative_cap, sectioning=args.sectioning, section_retries=args.section_retries,
     )
 
     schedulable = genres_mod.coverage_types([entry["name"] for entry in taxonomy["types"]])
@@ -3006,6 +3695,9 @@ def main() -> int:
                 "index": st.plan.idx, "genre": st.plan.genre, "variant": st.plan.variant,
                 "form": st.plan.form, "profile": st.plan.profile, "pii_free": st.plan.pii_free,
                 "dataset": args.dataset, "reason": st.result.get("reason"), "gate_log": st.gate_log,
+                "sectioned": st.section_plan is not None,
+                "section_plan": (sections_mod.summary(st.section_plan, st.record)
+                                 if st.section_plan is not None and st.record else None),
                 "audit_log": st.audit_log, "last_text": st.last_text,
                 "planned": [dataclasses.asdict(pv) for pv in st.record.planned] if st.record else None,
             })
@@ -3046,8 +3738,9 @@ def main() -> int:
                 "planned_types": sorted({pv.type for pv in rec.planned}),
                 "forced_types": st.plan.forced_types, "dropped_forced": rec.dropped_forced,
                 "planted_negatives": [
-                    {"type": neg.type, "text": neg.text, "why_not": neg.why_not,
-                     "also_labelled": neg.also_labelled, "in_text": neg.text in r["text"]}
+                    {"type": neg.type, "text": neg.text, "template": neg.template,
+                     "why_not": neg.why_not, "also_labelled": neg.also_labelled,
+                     "in_text": neg.text in r["text"]}
                     for neg in rec.planted_negatives],
                 "tabular": r["tabular"],
                 "type_target": st.plan.type_target, "art9_cap": st.plan.art9_cap,
@@ -3058,6 +3751,16 @@ def main() -> int:
                              "nationality": p.person.nationality} for p in rec.parties],
                 "subject": ({"gender": rec.person.gender, "age": rec.person.age(),
                              "nationality": rec.person.nationality} if rec.person else None),
+                "sectioned": st.section_plan is not None,
+                "section_plan": (sections_mod.summary(st.section_plan, rec)
+                                 if st.section_plan is not None else None),
+                "section_calls": st.section_calls,
+                "section_attempts": ([s.attempts for s in st.section_plan.sections]
+                                     if st.section_plan is not None else None),
+                "section_repairs": ([s.repairs_total for s in st.section_plan.sections]
+                                    if st.section_plan is not None else None),
+                "section_redos_after_join": (st.section_plan.redos_after_join
+                                             if st.section_plan is not None else None),
                 "num_attempts": st.attempt, "num_repairs": st.repairs_total,
                 "num_audit_repairs": st.audit_repairs_total,
                 "generate_calls": st.generate_calls, "gen_seconds": round(st.gen_seconds, 1),
@@ -3141,9 +3844,11 @@ def main() -> int:
         "G11_content_audit": audit_report(states, accepted, wall_seconds),
         "coverage": coverage_report(accepted_meta_for_g5, schedulable, args.coverage_target, plan_report),
         "density": density_report(accepted, plans),
+        "sectioning": sectioning_report(accepted, states, plans),
         "dataset": args.dataset,
         "partition": {"path": args.partition, "counts": partition.get("counts")},
-        "hard_negatives": negatives_report(accepted, states, plans),
+        "hard_negatives": {**negatives_report(accepted, states, plans),
+                           "run_ledger": config.negative_ledger.report() if config.negative_ledger else None},
         "tabular": tabular_report(accepted),
         "forced_types_dropped_by_sampler": dict(collections.Counter(
             t for r in accepted for t in r["record"].dropped_forced)),

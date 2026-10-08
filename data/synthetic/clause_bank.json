@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 5,
   "clause_bank": {
     "RELIGIOUS_BELIEF": [
       {
@@ -5811,6 +5811,210 @@
           "dismissal_letter",
           "nav_decision"
         ]
+      },
+      {
+        "text": "men {PRON} ville ikke svare på hva {PRON} tror på",
+        "form": "nb",
+        "why_not": "B7: a stated refusal to answer reveals no belief, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} tok ikke stilling til spørsmålet om livssynet sitt",
+        "form": "nb",
+        "why_not": "B7: a stated refusal to answer reveals no belief or philosophy of life, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og kirken ligger ved veien {PRON} bruker til bussen om morgenen",
+        "form": "nb",
+        "why_not": "Ordinary-life fact that only sounds sensitive: an unnamed building on a commute route; no observance or membership is attributed to the person, and RELIGIOUS_BELIEF excludes religious words with no believer attached (a generic unnamed place is not a LOCATION).",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "police_report"
+        ],
+        "kind": "ordinary",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men feltet om trosretning i søknadsskjemaet er frivillig og ble stående tomt",
+        "form": "nb",
+        "why_not": "B7: a deliberately blank optional field discloses nothing.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og det finnes både kirke, moské og idrettshall i området der {PRON} bor",
+        "form": "nb",
+        "why_not": "Generic statement: a list of buildings in a neighbourhood; no person is linked to any of them, so no belief or affiliation is stated (RELIGIOUS_BELIEF Exclude: generic religious words with no believer attached).",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "gp_referral",
+          "udi_decision"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} svarte at spørsmål om tro ikke hører hjemme i en saksbehandling",
+        "form": "nb",
+        "why_not": "B7: a stated refusal to answer reveals no belief, so nothing is disclosed and nothing is tagged. The person objects to the question and states no belief.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} leste en artikkel om religionshistorie i en avis",
+        "form": "nb",
+        "why_not": "Generic statement: reading or watching public material about the history of religion attributes no belief to the person; no affiliation, condition or fact about the data subject is stated.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "gp_referral"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} hadde ferie i julen og påsken, slik alle ansatte har ifølge avtalen",
+        "form": "nb",
+        "why_not": "Ordinary-life fact that only sounds sensitive: contractual holidays that every employee has; it states no observance or belief (cf. the existing negative about Good Friday).",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision"
+        ],
+        "kind": "ordinary",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {PRON} ville ikkje seie kva {PRON} trur på",
+        "form": "nn",
+        "why_not": "B7: a stated refusal to answer reveals no belief, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} tok ikkje stilling til spørsmålet om livssynet sitt",
+        "form": "nn",
+        "why_not": "B7: a stated refusal to answer reveals no belief or philosophy of life, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og kyrkja ligg ved vegen {PRON} brukar til bussen om morgonen",
+        "form": "nn",
+        "why_not": "Ordinary-life fact that only sounds sensitive: an unnamed building on a commute route; no observance or membership is attributed to the person (RELIGIOUS_BELIEF Exclude: no believer attached).",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "police_report"
+        ],
+        "kind": "ordinary",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men feltet om trusretning i søknadsskjemaet er frivillig og vart ståande tomt",
+        "form": "nn",
+        "why_not": "B7: a deliberately blank optional field discloses nothing.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} las ein artikkel om religionshistorie i ei avis",
+        "form": "nn",
+        "why_not": "Generic statement: reading or watching public material about the history of religion attributes no belief to the person; no affiliation, condition or fact about the data subject is stated.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "gp_referral"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og naboen opplyste at menighetshuset leies ut til private selskaper",
+        "form": "nb",
+        "why_not": "Third-party statement about an institution: a neighbour or colleague describes a building or an office, and no affiliation, membership or belief of any person is stated; a bare institution with no person attached is untagged.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "police_report"
+        ],
+        "kind": "third_party",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og naboen opplyste at menighetshuset blir leigd ut til private selskap",
+        "form": "nn",
+        "why_not": "Third-party statement about an institution: a neighbour or colleague describes a building or an office, and no affiliation, membership or belief of any person is stated; a bare institution with no person attached is untagged.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "police_report"
+        ],
+        "kind": "third_party",
+        "origin": "nearmiss_v5"
       }
     ],
     "TRADE_UNION": [
@@ -5913,6 +6117,204 @@
           "dismissal_letter",
           "nav_decision"
         ]
+      },
+      {
+        "text": "men {PRON} ville ikke si om {PRON} er fagorganisert",
+        "form": "nb",
+        "why_not": "B7: a stated refusal to answer reveals no membership, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision",
+          "gp_referral",
+          "police_report"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} svarte ikke på arbeidsgiverens spørsmål om organisasjonstilhørighet",
+        "form": "nb",
+        "why_not": "B7: a stated refusal to answer reveals no membership, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} så en tv-debatt om lønnsoppgjøret i helgen",
+        "form": "nb",
+        "why_not": "Generic statement: reading or watching public material about a wage settlement attributes no membership to the person; no affiliation, condition or fact about the data subject is stated.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} gikk forbi demonstrasjonstoget i sentrum uten å stoppe",
+        "form": "nb",
+        "why_not": "Ordinary-life fact that only sounds sensitive: walking past a march without taking part states non-participation; TRADE_UNION needs membership or organising activity (`deltok i streiken` is the positive).",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision",
+          "police_report"
+        ],
+        "kind": "ordinary",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} fikk informasjon om forsikringsordninger fra arbeidsgiveren, slik alle ansatte gjør",
+        "form": "nb",
+        "why_not": "Generic statement: information every employee receives from the employer; no union is named and no membership is stated.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} står oppført med medlemsnummer 4471882 i borettslaget",
+        "form": "nb",
+        "why_not": "B20: a membership number of a private association (here a housing cooperative) has no v2 type and stays untagged; it is not a union membership either.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "kind": "id_shaped",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} ba om en kopi av tariffavtalen som gjelder for stillingen",
+        "form": "nb",
+        "why_not": "Ordinary employee right: asking for the applicable collective agreement states no membership and no organising activity.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {PRON} kjenner bare til at det finnes flere forbund i bransjen",
+        "form": "nb",
+        "why_not": "Generic statement: general knowledge that several unions exist; no union is named and no membership is stated.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {PRON} ville ikkje seie om {PRON} er fagorganisert",
+        "form": "nn",
+        "why_not": "B7: a stated refusal to answer reveals no membership, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision",
+          "gp_referral",
+          "police_report"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} svara ikkje på spørsmålet frå arbeidsgjevaren om organisasjonstilknyting",
+        "form": "nn",
+        "why_not": "B7: a stated refusal to answer reveals no membership, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} såg ein tv-debatt om lønsoppgjeret i helga",
+        "form": "nn",
+        "why_not": "Generic statement: reading or watching public material about a wage settlement attributes no membership to the person; no affiliation, condition or fact about the data subject is stated.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} gjekk forbi demonstrasjonstoget i sentrum utan å stoppe",
+        "form": "nn",
+        "why_not": "Ordinary-life fact that only sounds sensitive: walking past a march without taking part states non-participation; TRADE_UNION needs membership or organising activity.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision",
+          "police_report"
+        ],
+        "kind": "ordinary",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} står oppført med medlemsnummer 3318806 i burettslaget",
+        "form": "nn",
+        "why_not": "B20: a membership number of a private association (a housing cooperative) has no v2 type and stays untagged; it is not a union membership either.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "kind": "id_shaped",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} fekk informasjon om forsikringsordningar frå arbeidsgjevaren, slik alle tilsette får",
+        "form": "nn",
+        "why_not": "Generic statement: information every employee receives from the employer; no union is named and no membership is stated.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og kollegaen opplyste at lokalet til fagforeningen leies ut til møter",
+        "form": "nb",
+        "why_not": "Third-party statement about an institution: a neighbour or colleague describes a building or an office, and no affiliation, membership or belief of any person is stated; a bare institution with no person attached is untagged.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision"
+        ],
+        "kind": "third_party",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og kollegaen opplyste at lokalet til fagforeininga blir leigd ut til møte",
+        "form": "nn",
+        "why_not": "Third-party statement about an institution: a neighbour or colleague describes a building or an office, and no affiliation, membership or belief of any person is stated; a bare institution with no person attached is untagged.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision"
+        ],
+        "kind": "third_party",
+        "origin": "nearmiss_v5"
       }
     ],
     "ETHNICITY": [
@@ -5943,14 +6345,15 @@
         "text": "har utenlandsk klingende navn",
         "form": "nb",
         "why_not": "a caseworker's own inference from a name is exactly the kind of stereotyping generalisation this type must never encode as a positive example",
-        "plantable": true,
+        "plantable": false,
         "genres": [
           "gp_referral",
           "police_report",
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "not_plantable_reason": "v2 tags a recorded claim about a special-category fact even when it is an inference or a rumour (ANNOTATION_SPEC, SEXUAL_ORIENTATION: third-party speculation is tagged; global reporting-frame rule), so an annotator may read an inference about origin from a name as ETHNICITY. Not a clean null."
       },
       {
         "text": "kommer opprinnelig fra Storbritannia",
@@ -5974,14 +6377,15 @@
         "text": "har utanlandsk klingande namn",
         "form": "nn",
         "why_not": "a caseworker's inference from a name is not a disclosure by the person",
-        "plantable": true,
+        "plantable": false,
         "genres": [
           "gp_referral",
           "police_report",
           "nav_decision",
           "dismissal_letter",
           "udi_decision"
-        ]
+        ],
+        "not_plantable_reason": "v2 tags a recorded claim about a special-category fact even when it is an inference or a rumour (ANNOTATION_SPEC, SEXUAL_ORIENTATION: third-party speculation is tagged; global reporting-frame rule), so an annotator may read an inference about origin from a name as ETHNICITY. Not a clean null."
       },
       {
         "text": "bor i et område med mange tilflyttere",
@@ -6004,6 +6408,126 @@
           "nav_decision",
           "udi_decision"
         ]
+      },
+      {
+        "text": "men {PRON} ønsket ikke å svare på spørsmål om etnisk bakgrunn",
+        "form": "nb",
+        "why_not": "B7: a stated refusal to answer reveals no origin, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "udi_decision"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} oppga ikke noe om etnisk tilhørighet, siden feltet er frivillig",
+        "form": "nb",
+        "why_not": "B7: a stated refusal to answer reveals no origin, so nothing is disclosed and nothing is tagged. The field is optional and was left unanswered.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "udi_decision"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} bor i en bydel der folk har svært ulik bakgrunn",
+        "form": "nb",
+        "why_not": "Generic statement: a description of the neighbourhood's population; no origin is attributed to the data subject.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "udi_decision"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} ville ikke si om {PRON} regner seg som del av en minoritet",
+        "form": "nb",
+        "why_not": "B7: a stated refusal to answer reveals no origin, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "udi_decision"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {POSS} navn blir ofte stavet feil av andre",
+        "form": "nb",
+        "why_not": "Ordinary-life fact that only sounds sensitive: a remark about how a name is misspelt; it says nothing about origin, and no name or country is given (ETHNICITY needs a stated racial or ethnic origin).",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "udi_decision"
+        ],
+        "kind": "ordinary",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {PRON} ville ikkje svare på spørsmål om etnisk bakgrunn",
+        "form": "nn",
+        "why_not": "B7: a stated refusal to answer reveals no origin, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "udi_decision"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} oppgav ikkje noko om etnisk tilhøyrsle, sidan feltet er frivillig",
+        "form": "nn",
+        "why_not": "B7: a stated refusal to answer reveals no origin, so nothing is disclosed and nothing is tagged. The field is optional and was left unanswered.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "udi_decision"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} bur i ei bydel der folk har svært ulik bakgrunn",
+        "form": "nn",
+        "why_not": "Generic statement: a description of the neighbourhood's population; no origin is attributed to the data subject.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "udi_decision"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} ville ikkje seie om {PRON} reknar seg som del av ei minoritet",
+        "form": "nn",
+        "why_not": "B7: a stated refusal to answer reveals no origin, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "udi_decision"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {POSS} namn blir ofte feilstava av andre",
+        "form": "nn",
+        "why_not": "Ordinary-life fact that only sounds sensitive: a remark about how a name is misspelt; it says nothing about origin (ETHNICITY needs a stated racial or ethnic origin).",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "udi_decision"
+        ],
+        "kind": "ordinary",
+        "origin": "nearmiss_v5"
       }
     ],
     "HEALTH": [
@@ -6064,6 +6588,198 @@
           120
         ],
         "not_plantable_reason": "a bare negation is mangled into a double negative when woven into prose (SYB-000000)"
+      },
+      {
+        "text": "men {PRON} ønsket ikke å snakke om helsa si under samtalen",
+        "form": "nb",
+        "why_not": "B7: a stated refusal to answer reveals no condition, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} fremsto opplagt og våken under hele møtet",
+        "form": "nb",
+        "why_not": "B15: a reassuring absence records that there is no problem, so it is not tagged. An observation of alertness states no condition, symptom or treatment.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "kind": "absence",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} viste ingen tegn til sykdom ved oppmøtet",
+        "form": "nb",
+        "why_not": "B15: a reassuring absence records that there is no problem, so it is not tagged. It is the same shape as `ingen synlige skader`, written as a full predicate so it cannot be spliced into a double negative.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "kind": "absence",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} leste en artikkel om influensavaksinering i avisen",
+        "form": "nb",
+        "why_not": "Generic statement: reading or watching public material about flu vaccination attributes no condition to the person; no affiliation, condition or fact about the data subject is stated.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "gp_referral"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} har meldt seg på tur- og treningsgruppen på jobben",
+        "form": "nb",
+        "why_not": "Ordinary-life fact that only sounds sensitive: joining a workplace exercise group states no condition, diagnosis, symptom or treatment.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision"
+        ],
+        "kind": "ordinary",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} har journalnummer 504417 ved legesenteret",
+        "form": "nb",
+        "why_not": "B20: `journalnummer` is a clinic's internal record number; v2 has no type for it, so it stays untagged, and it names no condition.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "nav_decision"
+        ],
+        "kind": "id_shaped",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {PRON} ville ikkje snakke om helsa si under samtalen",
+        "form": "nn",
+        "why_not": "B7: a stated refusal to answer reveals no condition, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} verka opplagd og var vaken under heile møtet",
+        "form": "nn",
+        "why_not": "B15: a reassuring absence records that there is no problem, so it is not tagged. An observation of alertness states no condition, symptom or treatment.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "kind": "absence",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} viste ingen teikn til sjukdom ved oppmøtet",
+        "form": "nn",
+        "why_not": "B15: a reassuring absence records that there is no problem, so it is not tagged. It is the same shape as `ingen synlege skadar`, written as a full predicate so it cannot be spliced into a double negative.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "kind": "absence",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} las ein artikkel om influensavaksinering i avisa",
+        "form": "nn",
+        "why_not": "Generic statement: reading or watching public material about flu vaccination attributes no condition to the person; no affiliation, condition or fact about the data subject is stated.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "gp_referral"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} har meldt seg på tur- og treningsgruppa på jobben",
+        "form": "nn",
+        "why_not": "Ordinary-life fact that only sounds sensitive: joining a workplace exercise group states no condition, diagnosis, symptom or treatment.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision"
+        ],
+        "kind": "ordinary",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} har journalnummer 618203 ved legesenteret",
+        "form": "nn",
+        "why_not": "B20: `journalnummer` is a clinic's internal record number; v2 has no type for it, so it stays untagged, and it names no condition.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "nav_decision"
+        ],
+        "kind": "id_shaped",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og naboen sa at legekontoret i nærheten har fått ny åpningstid",
+        "form": "nb",
+        "why_not": "Third-party statement about an institution: a neighbour or colleague describes a clinic's opening hours, and no affiliation, membership or belief of any person is stated; a bare institution with no person attached is untagged.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter",
+          "police_report"
+        ],
+        "kind": "third_party",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og naboen sa at legekontoret i nærleiken har fått ny opningstid",
+        "form": "nn",
+        "why_not": "Third-party statement about an institution: a neighbour or colleague describes a clinic's opening hours, and no affiliation, membership or belief of any person is stated; a bare institution with no person attached is untagged.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter",
+          "police_report"
+        ],
+        "kind": "third_party",
+        "origin": "nearmiss_v5"
       }
     ],
     "DISABILITY": [
@@ -6086,6 +6802,148 @@
         "text": "gikk med krykker en periode etter en fotballskade",
         "form": "nb",
         "why_not": "a temporary, healed sports injury is not a disability — no lasting functional impairment is stated"
+      },
+      {
+        "text": "men {PRON} ønsket ikke å svare på spørsmål om funksjonsevne",
+        "form": "nb",
+        "why_not": "B7: a stated refusal to answer reveals no impairment, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "gp_referral",
+          "dismissal_letter"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} tok trappene opp til kontoret uten problemer",
+        "form": "nb",
+        "why_not": "B15: a reassuring absence records that there is no problem, so it is not tagged. Climbing stairs without difficulty states no impairment.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision",
+          "gp_referral"
+        ],
+        "kind": "absence",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {PRON} tok heisen fordi trappeoppgangen var stengt for maling",
+        "form": "nb",
+        "why_not": "Ordinary-life fact that only sounds sensitive: the lift is used because the staircase was closed for painting, a reason that has nothing to do with the person's mobility.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "gp_referral"
+        ],
+        "kind": "ordinary",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} snakket høyt fordi det var mye støy i rommet",
+        "form": "nb",
+        "why_not": "Ordinary-life fact that only sounds sensitive: speaking loudly because of room noise states no hearing impairment.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision",
+          "gp_referral",
+          "police_report"
+        ],
+        "kind": "ordinary",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og feltet om tilrettelagt arbeidsplass i søknadsskjemaet er ikke fylt ut",
+        "form": "nb",
+        "why_not": "DISABILITY Exclude: a bare accommodation noun with no condition named (`tilrettelagt arbeidsplass`) is untagged, and a blank field discloses nothing (B7).",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {PRON} leste bare en brosjyre om universell utforming av kontorbygg",
+        "form": "nb",
+        "why_not": "Generic statement: reading or watching public material about universal design of office buildings attributes no impairment to the person; no affiliation, condition or fact about the data subject is stated.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {PRON} ville ikkje svare på spørsmål om funksjonsevne",
+        "form": "nn",
+        "why_not": "B7: a stated refusal to answer reveals no impairment, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "gp_referral",
+          "dismissal_letter"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} tok trappene opp til kontoret utan problem",
+        "form": "nn",
+        "why_not": "B15: a reassuring absence records that there is no problem, so it is not tagged. Climbing stairs without difficulty states no impairment.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision",
+          "gp_referral"
+        ],
+        "kind": "absence",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {PRON} tok heisen fordi trappeoppgangen var stengd for maling",
+        "form": "nn",
+        "why_not": "Ordinary-life fact that only sounds sensitive: the lift is used because the staircase was closed for painting, a reason that has nothing to do with the person's mobility.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "gp_referral"
+        ],
+        "kind": "ordinary",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} snakka høgt fordi det var mykje støy i rommet",
+        "form": "nn",
+        "why_not": "Ordinary-life fact that only sounds sensitive: speaking loudly because of room noise states no hearing impairment.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision",
+          "gp_referral",
+          "police_report"
+        ],
+        "kind": "ordinary",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og feltet om tilrettelagd arbeidsplass i søknadsskjemaet er ikkje fylt ut",
+        "form": "nn",
+        "why_not": "DISABILITY Exclude: a bare accommodation noun with no condition named (`tilrettelagd arbeidsplass`) is untagged, and a blank field discloses nothing (B7).",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
       }
     ],
     "MEDICATION": [
@@ -6103,6 +6961,126 @@
         "text": "nektet å ta imot medisiner fra hjemmesykepleien",
         "form": "nb",
         "why_not": "a stated refusal is not a disclosure of what is used, per the B7 refusal principle applied by analogy"
+      },
+      {
+        "text": "men {PRON} ville ikke si om {PRON} bruker faste medisiner",
+        "form": "nb",
+        "why_not": "B7: a stated refusal to answer reveals no medication, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter",
+          "police_report"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} var innom apoteket for å kjøpe tannkrem og solkrem",
+        "form": "nb",
+        "why_not": "Ordinary-life fact that only sounds sensitive: a pharmacy visit for toothpaste and sun cream names no medication and no treatment.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter",
+          "police_report"
+        ],
+        "kind": "ordinary",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} svarte at spørsmål om medisinbruk ikke hørte hjemme i en saksbehandling",
+        "form": "nb",
+        "why_not": "B7: a stated refusal to answer reveals no medication, so nothing is disclosed and nothing is tagged. The person objects to the question.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "police_report",
+          "gp_referral"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og førstehjelpsskapet på lageret ble etterfylt i forrige uke",
+        "form": "nb",
+        "why_not": "Non-subject statement: the contents of a first-aid cabinet at a workplace; no medication is tied to a person.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} leste pakningsvedlegget til et rengjøringsmiddel for å se hvordan det skulle brukes",
+        "form": "nb",
+        "why_not": "Ordinary-life fact that only sounds sensitive: a package leaflet for a cleaning product; it is not a medicine and no treatment is stated.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision",
+          "police_report"
+        ],
+        "kind": "ordinary",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {PRON} ville ikkje seie om {PRON} brukar faste medisinar",
+        "form": "nn",
+        "why_not": "B7: a stated refusal to answer reveals no medication, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter",
+          "police_report"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} var innom apoteket for å handle tannkrem og solkrem",
+        "form": "nn",
+        "why_not": "Ordinary-life fact that only sounds sensitive: a pharmacy visit for toothpaste and sun cream names no medication and no treatment.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter",
+          "police_report"
+        ],
+        "kind": "ordinary",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og førstehjelpsskapet på lageret vart etterfylt i førre veke",
+        "form": "nn",
+        "why_not": "Non-subject statement: the contents of a first-aid cabinet at a workplace; no medication is tied to a person.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} las pakningsvedlegget til eit reinsemiddel for å sjå korleis det skulle brukast",
+        "form": "nn",
+        "why_not": "Ordinary-life fact that only sounds sensitive: a package leaflet for a cleaning product; it is not a medicine and no treatment is stated.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision",
+          "police_report"
+        ],
+        "kind": "ordinary",
+        "origin": "nearmiss_v5"
       }
     ],
     "BEHAVIORAL_PATTERN": [
@@ -6169,6 +7147,126 @@
           "nav_decision"
         ],
         "not_plantable_reason": "first-person text cannot be planted in a third-person document"
+      },
+      {
+        "text": "men {PRON} ønsket ikke å svare på spørsmål om livsstil",
+        "form": "nb",
+        "why_not": "B7: a stated refusal to answer reveals no conduct, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} ville ikke gå inn på hva {PRON} gjør på fritiden",
+        "form": "nb",
+        "why_not": "B7: a stated refusal to answer reveals no conduct, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision",
+          "police_report",
+          "gp_referral"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {PRON} kunne ikke huske noen konkrete uenigheter da {PRON} ble spurt om det",
+        "form": "nb",
+        "why_not": "B15: a reassuring absence records that there is no problem, so it is not tagged. Not recalling any disagreement asserts no conduct and no pattern.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision",
+          "police_report"
+        ],
+        "kind": "absence",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} ga ikke uttrykk for noen misnøye med arbeidsgiveren i samtalen",
+        "form": "nb",
+        "why_not": "B15: a reassuring absence records that there is no problem, so it is not tagged. No dissatisfaction was expressed; nothing is asserted about conduct.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision"
+        ],
+        "kind": "absence",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {PRON} ville ikkje svare på spørsmål om livsstil",
+        "form": "nn",
+        "why_not": "B7: a stated refusal to answer reveals no conduct, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} ville ikkje gå inn på kva {PRON} gjer på fritida",
+        "form": "nn",
+        "why_not": "B7: a stated refusal to answer reveals no conduct, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision",
+          "police_report",
+          "gp_referral"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {PRON} kunne ikkje hugse nokon konkrete usemjer då {PRON} vart spurt om det",
+        "form": "nn",
+        "why_not": "B15: a reassuring absence records that there is no problem, so it is not tagged. Not recalling any disagreement asserts no conduct and no pattern.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision",
+          "police_report"
+        ],
+        "kind": "absence",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {PRON} leste bare en artikkel om konfliktløsning på arbeidsplassen",
+        "form": "nb",
+        "why_not": "Generic statement: reading or watching public material about conflict resolution at work attributes no conduct to the person; no affiliation, condition or fact about the data subject is stated.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {PRON} las berre ein artikkel om konfliktløysing på arbeidsplassen",
+        "form": "nn",
+        "why_not": "Generic statement: reading or watching public material about conflict resolution at work attributes no conduct to the person; no affiliation, condition or fact about the data subject is stated.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
       }
     ],
     "CRIMINAL": [
@@ -6239,6 +7337,189 @@
           "dismissal_letter",
           "nav_decision"
         ]
+      },
+      {
+        "text": "og {PRON} oppbevarer jaktvåpenet i godkjent våpenskap, slik regelverket krever",
+        "form": "nb",
+        "why_not": "CRIMINAL Exclude: lawful, registered possession with no illegality asserted.",
+        "plantable": true,
+        "genres": [
+          "police_report",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "kind": "lawful",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} har hatt gyldig førerkort hele tiden",
+        "form": "nb",
+        "why_not": "B15: a reassuring absence records that there is no problem, so it is not tagged. A continuously valid licence asserts no offence; the licence number is not given.",
+        "plantable": true,
+        "genres": [
+          "police_report",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "kind": "absence",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} leverte inn et funnet nøkkelknippe på politistasjonen",
+        "form": "nb",
+        "why_not": "Ordinary-life fact that only sounds sensitive: handing in lost property at a police station is a lawful act and attributes no offence.",
+        "plantable": true,
+        "genres": [
+          "police_report",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "kind": "ordinary",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {PRON} er ikke registrert med noen tidligere straffesaker",
+        "form": "nb",
+        "why_not": "B15: a reassuring absence records that there is no problem, so it is not tagged. A clean record names no conviction, charge or suspicion (`ingen synlige skader` is the model case).",
+        "plantable": true,
+        "genres": [
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "kind": "absence",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} gikk gjennom sikkerhetskontrollen uten merknader",
+        "form": "nb",
+        "why_not": "Ordinary-life fact that only sounds sensitive: passing a security check without remarks asserts no offence.",
+        "plantable": true,
+        "genres": [
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "kind": "ordinary",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} kjøpte jaktvåpenet lovlig hos en forhandler",
+        "form": "nb",
+        "why_not": "CRIMINAL Exclude: lawful acquisition and registered possession, no illegality asserted.",
+        "plantable": true,
+        "genres": [
+          "police_report",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "kind": "lawful",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og serienummer AB12345 er preget på jaktriflen",
+        "form": "nb",
+        "why_not": "B20: `AB12345` is a rifle serial, a manufacturer's private mark, and stays untagged (a firearms card number would be FIREARMS_LICENSE); lawful possession is not CRIMINAL.",
+        "plantable": true,
+        "genres": [
+          "police_report",
+          "nav_decision"
+        ],
+        "kind": "id_shaped",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} oppbevarer jaktvåpenet i godkjent våpenskåp, slik regelverket krev",
+        "form": "nn",
+        "why_not": "CRIMINAL Exclude: lawful, registered possession with no illegality asserted.",
+        "plantable": true,
+        "genres": [
+          "police_report",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "kind": "lawful",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} har hatt gyldig førarkort heile tida",
+        "form": "nn",
+        "why_not": "B15: a reassuring absence records that there is no problem, so it is not tagged. A continuously valid licence asserts no offence; the licence number is not given.",
+        "plantable": true,
+        "genres": [
+          "police_report",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "kind": "absence",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} leverte inn eit funne nøkkelknippe på politistasjonen",
+        "form": "nn",
+        "why_not": "Ordinary-life fact that only sounds sensitive: handing in lost property at a police station is a lawful act and attributes no offence.",
+        "plantable": true,
+        "genres": [
+          "police_report",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "kind": "ordinary",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {PRON} er ikkje registrert med nokon tidlegare straffesaker",
+        "form": "nn",
+        "why_not": "B15: a reassuring absence records that there is no problem, so it is not tagged. A clean record names no conviction, charge or suspicion.",
+        "plantable": true,
+        "genres": [
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "kind": "absence",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og serienummeret KM48213 er prega på jaktrifla",
+        "form": "nn",
+        "why_not": "B20: `KM48213` is a rifle serial, a manufacturer's private mark, and stays untagged; lawful possession is not CRIMINAL.",
+        "plantable": true,
+        "genres": [
+          "police_report",
+          "nav_decision"
+        ],
+        "kind": "id_shaped",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og naboen fortalte at politiet har satt opp fartskontroll i gata",
+        "form": "nb",
+        "why_not": "Third-party statement about police activity in a street; no offence is attributed to any identifiable person.",
+        "plantable": true,
+        "genres": [
+          "police_report",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "kind": "third_party",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og naboen fortalde at politiet har sett opp fartskontroll i gata",
+        "form": "nn",
+        "why_not": "Third-party statement about police activity in a street; no offence is attributed to any identifiable person.",
+        "plantable": true,
+        "genres": [
+          "police_report",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "kind": "third_party",
+        "origin": "nearmiss_v5"
       }
     ],
     "POLITICAL": [
@@ -6288,6 +7569,206 @@
           "police_report",
           "dismissal_letter"
         ]
+      },
+      {
+        "text": "men {PRON} ønsket ikke å fortelle hvem {PRON} stemte på ved forrige valg",
+        "form": "nb",
+        "why_not": "B7: a stated refusal to answer reveals no party preference, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "police_report",
+          "udi_decision"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} mottok valgkortet i posten, slik alle stemmeberettigede gjør",
+        "form": "nb",
+        "why_not": "Generic statement: receiving the voting card is what every eligible voter does; no party, opinion or affiliation is stated.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "gp_referral"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} tok imot en brosjyre fra en partistand i gågata uten å kommentere innholdet",
+        "form": "nb",
+        "why_not": "POLITICAL needs an affiliation verb or a stated opinion with a named party or position; taking a leaflet from an unnamed stand, with no comment, states neither.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "police_report"
+        ],
+        "kind": "institution",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {PRON} følger bare med på nyhetene om statsbudsjettet, som de fleste andre",
+        "form": "nb",
+        "why_not": "Generic statement: reading or watching public material about the state budget attributes no opinion to the person; no affiliation, condition or fact about the data subject is stated.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} svarte at politiske spørsmål ikke var aktuelle for saken",
+        "form": "nb",
+        "why_not": "B7: a stated refusal to answer reveals no opinion, so nothing is disclosed and nothing is tagged. The person only calls political questions irrelevant to the case.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} ga ikke uttrykk for noen politisk preferanse i samtalen",
+        "form": "nb",
+        "why_not": "B15: a reassuring absence records that there is no problem, so it is not tagged. No preference was expressed, which is the absence of a disclosure (B7).",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision",
+          "police_report"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og kommunen {PRON} bor i har fått ny ordfører",
+        "form": "nb",
+        "why_not": "Generic statement: a local-government fact about an unnamed office-holder; EMPLOYMENT excludes a generic role not tied to a named person, and no affiliation of the data subject is stated.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {PRON} ville ikkje fortelje kven {PRON} røysta på ved førre val",
+        "form": "nn",
+        "why_not": "B7: a stated refusal to answer reveals no party preference, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "police_report",
+          "udi_decision"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} fekk valkortet i posten, slik alle røysteføre får",
+        "form": "nn",
+        "why_not": "Generic statement: receiving the voting card is what every eligible voter does; no party, opinion or affiliation is stated.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "gp_referral"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} tok imot ein brosjyre frå ein partistand i gågata utan å kommentere innhaldet",
+        "form": "nn",
+        "why_not": "POLITICAL needs an affiliation verb or a stated opinion with a named party or position; taking a leaflet from an unnamed stand, with no comment, states neither.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "police_report"
+        ],
+        "kind": "institution",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} svara at politiske spørsmål ikkje var aktuelle for saka",
+        "form": "nn",
+        "why_not": "B7: a stated refusal to answer reveals no opinion, so nothing is disclosed and nothing is tagged. The person only calls political questions irrelevant to the case.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {PRON} følgjer berre med på nyhenda om statsbudsjettet, som dei fleste andre",
+        "form": "nn",
+        "why_not": "Generic statement: reading or watching public material about the state budget attributes no opinion to the person; no affiliation, condition or fact about the data subject is stated.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} gav ikkje uttrykk for noka politisk preferanse i samtalen",
+        "form": "nn",
+        "why_not": "B15: a reassuring absence records that there is no problem, so it is not tagged. No preference was expressed, which is the absence of a disclosure (B7).",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision",
+          "police_report"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og naboen nevnte at partikontoret i sentrum har fått nye lokaler",
+        "form": "nb",
+        "why_not": "Third-party statement about an institution: a neighbour or colleague describes a building or an office, and no affiliation, membership or belief of any person is stated; a bare institution with no person attached is untagged.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "police_report"
+        ],
+        "kind": "third_party",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og naboen nemnde at partikontoret i sentrum har fått nye lokale",
+        "form": "nn",
+        "why_not": "Third-party statement about an institution: a neighbour or colleague describes a building or an office, and no affiliation, membership or belief of any person is stated; a bare institution with no person attached is untagged.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "police_report"
+        ],
+        "kind": "third_party",
+        "origin": "nearmiss_v5"
       }
     ],
     "SEXUAL_ORIENTATION": [
@@ -6350,6 +7831,158 @@
           "dismissal_letter",
           "udi_decision"
         ]
+      },
+      {
+        "text": "men {PRON} ville ikke svare på spørsmål om {POSS} seksuelle legning",
+        "form": "nb",
+        "why_not": "B7: a stated refusal to answer reveals no orientation, so nothing is disclosed and nothing is tagged. B24 gives the same ruling for `har nektet å oppgi informasjon om sin seksuelle orientering`.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} valgte å ikke kommentere privatlivet sitt",
+        "form": "nb",
+        "why_not": "B7: a stated refusal to answer reveals no orientation or sex life, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} svarte at privatlivet ikke angår arbeidsgiveren",
+        "form": "nb",
+        "why_not": "B7: a stated refusal to answer reveals no orientation or sex life, so nothing is disclosed and nothing is tagged. The person only states that private life is private.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision",
+          "police_report",
+          "udi_decision"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {PRON} satt ved siden av en mannlig kollega under kurset",
+        "form": "nb",
+        "why_not": "SEXUAL_ORIENTATION Exclude: `mannlig kollega` alone does not disclose orientation, and sitting next to a colleague states no relationship (B31 needs a relationship).",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision"
+        ],
+        "kind": "ordinary",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} så et tv-program om samliv og forhold i helgen",
+        "form": "nb",
+        "why_not": "Generic statement: reading or watching public material about relationships attributes no orientation to the person; no affiliation, condition or fact about the data subject is stated.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision",
+          "gp_referral"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} likte ikke at spørsmål om privatlivet kom opp i møtet",
+        "form": "nb",
+        "why_not": "B7: a stated refusal to answer reveals no orientation or sex life, so nothing is disclosed and nothing is tagged. The person objects to the question.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision",
+          "police_report",
+          "gp_referral"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {PRON} ville ikkje svare på spørsmål om den seksuelle orienteringa si",
+        "form": "nn",
+        "why_not": "B7: a stated refusal to answer reveals no orientation, so nothing is disclosed and nothing is tagged. B24 gives the same ruling for the Bokmål wording.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} valde å ikkje kommentere privatlivet sitt",
+        "form": "nn",
+        "why_not": "B7: a stated refusal to answer reveals no orientation or sex life, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} svara at privatlivet ikkje vedkjem arbeidsgjevaren",
+        "form": "nn",
+        "why_not": "B7: a stated refusal to answer reveals no orientation or sex life, so nothing is disclosed and nothing is tagged. The person only states that private life is private.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision",
+          "police_report",
+          "udi_decision"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {PRON} sat ved sida av ein mannleg kollega under kurset",
+        "form": "nn",
+        "why_not": "SEXUAL_ORIENTATION Exclude: `mannleg kollega` alone does not disclose orientation, and sitting next to a colleague states no relationship (B31 needs a relationship).",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision"
+        ],
+        "kind": "ordinary",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} såg eit tv-program om samliv og forhold i helga",
+        "form": "nn",
+        "why_not": "Generic statement: reading or watching public material about relationships attributes no orientation to the person; no affiliation, condition or fact about the data subject is stated.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision",
+          "gp_referral"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
       }
     ],
     "FINANCIAL": [
@@ -6372,6 +8005,146 @@
         "text": "forsøk på skattesvindel",
         "form": "nb",
         "why_not": "'svindel' is an offense noun — CRIMINAL_RECORD wins"
+      },
+      {
+        "text": "men {PRON} ønsket ikke å oppgi hvilken bank {PRON} bruker",
+        "form": "nb",
+        "why_not": "B7: a stated refusal to answer reveals no bank, amount or debt, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "police_report"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} svarte ikke på spørsmål om lønnen sin",
+        "form": "nb",
+        "why_not": "B7: a stated refusal to answer reveals no amount, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} bor i nærheten av en bankfilial",
+        "form": "nb",
+        "why_not": "FINANCIAL tags a bank only as creditor or account holder of the person; an unnamed branch nearby is a place feature with no debt, account or amount.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "police_report"
+        ],
+        "kind": "institution",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} fikk nytt bankkort i posten som vanlig",
+        "form": "nb",
+        "why_not": "Ordinary-life fact that only sounds sensitive: a routine card renewal; no card number, amount, creditor or debt instrument is stated.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "police_report"
+        ],
+        "kind": "ordinary",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {PRON} så bare en reklame fra en bank på tv",
+        "form": "nb",
+        "why_not": "FINANCIAL: a bank named (here only generically) in an advertisement is not a creditor or account of the person.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "kind": "institution",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} står oppført med kundenummer 7782193 i bokhandelen",
+        "form": "nb",
+        "why_not": "B20: a shop customer number has no v2 type and stays untagged (only `Kontonummer` and `lånenummer` are BANK_ACCOUNT); no amount, creditor or debt is stated.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "police_report"
+        ],
+        "kind": "id_shaped",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {PRON} ville ikkje oppgi kva bank {PRON} brukar",
+        "form": "nn",
+        "why_not": "B7: a stated refusal to answer reveals no bank, amount or debt, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "police_report"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} svara ikkje på spørsmål om løna si",
+        "form": "nn",
+        "why_not": "B7: a stated refusal to answer reveals no amount, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} bur i nærleiken av ein bankfilial",
+        "form": "nn",
+        "why_not": "FINANCIAL tags a bank only as creditor or account holder of the person; an unnamed branch nearby is a place feature with no debt, account or amount.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "police_report"
+        ],
+        "kind": "institution",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} fekk nytt bankkort i posten som vanleg",
+        "form": "nn",
+        "why_not": "Ordinary-life fact that only sounds sensitive: a routine card renewal; no card number, amount, creditor or debt instrument is stated.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "police_report"
+        ],
+        "kind": "ordinary",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} står oppført med kundenummer 5530418 i bokhandelen",
+        "form": "nn",
+        "why_not": "B20: a shop customer number has no v2 type and stays untagged (only `Kontonummer` and `lånenummer` are BANK_ACCOUNT); no amount, creditor or debt is stated.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "police_report"
+        ],
+        "kind": "id_shaped",
+        "origin": "nearmiss_v5"
       }
     ],
     "ECONOMIC_STATUS": [
@@ -6414,6 +8187,116 @@
           "nav_decision",
           "dismissal_letter"
         ]
+      },
+      {
+        "text": "men {PRON} ønsket ikke å si noe om økonomien sin",
+        "form": "nb",
+        "why_not": "B7: a stated refusal to answer reveals no financial condition, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "police_report"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} ville ikke vurdere økonomien sin overfor saksbehandleren",
+        "form": "nb",
+        "why_not": "B7: a stated refusal to answer reveals no financial condition, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} leste en artikkel om boligprisene i avisen",
+        "form": "nb",
+        "why_not": "Generic statement: reading or watching public material about house prices attributes no financial condition to the person; no affiliation, condition or fact about the data subject is stated.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} hørte en nyhetssak om renteøkningen",
+        "form": "nb",
+        "why_not": "Generic statement: reading or watching public material about an interest-rate rise attributes no financial condition to the person; no affiliation, condition or fact about the data subject is stated.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {PRON} kommenterte bare at prisene i butikken har gått opp, slik mange andre også merker",
+        "form": "nb",
+        "why_not": "Generic statement: a remark about prices that, by its own words, many others share; it characterises no one's financial condition.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {PRON} ville ikkje seie noko om økonomien sin",
+        "form": "nn",
+        "why_not": "B7: a stated refusal to answer reveals no financial condition, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "police_report"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} las ein artikkel om bustadprisane i avisa",
+        "form": "nn",
+        "why_not": "Generic statement: reading or watching public material about house prices attributes no financial condition to the person; no affiliation, condition or fact about the data subject is stated.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} høyrde ei nyheitssak om renteauken",
+        "form": "nn",
+        "why_not": "Generic statement: reading or watching public material about an interest-rate rise attributes no financial condition to the person; no affiliation, condition or fact about the data subject is stated.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {PRON} kommenterte berre at prisane i butikken har auka, slik mange andre også merkar",
+        "form": "nn",
+        "why_not": "Generic statement: a remark about prices that, by its own words, many others share; it characterises no one's financial condition.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
       }
     ],
     "BIOMETRIC_DATA": [
@@ -6473,6 +8356,107 @@
           0,
           120
         ]
+      },
+      {
+        "text": "og {PRON} ble beskrevet med lys hud og mørkt hår",
+        "form": "nb",
+        "why_not": "BIOMETRIC_DATA: a physical description is not biometric data, and ETHNICITY: a physical description given to identify someone (`lys hud, mørkt hår`) is not ethnicity; both are in the spec as untagged.",
+        "plantable": true,
+        "genres": [
+          "police_report"
+        ],
+        "kind": "physical",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} var kort og kraftig bygd",
+        "form": "nb",
+        "why_not": "BIOMETRIC_DATA: a physical description with no identification method named is not biometric data.",
+        "plantable": true,
+        "genres": [
+          "police_report"
+        ],
+        "kind": "physical",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} hadde på seg en grønn jakke og en grå lue",
+        "form": "nb",
+        "why_not": "BIOMETRIC_DATA: a clothing description with no identification method named is not biometric data.",
+        "plantable": true,
+        "genres": [
+          "police_report"
+        ],
+        "kind": "physical",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {PRON} ble beskrevet som slank og middels høy",
+        "form": "nb",
+        "why_not": "BIOMETRIC_DATA: a physical description with no identification method named is not biometric data.",
+        "plantable": true,
+        "genres": [
+          "police_report"
+        ],
+        "kind": "physical",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og nøkkelkortet ble brukt til å låse opp døren",
+        "form": "nb",
+        "why_not": "Ordinary-life fact that only sounds sensitive: a key card opens a door; it is a credential object, not a fingerprint, face or voice pattern used to identify a person.",
+        "plantable": true,
+        "genres": [
+          "police_report",
+          "dismissal_letter"
+        ],
+        "kind": "ordinary",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} vart skildra med lys hud og mørkt hår",
+        "form": "nn",
+        "why_not": "BIOMETRIC_DATA: a physical description is not biometric data, and ETHNICITY: a physical description given to identify someone is not ethnicity; both are untagged in the spec.",
+        "plantable": true,
+        "genres": [
+          "police_report"
+        ],
+        "kind": "physical",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} var låg og kraftig bygd",
+        "form": "nn",
+        "why_not": "BIOMETRIC_DATA: a physical description with no identification method named is not biometric data.",
+        "plantable": true,
+        "genres": [
+          "police_report"
+        ],
+        "kind": "physical",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} hadde på seg ei grøn jakke og ei grå lue",
+        "form": "nn",
+        "why_not": "BIOMETRIC_DATA: a clothing description with no identification method named is not biometric data.",
+        "plantable": true,
+        "genres": [
+          "police_report"
+        ],
+        "kind": "physical",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og nøkkelkortet vart brukt til å låse opp døra",
+        "form": "nn",
+        "why_not": "Ordinary-life fact that only sounds sensitive: a key card opens a door; it is a credential object, not a fingerprint, face or voice pattern used to identify a person.",
+        "plantable": true,
+        "genres": [
+          "police_report",
+          "dismissal_letter"
+        ],
+        "kind": "ordinary",
+        "origin": "nearmiss_v5"
       }
     ],
     "GENETIC_DATA": [
@@ -6485,6 +8469,97 @@
         "text": "arvelig i familien, ifølge eieren",
         "form": "nb",
         "why_not": "a family medical-history mention with no genetic test named is too vague on its own"
+      },
+      {
+        "text": "men {PRON} ønsket ikke å svare på spørsmål om arvelige sykdommer",
+        "form": "nb",
+        "why_not": "B7: a stated refusal to answer reveals no genetic or hereditary fact, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} så en dokumentar om DNA på tv",
+        "form": "nb",
+        "why_not": "Generic statement: reading or watching public material about DNA attributes no genetic result to the person; no affiliation, condition or fact about the data subject is stated.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "gp_referral"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} har lest en artikkel om slektsforskning i et lokalhistorisk tidsskrift",
+        "form": "nb",
+        "why_not": "Generic statement: reading about genealogy is not a genetic test or result and states no hereditary condition.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "gp_referral"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} takket nei til å delta i en spørreundersøkelse om genetikk",
+        "form": "nb",
+        "why_not": "B7: declining a survey reveals no genetic test or result; GENETIC_DATA needs a stated test or confirmed hereditary condition.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {PRON} ville ikkje svare på spørsmål om arvelege sjukdommar",
+        "form": "nn",
+        "why_not": "B7: a stated refusal to answer reveals no genetic or hereditary fact, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "gp_referral",
+          "nav_decision",
+          "dismissal_letter"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} såg ein dokumentar om DNA på tv",
+        "form": "nn",
+        "why_not": "Generic statement: reading or watching public material about DNA attributes no genetic result to the person; no affiliation, condition or fact about the data subject is stated.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "gp_referral"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} har lese ein artikkel om slektsgransking i eit lokalhistorisk tidsskrift",
+        "form": "nn",
+        "why_not": "Generic statement: reading about genealogy is not a genetic test or result and states no hereditary condition.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "gp_referral"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
       }
     ],
     "IMMIGRATION_STATUS": [
@@ -6497,6 +8572,102 @@
         "text": "Visumnummer: UDI-2023-004521",
         "form": "nb",
         "why_not": "a visa/permit reference number alone with no status statement is VISA_NUMBER (mapped to GOV_ID) instead"
+      },
+      {
+        "text": "men {PRON} ønsket ikke å svare på spørsmål om oppholdsstatus",
+        "form": "nb",
+        "why_not": "B7: a stated refusal to answer reveals no residence or asylum status, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "gp_referral",
+          "dismissal_letter"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} leste en nyhetssak om nye regler for oppholdstillatelse",
+        "form": "nb",
+        "why_not": "Generic statement: reading or watching public material about new permit rules attributes no residence status to the person; no affiliation, condition or fact about the data subject is stated.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision",
+          "gp_referral"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} så en dokumentar om asylmottak på tv",
+        "form": "nb",
+        "why_not": "Generic statement: reading or watching public material about reception centres attributes no asylum status to the person; no affiliation, condition or fact about the data subject is stated.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "gp_referral",
+          "udi_decision"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} ville ikke svare på hva {PRON} har søkt om hos myndighetene",
+        "form": "nb",
+        "why_not": "B7: a stated refusal to answer reveals no application or status, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "gp_referral",
+          "udi_decision",
+          "dismissal_letter"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {PRON} ville ikkje svare på spørsmål om opphaldsstatus",
+        "form": "nn",
+        "why_not": "B7: a stated refusal to answer reveals no residence or asylum status, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "gp_referral",
+          "dismissal_letter"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} las ei nyheitssak om nye reglar for opphaldsløyve",
+        "form": "nn",
+        "why_not": "Generic statement: reading or watching public material about new permit rules attributes no residence status to the person; no affiliation, condition or fact about the data subject is stated.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision",
+          "gp_referral"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} såg ein dokumentar om asylmottak på tv",
+        "form": "nn",
+        "why_not": "Generic statement: reading or watching public material about reception centres attributes no asylum status to the person; no affiliation, condition or fact about the data subject is stated.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "gp_referral",
+          "udi_decision"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
       }
     ],
     "AGE_INFO": [
@@ -6526,6 +8697,123 @@
           "dismissal_letter",
           "nav_decision"
         ]
+      },
+      {
+        "text": "men {PRON} ønsket ikke å si noe om utdanningen sin",
+        "form": "nb",
+        "why_not": "B7: a stated refusal to answer reveals no credential, grade or enrolment, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision",
+          "gp_referral"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} ville ikke gå inn på karakterene sine",
+        "form": "nb",
+        "why_not": "B7: a stated refusal to answer reveals no grade, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision",
+          "gp_referral"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} leste en artikkel om opptakskrav til høyere utdanning",
+        "form": "nb",
+        "why_not": "Generic statement: reading or watching public material about admission requirements attributes no credential or enrolment to the person; no affiliation, condition or fact about the data subject is stated.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "gp_referral"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} gikk forbi universitetsbygget på vei til bussen",
+        "form": "nb",
+        "why_not": "Ordinary-life fact that only sounds sensitive: walking past an unnamed university building; no enrolment, degree or grade is stated and a generic place is not tagged.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "police_report"
+        ],
+        "kind": "ordinary",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {PRON} så bare en reklame for et nettkurs og meldte seg ikke på",
+        "form": "nb",
+        "why_not": "Ordinary-life fact that only sounds sensitive: seeing an advert and not enrolling states no enrolment, credential or grade.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "gp_referral"
+        ],
+        "kind": "ordinary",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "men {PRON} ville ikkje seie noko om utdanninga si",
+        "form": "nn",
+        "why_not": "B7: a stated refusal to answer reveals no credential, grade or enrolment, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision",
+          "gp_referral"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} ville ikkje gå inn på karakterane sine",
+        "form": "nn",
+        "why_not": "B7: a stated refusal to answer reveals no grade, so nothing is disclosed and nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "dismissal_letter",
+          "nav_decision",
+          "gp_referral"
+        ],
+        "kind": "refusal",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} las ein artikkel om opptakskrav til høgare utdanning",
+        "form": "nn",
+        "why_not": "Generic statement: reading or watching public material about admission requirements attributes no credential or enrolment to the person; no affiliation, condition or fact about the data subject is stated.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "gp_referral"
+        ],
+        "kind": "generic",
+        "origin": "nearmiss_v5"
+      },
+      {
+        "text": "og {PRON} gjekk forbi universitetsbygget på veg til bussen",
+        "form": "nn",
+        "why_not": "Ordinary-life fact that only sounds sensitive: walking past an unnamed university building; no enrolment, degree or grade is stated and a generic place is not tagged.",
+        "plantable": true,
+        "genres": [
+          "nav_decision",
+          "dismissal_letter",
+          "police_report"
+        ],
+        "kind": "ordinary",
+        "origin": "nearmiss_v5"
       }
     ],
     "EMPLOYMENT": [
@@ -6573,5 +8861,5 @@
       }
     ]
   },
-  "schema_note": "Entry fields: text, form (nb/nn/en), subject (person/animal/org), difficulty, note, genres (genre ids the clause is plausible in; [] = never sampled), and optional constraints on the record's subject: gender (M/F), age_range [min,max], origin (native/foreign), nationalities (list of nationality adjectives the subject must have), status (employed/unemployed/retired/uforetrygd), partner (opposite: implies an opposite-sex partner), marital (the MARITAL_STATUS value the clause implies). Negatives (version 4): `plantable` marks near-miss texts that are null under every type, so a benchmark run may plant them verbatim and leave them unlabelled; `genres` restricts them like a clause, `gender` (M/F) restricts the subject, and `also_labelled` maps a TYPE to a substring of the text that is a real value of that other type and is labelled as such (the near-miss is only for the type the negative is filed under). Negatives may carry `age_range` like a clause; without one a negative is for adult subjects only. `as_type` relabels an entry as another type when sampled (a civil-status clause with no kinship noun filed under FAMILY_RELATION is MARITAL_STATUS)."
+  "schema_note": "Entry fields: text, form (nb/nn/en), subject (person/animal/org), difficulty, note, genres (genre ids the clause is plausible in; [] = never sampled), and optional constraints on the record's subject: gender (M/F), age_range [min,max], origin (native/foreign), nationalities (list of nationality adjectives the subject must have), status (employed/unemployed/retired/uforetrygd), partner (opposite: implies an opposite-sex partner), marital (the MARITAL_STATUS value the clause implies). Negatives (version 4; version 5 adds the `nearmiss_v5` batch): `plantable` marks near-miss texts that are null under every type, so a benchmark run may plant them verbatim and leave them unlabelled; `genres` restricts them like a clause, `gender` (M/F) restricts the subject, and `also_labelled` maps a TYPE to a substring of the text that is a real value of that other type and is labelled as such (the near-miss is only for the type the negative is filed under). Negatives may carry `age_range` like a clause; without one a negative is for adult subjects only. `as_type` relabels an entry as another type when sampled (a civil-status clause with no kinship noun filed under FAMILY_RELATION is MARITAL_STATUS). Version 5: a negative's `text` may hold `{PRON}` (han/hun, han/ho), `{POSS}` (hans/hennes, hans/hennar) and `{OBJ}` (ham/henne, han/henne), filled from the document subject's gender and the document's form when the negative is planted; the planted text, and what G2 searches for, is the filled one. A near-miss that needs a subject carries its own (`og {PRON} svarte ...`) and starts with a coordinating word so it cannot open a sentence and be capitalised. `why_not` begins with the ANNOTATION_SPEC rule that makes the text a null; `kind` is one of refusal (B7), absence (B15), generic, ordinary, third_party, institution, id_shaped (B20), lawful, physical; `origin` names the batch so `gendoc_dataset.py extend-negatives` can partition it without moving earlier entries."
 }

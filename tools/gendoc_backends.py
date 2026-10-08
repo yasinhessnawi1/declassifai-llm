@@ -24,6 +24,13 @@ this generator's own tests can rely on, and implements it twice:
   imported lazily inside `HFBackend.__init__` so importing this module, or
   running with `--backend mock`, never requires them.
 
+A sectioned document's prompt (`generate_documents.build_section_prompt`) carries
+`SECTION|k|n|kind`, `HEADING|...` and only that section's items in its manifest.
+The mock answers one section per call: the heading, then the section's items and
+a couple of neutral sentences no other section of the same document uses, so a
+joined mock document passes the cross-section repetition gate unless a test
+injects a repeat.
+
 Both backends implement the same method:
 
     generate(self, prompts: List[str], *, max_new_tokens: int = 900,
@@ -83,7 +90,8 @@ class GenerationBackend(abc.ABC):
 
 
 _MANIFEST_LINE_RE = re.compile(
-    r"^(VALUE|CLAUSE_SEEDED|CLAUSE_MARKED|NEGATIVE|SEED|META|REPAIR|MISSING|AUDIT|AUDIT_REPAIR|REMOVE|KEEP)\|(.*)$"
+    r"^(VALUE|CLAUSE_SEEDED|CLAUSE_MARKED|NEGATIVE|SEED|META|REPAIR|MISSING|AUDIT|AUDIT_REPAIR|REMOVE|KEEP"
+    r"|SECTION|HEADING|LAST)\|(.*)$"
 )
 
 # Sentinels the audit prompt wraps the document in; duplicated from
@@ -126,6 +134,47 @@ _BOILERPLATE_NN = [
 ]
 
 
+# Neutral sentences for the mock's sections. A document draws its own permutation,
+# and each section takes two, so no sentence occurs twice in a joined document of
+# up to eight sections and two documents rarely share a pair.
+_SECTION_FILLER_NB = [
+    "Opplysningene er gjennomgått av saksbehandler.",
+    "Det vises til tidligere korrespondanse i saken.",
+    "Partene har fått anledning til å uttale seg.",
+    "Fristen for å komme med merknader er varslet skriftlig.",
+    "Saken er vurdert opp mot gjeldende retningslinjer.",
+    "Møtet ble holdt i henhold til innkallingen.",
+    "Det er ikke fremmet innsigelser mot saksgangen.",
+    "Dokumentasjonen følger vedlagt under behandlingen.",
+    "Forholdene er forelagt de berørte i rimelig tid.",
+    "Videre behandling skjer etter vanlige rutiner.",
+    "Det er innhentet de uttalelsene som er nødvendige.",
+    "Beslutningen er truffet etter en samlet gjennomgang.",
+    "Alle sider av saken er tatt med i betraktning.",
+    "Behandlingen har foregått innenfor de fastsatte fristene.",
+    "Nødvendige varsler er sendt ut i god tid.",
+    "Saksfremstillingen bygger på det som er kjent per i dag.",
+]
+_SECTION_FILLER_NN = [
+    "Opplysningane er gjennomgåtte av sakshandsamar.",
+    "Det blir synt til tidlegare korrespondanse i saka.",
+    "Partane har fått høve til å uttale seg.",
+    "Fristen for å kome med merknader er varsla skriftleg.",
+    "Saka er vurdert opp mot gjeldande retningslinjer.",
+    "Møtet vart halde i samsvar med innkallinga.",
+    "Det er ikkje fremja innvendingar mot saksgangen.",
+    "Dokumentasjonen følgjer vedlagd under handsaminga.",
+    "Forholda er førelagde dei råka i rimeleg tid.",
+    "Vidare handsaming skjer etter vanlege rutinar.",
+    "Det er innhenta dei fråsegnene som er nødvendige.",
+    "Avgjerda er teken etter ei samla gjennomgang.",
+    "Alle sider av saka er tekne med i vurderinga.",
+    "Handsaminga har gått føre seg innanfor dei fastsette fristane.",
+    "Nødvendige varsel er sende ut i god tid.",
+    "Saksframstillinga byggjer på det som er kjent per i dag.",
+]
+
+
 class MockBackend(GenerationBackend):
     """Deterministic template filler used to exercise the pipeline without a model.
 
@@ -146,7 +195,9 @@ class MockBackend(GenerationBackend):
         self.last_finished = [True] * len(prompts)
         outputs = []
         for prompt in prompts:
-            if "\nAUDIT|1" in prompt:
+            if "\nSECTION|" in prompt and "\nREPAIR|" not in prompt:
+                outputs.append(self._fill_section(prompt))
+            elif "\nAUDIT|1" in prompt:
                 outputs.append(self._audit(prompt))
             elif "\nAUDIT_REPAIR|1" in prompt:
                 outputs.append(self._audit_repair(prompt))
@@ -227,6 +278,46 @@ class MockBackend(GenerationBackend):
                 if rest.startswith("form="):
                     form = rest.split("=", 1)[1]
         return values, seeded_clauses, marked_types, negatives, seed, form
+
+    def _fill_section(self, prompt: str) -> str:
+        """Mock one section: its heading, its own items and two neutral sentences.
+
+        Reads only the manifest lines `SECTION|k|n|kind`, `HEADING|...`, `LAST|1`
+        and the section's items, so a missing value in the output is exactly a
+        value the section was asked for and did not get.
+        """
+        manifest = prompt.split(MANIFEST_SENTINEL, 1)[1]
+        values, seeded_clauses, marked_types, negatives, seed, form = self._parse_manifest(prompt)
+        k, n, heading = 0, 1, None
+        for line in manifest.splitlines():
+            if line.startswith("SECTION|"):
+                k, n = (int(x) for x in line.split("|")[1:3])
+            elif line.startswith("HEADING|"):
+                heading = line.split("|", 1)[1]
+        rng = random.Random(seed)
+        pool = _SECTION_FILLER_NB if form == "nb" else _SECTION_FILLER_NN
+        order = random.Random(seed ^ 0xF111).sample(range(len(pool)), len(pool))
+        filler = [pool[order[(2 * k) % len(pool)]], pool[order[(2 * k + 1) % len(pool)]]]
+
+        header_items, prose_items = [], []
+        for etype, value in values:
+            to_header = k == 0 and rng.random() < 0.55 and len(header_items) < MOCK_HEADER_FIELDS
+            (header_items if to_header else prose_items).append((etype, value))
+        sentences = [f"Opplysning ({etype}) i saken er {value}." for etype, value in prose_items]
+        sentences += [f"Videre er det opplyst at vedkommende {text}." for _etype, text in seeded_clauses]
+        sentences += [f"Det er også notert at vedkommende {text}." for text in negatives]
+        sentences += [f"⟦{etype}: vedkommende har forhold av denne typen som er nærmere beskrevet i saken⟧."
+                      for etype in marked_types]
+        rng.shuffle(sentences)
+        sentences.insert(rng.randint(0, len(sentences)), filler[0])
+        sentences.append(filler[1])
+        parts = []
+        if heading:
+            parts.append(heading)
+        if header_items:
+            parts.append("\n".join(f"{etype}: {value}" for etype, value in header_items))
+        parts.append(" ".join(sentences))
+        return "\n\n".join(parts)
 
     def _fill(self, prompt: str) -> str:
         values, seeded_clauses, marked_types, negatives, seed, form = self._parse_manifest(prompt)

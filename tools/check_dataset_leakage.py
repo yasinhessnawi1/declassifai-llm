@@ -11,6 +11,13 @@ out, run over finished files rather than trusted from the sampler:
   document that contains a *training-partition* text, or a training document that
   contains a *benchmark-partition* one, is reported too, since the generator
   should never have produced either.
+* **Planted negatives.** Both sets plant near-miss sentences, each from its own
+  partition, so a negative found in both is the one leak that teaches a detector
+  exactly what the benchmark will ask. A negative's `{PRON}`/`{POSS}`/`{OBJ}` is
+  filled per document ("han"/"hun"/"ho"), so it is searched for as a pattern.
+  They are reported on their own (`shared_negative_texts`) as well as inside the
+  clause-text checks, and, when the metadata files are given, the recorded
+  `planted_negatives` of the two runs are compared too (`shared_planted_negatives`).
 * **Full names.** A PERSON span equal in both files. Name components that cross
   the partition (a benchmark surname in a training document) are counted but are
   not failures: the model sometimes invents a name, and an invented "Hansen" is
@@ -19,12 +26,14 @@ out, run over finished files rather than trusted from the sampler:
   tokens to `N`) are identical, one in each file, are the same template.
 * **Streets.** Street names in address spans that belong to the other partition.
 
-Exit status is 0 only when the three hard checks (shared clause text, shared full
-name, shared skeleton) and the partition-crossing clause check are all empty.
+Exit status is 0 only when the hard checks (shared clause text, shared full name,
+shared skeleton, shared planted negative) and the partition-crossing clause check are
+all empty.
 
 Usage:
     python3 tools/check_dataset_leakage.py --train train.jsonl [more.jsonl] \\
-        --benchmark bench.jsonl [--json report.json]
+        --benchmark bench.jsonl [--train-meta train_meta.jsonl --benchmark-meta bench_meta.jsonl] \\
+        [--json report.json]
 """
 
 from __future__ import annotations
@@ -35,7 +44,7 @@ import json
 import os
 import re
 import sys
-from typing import Dict, Iterable, List, Set
+from typing import Dict, Iterable, List, Optional, Set
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -44,9 +53,14 @@ import gendoc_dataset as dataset_mod
 import gendoc_gates as gates
 
 # A bare word such as "samboer" or "eieren" is a clause-bank negative but also
-# ordinary Norwegian; matching it would report a leak in every document.
+# ordinary Norwegian; matching it would report a leak in every document. The same
+# holds for a template whose fixed words are that short: `gift med {PERSON_F}` is
+# also what the sampler writes for a MARITAL_STATUS value in every document of both
+# sets, so it is measured without its placeholders.
 MIN_TEXT_CHARS = 12
+_ANY_PLACEHOLDER = re.compile(r"\{[A-Z_]+\}")
 _PLACEHOLDER = re.compile(r"\\\{(?:PERSON|PERSON_M|PERSON_F|SURNAME_FAM|SURNAME_ORG)\\\}")
+_PRONOUN_PLACEHOLDER = re.compile(r"\\\{(PRON|POSS|OBJ)\\\}")
 _NAME_TOKEN = r"[A-ZÆØÅ][\wæøå'\-]+(?: [A-ZÆØÅ][\wæøå'\-]+)*"
 
 
@@ -60,14 +74,17 @@ def load_documents(paths: Iterable[str]) -> List[dict]:
 
 
 def _pattern(text: str) -> "re.Pattern":
-    return re.compile(_PLACEHOLDER.sub(lambda _m: _NAME_TOKEN, re.escape(text)))
+    escaped = _PLACEHOLDER.sub(lambda _m: _NAME_TOKEN, re.escape(text))
+    escaped = _PRONOUN_PLACEHOLDER.sub(
+        lambda m: "(?:" + "|".join(dataset_mod.pronoun_alternatives(m.group(1))) + ")", escaped)
+    return re.compile(r"(?<!\w)" + escaped + r"(?!\w)")
 
 
 def texts_in(docs: List[dict], texts: Iterable[str]) -> Dict[str, List[str]]:
     """Return `{text: [ids of the documents containing it]}` for the texts that occur."""
     found: Dict[str, List[str]] = collections.defaultdict(list)
     for text in texts:
-        if len(text) < MIN_TEXT_CHARS:
+        if len(_ANY_PLACEHOLDER.sub("", text).strip()) < MIN_TEXT_CHARS:
             continue
         plain = "{" not in text
         pattern = None if plain else _pattern(text)
@@ -87,7 +104,17 @@ def persons(docs: List[dict]) -> Dict[str, List[str]]:
     return dict(out)
 
 
-def check(train: List[dict], benchmark: List[dict], clause_bank: dict, partition: dict) -> dict:
+def _planted(meta: Iterable[dict]) -> Dict[str, List[str]]:
+    """Return `{planted negative template: [document ids]}` from metadata records."""
+    out: Dict[str, List[str]] = collections.defaultdict(list)
+    for record in meta:
+        for neg in record.get("planted_negatives", []):
+            out[neg.get("template") or neg["text"]].append(record["id"])
+    return dict(out)
+
+
+def check(train: List[dict], benchmark: List[dict], clause_bank: dict, partition: dict,
+          train_meta: Optional[List[dict]] = None, benchmark_meta: Optional[List[dict]] = None) -> dict:
     """Compare a training and a benchmark document set and report every overlap.
 
     Args:
@@ -95,6 +122,9 @@ def check(train: List[dict], benchmark: List[dict], clause_bank: dict, partition
         benchmark: Benchmark documents.
         clause_bank: The full flat clause bank.
         partition: The loaded benchmark partition.
+        train_meta: The training run's `*_batch_meta.jsonl` records, whose
+            `planted_negatives` are compared with the benchmark's; optional.
+        benchmark_meta: Likewise for the benchmark run.
 
     Returns:
         The report dict; `ok` is True only when every hard check is empty.
@@ -152,11 +182,24 @@ def check(train: List[dict], benchmark: List[dict], clause_bank: dict, partition
         if digest in skeletons:
             shared_skeletons.append({"benchmark": doc["id"], "train": skeletons[digest]})
 
+    neg_texts = set(negatives)
+    shared_negatives = sorted(t for t in shared_text if t in neg_texts)
+    planted_train, planted_bench = _planted(train_meta or []), _planted(benchmark_meta or [])
+    shared_planted = sorted(set(planted_train) & set(planted_bench))
+    bench_negative_in_train = [t for t in bench_text_in_train if t in neg_texts]
+    train_negative_in_bench = [t for t in train_text_in_bench if t in neg_texts]
+
     ok = not (shared_text or bench_text_in_train or train_text_in_bench or shared_names
-              or shared_skeletons)
+              or shared_skeletons or shared_planted)
     return {
         "ok": ok,
         "documents": {"train": len(train), "benchmark": len(benchmark)},
+        "shared_negative_texts": {t: {"train": in_train[t], "benchmark": in_bench[t]}
+                                  for t in shared_negatives},
+        "benchmark_negatives_in_train_documents": bench_negative_in_train,
+        "train_negatives_in_benchmark_documents": train_negative_in_bench,
+        "shared_planted_negatives": {t: {"train": planted_train[t], "benchmark": planted_bench[t]}
+                                     for t in shared_planted},
         "shared_clause_texts": {t: {"train": in_train[t], "benchmark": in_bench[t]} for t in shared_text},
         "benchmark_partition_texts_in_train_documents": bench_text_in_train,
         "train_partition_texts_in_benchmark_documents": train_text_in_bench,
@@ -181,11 +224,16 @@ def main() -> int:
     parser.add_argument("--benchmark", nargs="+", required=True, help="benchmark JSONL file(s)")
     parser.add_argument("--clause-bank", default="data/synthetic/clause_bank.json")
     parser.add_argument("--partition", default=dataset_mod.PARTITION_PATH)
+    parser.add_argument("--train-meta", nargs="*", default=[],
+                        help="training *_batch_meta.jsonl file(s), to compare planted negatives")
+    parser.add_argument("--benchmark-meta", nargs="*", default=[],
+                        help="benchmark *_batch_meta.jsonl file(s), to compare planted negatives")
     parser.add_argument("--json", default=None, help="also write the report here")
     args = parser.parse_args()
 
     report = check(load_documents(args.train), load_documents(args.benchmark),
-                   data.load_clause_bank(args.clause_bank), dataset_mod.load_partition(args.partition))
+                   data.load_clause_bank(args.clause_bank), dataset_mod.load_partition(args.partition),
+                   train_meta=load_documents(args.train_meta), benchmark_meta=load_documents(args.benchmark_meta))
     text = json.dumps(report, ensure_ascii=False, indent=1)
     print(text)
     if args.json:

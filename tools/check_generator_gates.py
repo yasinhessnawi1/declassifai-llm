@@ -14,6 +14,19 @@ and its G11 audit reports the two cue phrases in `gendoc_backends`
 (`MOCK_ELABORATION_CUE`, `MOCK_FRAMING_CUE`) so the content-audit gate can be
 exercised without a language model's judgement in the loop.
 
+Sectioned generation has its own cases. A dense or case-file document is written
+one section per call, so a failure is attributed to a section and only that section
+is repaired or regenerated: a value missing from a middle section is repaired in
+place or that section alone is written again, a heading that names a category is
+rejected, a neutral heading the model chose is replaced by the planned one, a
+passage repeated from an earlier section is caught by G12 on the joined text and the
+later section alone is redone, and the joined document validates. The planting of
+near-miss negatives has cases of its own: the pronoun placeholders are filled by the
+subject's gender and form, a filled negative is planted verbatim and never
+labelled, no negative text is planted more than twice in a 100-document benchmark
+run (and the training run stays on its own partition at one per document), and the
+leakage checker catches a negative shared between a training and a benchmark file.
+
 It also carries the checks that need no generation: the benchmark/training
 partition is disjoint, the leakage checker fires on an injected leak, and G13's
 thresholds reject the table dumps they were calibrated on while passing the gold
@@ -45,9 +58,11 @@ import gendoc_audit as audit  # noqa: E402
 import gendoc_data as data  # noqa: E402
 import gendoc_dataset as dataset_mod  # noqa: E402
 import gendoc_gates as gates  # noqa: E402
+import gendoc_genres as genres_mod  # noqa: E402
+import gendoc_sections as sections_mod  # noqa: E402
 import generate_documents as gen  # noqa: E402
 from gendoc_backends import (  # noqa: E402
-    MANIFEST_SENTINEL, MOCK_ELABORATION_CUE, MOCK_FRAMING_CUE, MockBackend,
+    MANIFEST_SENTINEL, MOCK_ELABORATION_CUE, MOCK_FRAMING_CUE, MockBackend, model_visible,
 )
 
 BASE_SEED = 7
@@ -767,6 +782,569 @@ def unit_checks(clause_bank: dict, partition: dict, gold_glob: str, pilot_dir: s
     return ok
 
 
+# ---------------------------------------------------------------------------
+# Sectioned generation
+# ---------------------------------------------------------------------------
+
+# One case per document: (name, the first section index that may be corrupted).
+# The mock corrupts that section's first attempt only, so what the pipeline does
+# about it is the whole observable: which gate fired, in which section, and what
+# was written again.
+SECTION_CASES: Dict[int, Tuple[str, int]] = {
+    0: ("missing_value_repair", 1),
+    1: ("missing_value_section3", 2),
+    2: ("category_heading", 2),
+    3: ("neutral_heading_normalised", 1),
+    4: ("cross_section_repetition", 3),
+    5: ("clean", 0),
+    6: ("clean_nn", 0),
+    7: ("invented_fnr", 1),
+    8: ("truncated_section", 2),
+    9: ("clean_case_file", 0),
+    10: ("clean", 0),
+    11: ("clean_nn", 0),
+    12: ("audit_elaboration", 1),
+}
+_SECTION_GENRES = ["police_report", "nav_decision", "gp_referral", "dismissal_letter", "udi_decision",
+                   "school_incident", "barnevern_concern", "mattilsynet_inspection"]
+
+
+def build_section_plans() -> List[gen.DocPlan]:
+    """One dense or case-file plan per sectioned case, with negatives planned like a benchmark's."""
+    plans = []
+    for idx, (name, _target) in sorted(SECTION_CASES.items()):
+        case_file = name == "clean_case_file"
+        plans.append(gen.DocPlan(
+            idx=idx, genre=_SECTION_GENRES[idx % len(_SECTION_GENRES)], variant="prose_letter",
+            form="nn" if name.endswith("_nn") else "nb",
+            length_band=(3600, 4600) if case_file else (2800, 4000), forced_types=[],
+            profile="case_file" if case_file else "dense", type_target=22 if case_file else 16,
+            art9_cap=2, n_negatives=2))
+    return plans
+
+
+class SectionInjectingMock(MockBackend):
+    """A mock backend that corrupts one section of each document, once, in one specific way.
+
+    Every other call, the regeneration of a corrupted section included, gets the
+    clean mock output, so a section that is written again comes back right.
+    """
+
+    def __init__(self) -> None:
+        self.fired: Dict[int, int] = {}  # document index -> section index corrupted
+
+    def generate(self, prompts, **kwargs):
+        outputs = super().generate(prompts, **kwargs)
+        finished = [True] * len(prompts)
+        for i, prompt in enumerate(prompts):
+            if "\nSECTION|" not in prompt or "\nREPAIR|" in prompt:
+                continue
+            seed = int(re.search(r"SEED\|(\d+)", prompt).group(1))
+            idx, attempt = divmod(seed - BASE_SEED * 100003, 97)
+            name, target = SECTION_CASES.get(idx, ("clean", 0))
+            k, n = (int(x) for x in re.search(r"SECTION\|(\d+)\|(\d+)\|", prompt).groups())
+            droppable = [v for v in _values(prompt) + _values(prompt, "CLAUSE_SEEDED") if len(v) > 4]
+            wants = {"missing_value_repair": 1, "missing_value_section3": 3}.get(name, 0)
+            if (name.startswith("clean") or attempt != 1 or idx in self.fired or k < min(target, n - 1)
+                    or len(droppable) < wants):
+                continue
+            self.fired[idx] = k
+            outputs[i], finished[i] = self._corrupt(name, outputs[i], prompt)
+        self.last_finished = finished
+        return outputs
+
+    @staticmethod
+    def _corrupt(name: str, text: str, prompt: str) -> Tuple[str, bool]:
+        if name == "missing_value_repair":
+            return _drop(text, prompt, 1), True
+        if name == "missing_value_section3":
+            return _drop(text, prompt, 3), True
+        if name == "category_heading":
+            return "Helserelaterte opplysningar\n" + text, True
+        if name == "neutral_heading_normalised":
+            return "Nærmere om forholdene\n\n" + text, True
+        if name == "invented_fnr":
+            return text + " Opplyst fnr for naboen er 01018012345.", True
+        if name == "audit_elaboration":
+            return text + f" Pasienten {MOCK_ELABORATION_CUE}.", True
+        if name == "truncated_section":
+            return text, False
+        if name == "cross_section_repetition":
+            context = prompt.split("<<<TIDLIGERE>>>\n", 1)[1].split("\n<<<SLUTT PÅ TIDLIGERE>>>", 1)[0]
+            return text + "\n\n" + context.split("\n\n")[-1], True
+        return text, True
+
+
+def section_cases(taxonomy_index, clause_bank, partition, out_dir: str) -> Tuple[bool, List[dict]]:
+    """Run the sectioned-generation cases. Returns (all passed, accepted documents for G1)."""
+    ok = True
+    public_figures = set(data.PUBLIC_FIGURES)
+    place_names = {p for _c, p in data.POSTAL_PAIRS}
+    agency_names = set(data.AGENCY_NAMES)
+    bank = dataset_mod.select_clause_bank(clause_bank, partition, "benchmark")
+    negative_bank = bank.pop("negatives")
+    mock = SectionInjectingMock()
+    config = gen.GenerationConfig(
+        strategy="seeded", invalid_checksum_rate=0.0, retries=3, near_dup_threshold=0.7,
+        g7_policy="reject", batch_size=4, audit=True, max_audit_repairs=1, dataset="benchmark",
+        negative_bank=negative_bank, sectioning="auto")
+    states, stats = gen.run_generation(
+        build_section_plans(), BASE_SEED, taxonomy_index, bank, public_figures, place_names,
+        agency_names, mock, config)
+
+    def report(name: str, passed: bool, detail: str) -> None:
+        nonlocal ok
+        ok &= passed
+        print(f"{'PASS' if passed else 'FAIL'} section {name:<28} {detail}")
+
+    docs = []
+    visible = []
+    for st in states:
+        idx = st.plan.idx
+        name, _target = SECTION_CASES[idx]
+        plan = st.section_plan
+        k = mock.fired.get(idx)
+        accepted = bool(st.result.get("accepted"))
+        text = st.result.get("text", "")
+        section_fails = [e for e in st.gate_log if e.get("scope") == "section" and not e["ok"]]
+        joined_fails = [e for e in st.gate_log if not e.get("ok") and "section" not in e]
+        attempts = [s.attempts for s in plan.sections] if plan else []
+        only_k_again = bool(plan) and k is not None and all(
+            a == (2 if i == k else 1) for i, a in enumerate(attempts))
+        all_once = bool(plan) and all(a == 1 for a in attempts)
+        base = accepted and plan is not None and st.attempt == 1
+        detail = f"sections={len(attempts)} attempts={attempts} doc_attempt={st.attempt} fired_in={k}"
+        if name == "missing_value_repair":
+            passed = (base and k is not None and section_fails and section_fails[0]["stage"] == "G2_verbatim"
+                      and section_fails[0]["section"] == k and plan.sections[k].repairs_total == 1
+                      and all_once and not joined_fails)
+        elif name == "missing_value_section3":
+            passed = (base and k is not None and section_fails and section_fails[0]["stage"] == "G2_verbatim"
+                      and section_fails[0]["section"] == k and plan.sections[k].repairs_total == 0
+                      and only_k_again and not joined_fails)
+        elif name == "category_heading":
+            first = section_fails[0] if section_fails else {}
+            passed = (base and first.get("stage") == "G9_slot" and first.get("section") == k
+                      and first["detail"][0]["kind"] == "category_heading" and only_k_again
+                      and "Helserelaterte" not in text)
+        elif name == "neutral_heading_normalised":
+            passed = (base and not section_fails and not joined_fails and all_once
+                      and "Nærmere om forholdene" not in text)
+        elif name == "cross_section_repetition":
+            passed = (base and not section_fails and joined_fails and joined_fails[0]["stage"] == "G12_repetition"
+                      and plan.redos_after_join == 1 and only_k_again
+                      and gates.repetition_share(text) <= config.repetition_threshold)
+        elif name == "invented_fnr":
+            passed = (base and section_fails and section_fails[0]["stage"] == "G7_unplanned_pii"
+                      and section_fails[0]["section"] == k and only_k_again and "01018012345" not in text)
+        elif name == "audit_elaboration":
+            reasons = [f["reason"] for entry in st.audit_log for f in entry["findings"]]
+            passed = (base and not section_fails and not joined_fails and all_once
+                      and "unlabelled_sensitive" in reasons and st.audit_repairs_total == 1
+                      and k is not None and plan.sections[k].audit_repairs == 1
+                      and sum(s.audit_repairs for s in plan.sections) == 1
+                      and MOCK_ELABORATION_CUE not in text)
+        elif name == "truncated_section":
+            passed = (base and section_fails and section_fails[0]["stage"] == "G10_truncated"
+                      and section_fails[0]["section"] == k and only_k_again)
+        else:
+            passed = base and not section_fails and not joined_fails and all_once
+        report(f"#{idx} {name}", bool(passed), detail)
+        if plan:
+            visible.append(plan.headings_visible)
+        if accepted:
+            docs.append({"id": f"SEC-{idx:03d}", "text_input": text, "output": st.result["output"],
+                         "state": st})
+
+    # Whatever the injections did, the joined document must validate: every label is a
+    # substring of the text at a known position, and every section the plan promised is there.
+    located = all(sp in d["text_input"] for d in docs for spans in d["output"].values() for sp in spans)
+    complete = all(
+        all(sec.text and sec.text in d["text_input"] for sec in d["state"].section_plan.sections)
+        for d in docs)
+    report("joined_document_validates", located and complete and len(docs) == len(states),
+           f"documents={len(docs)}/{len(states)} labels_located={located} sections_present={complete}")
+    report("headings_vary", True in visible and False in visible or len(visible) < 6,
+           f"headings_visible={visible.count(True)} flowing={visible.count(False)}")
+    print(f"section run stats: {stats}")
+    for d in docs:
+        d.pop("state")
+    return ok, docs
+
+
+def section_unit_checks(taxonomy_index, clause_bank, partition) -> bool:
+    """Checks on the section plan and the section prompt that need no backend."""
+    import random
+    ok = True
+
+    def report(name: str, passed: bool, detail: str) -> None:
+        nonlocal ok
+        ok &= passed
+        print(f"{'PASS' if passed else 'FAIL'} section {name:<28} {detail}")
+
+    problems = sections_mod.validate_catalogue()
+    report("catalogue_headings_neutral", not problems, f"problems={problems[:3]}")
+    covered = [g for g in genres_mod.genre_names() if g in sections_mod.GENRE_FAMILY]
+    report("every_genre_has_a_family", len(covered) == len(genres_mod.genre_names()),
+           f"genres={len(covered)}/{len(genres_mod.genre_names())}")
+    lengths = {f: len(seq) for f, seq in sections_mod.FAMILIES.items()}
+    report("families_have_3_to_5_roles", all(3 <= n <= 5 for n in lengths.values()), f"{lengths}")
+
+    bank = dataset_mod.select_clause_bank(clause_bank, partition, "benchmark")
+    negative_bank = bank.pop("negatives")
+    public_figures = set(data.PUBLIC_FIGURES)
+    over_cap, unassigned, bad_heading, wrong_form = [], [], [], []
+    shares, seen_sections = [], []
+    n_docs = 0
+    for seed in range(60):
+        profile = "case_file" if seed % 3 == 0 else "dense"
+        genre = _SECTION_GENRES[seed % len(_SECTION_GENRES)]
+        plan = gen.DocPlan(
+            idx=seed, genre=genre, variant="prose_letter", form="nn" if seed % 2 else "nb",
+            length_band=(3600, 4600) if profile == "case_file" else (2800, 4000), forced_types=[],
+            profile=profile, type_target=22 if profile == "case_file" else 16, art9_cap=2, n_negatives=2)
+        rec = gen.sample_record(random.Random(seed), seed, plan, "seeded", taxonomy_index, bank,
+                                public_figures, negative_bank=negative_bank, dataset="benchmark")
+        sp = sections_mod.build_plan(rec, random.Random(seed))
+        n_docs += 1
+        seen_sections.append(len(sp.sections))
+        items = sorted(i for s in sp.sections for i in s.items)
+        negs = sorted(j for s in sp.sections for j in s.negatives)
+        if items != list(range(len(rec.planned))) or negs != list(range(len(rec.planted_negatives))):
+            unassigned.append(seed)
+        over_cap += [(seed, s.load) for s in sp.sections if s.load > sections_mod.MAX_ITEMS]
+        col = rec.form
+        for s in sp.sections:
+            if sections_mod.names_category(s.role_heading):
+                bad_heading.append(s.role_heading)
+            if s.role_heading not in sections_mod.KINDS[s.kind][col] and not any(
+                    s.role_heading in ov[0 if col == "nb" else 1]
+                    for ov in sections_mod.FAMILY_HEADINGS.get(sp.family, {}).values()):
+                wrong_form.append((rec.form, s.role_heading))
+        loads = [s.load for s in sp.sections]
+        shares.append(max(loads) - min(loads))
+        # Cast members act where their role is: a witness's values are never in the
+        # signature section, and the signatory's are in the last one.
+        for s in sp.sections:
+            for i in s.items:
+                if rec.planned[i].party == "author" and s.index != len(sp.sections) - 1:
+                    unassigned.append(("author_not_last", seed))
+    report("every_item_in_one_section", not unassigned, f"documents={n_docs} problems={unassigned[:3]}")
+    report("at_most_7_items_per_section", not over_cap, f"over_cap={over_cap[:3]}")
+    report("headings_neutral_and_in_form", not bad_heading and not wrong_form,
+           f"category={bad_heading[:2]} wrong_form={wrong_form[:2]}")
+    report("sections_3_to_8", min(seen_sections) >= 3 and max(seen_sections) <= sections_mod.MAX_SECTIONS,
+           f"min={min(seen_sections)} max={max(seen_sections)} mean_load_spread={sum(shares) / len(shares):.1f}")
+
+    # The prompt of section k carries only section k's values, the text before it, its
+    # heading, the shared rules and the manifest the mock reads.
+    plan = gen.DocPlan(idx=1, genre="police_report", variant="prose_letter", form="nb",
+                       length_band=(2800, 4000), forced_types=[], profile="dense", type_target=16,
+                       art9_cap=2, n_negatives=2)
+    rec = gen.sample_record(random.Random(1), 1, plan, "seeded", taxonomy_index, bank,
+                            public_figures, negative_bank=negative_bank, dataset="benchmark")
+    sp = sections_mod.build_plan(rec, random.Random(1))
+    sp.headings_visible = True
+    for sec in sp.sections:
+        sec.heading = sec.role_heading
+    k = 2
+    sp.sections[0].text = "Innledning\n\n" + "Åpningen av dokumentet nevner saken. " * 20
+    sp.sections[1].text = "Videre tekst fra den andre delen. " * 10
+    prompt = gen.build_section_prompt(rec, sp, k, [s.text for s in sp.sections[:k]])
+    visible_part = model_visible(prompt)
+    mine = [rec.planned[i].value for i in sp.sections[k].items if rec.planned[i].value]
+    others = [rec.planned[i].value for s in sp.sections if s.index != k for i in s.items
+              if rec.planned[i].value and len(rec.planned[i].value) > 6]
+    foreign = [v for v in others if v in visible_part and v not in mine]
+    # A foreign value may appear legitimately only inside the cast list or the previous text.
+    leaked = [v for v in foreign if f"«{v}»" in visible_part]
+    report("prompt_has_only_this_sections_items",
+           all(f"«{v}»" in visible_part for v in mine) and not leaked,
+           f"own={len(mine)} listed_from_other_sections={leaked[:2]}")
+    report("prompt_carries_context_and_rules",
+           "<<<TIDLIGERE>>>" in visible_part and "Innledning" in visible_part
+           and f"del {k + 1} av {len(sp.sections)}" in visible_part and "ORDRETT" in visible_part
+           and "Skriv bare denne delen" in visible_part and "ikke i tabeller" in visible_part
+           and f"«{sp.sections[k].heading}»" in visible_part
+           and f"\nSECTION|{k}|{len(sp.sections)}|" in prompt,
+           f"chars={len(visible_part)}")
+    long_context = sections_mod.previous_context(
+        ["Første del. " * 300, "Midten én. " * 200, "Midten to. " * 200, "Siste før. " * 50])
+    report("context_keeps_first_drops_oldest",
+           long_context.startswith("Første del.") and "Siste før." in long_context
+           and "Midten én." not in long_context and "…" in long_context
+           and len(long_context) <= sections_mod.CONTEXT_BUDGET_CHARS + 50,
+           f"chars={len(long_context)}")
+    last_prompt = model_visible(gen.build_section_prompt(rec, sp, len(sp.sections) - 1,
+                                                          [s.text for s in sp.sections[:-1]]))
+    first_prompt = model_visible(gen.build_section_prompt(rec, sp, 0, []))
+    report("only_last_section_closes",
+           "dokumentet avsluttes her" in last_prompt and "dokumentet avsluttes her" not in first_prompt
+           and "dokumentet fortsetter i neste del" in first_prompt, "")
+    return ok
+
+
+def no_discard_check(taxonomy_index, clause_bank, partition) -> bool:
+    """Dense and case-file mock documents are no longer discarded for missing values."""
+    public_figures = set(data.PUBLIC_FIGURES)
+    place_names = {p for _c, p in data.POSTAL_PAIRS}
+    agency_names = set(data.AGENCY_NAMES)
+    bank = dataset_mod.select_clause_bank(clause_bank, partition, "benchmark")
+    negative_bank = bank.pop("negatives")
+    plans = []
+    for i in range(24):
+        profile = "case_file" if i % 2 else "dense"
+        plans.append(gen.DocPlan(
+            idx=i, genre=_SECTION_GENRES[i % len(_SECTION_GENRES)], variant="prose_letter",
+            form="nn" if i % 3 == 0 else "nb",
+            length_band=(3600, 4600) if profile == "case_file" else (2800, 4000), forced_types=[],
+            profile=profile, type_target=24 if profile == "case_file" else 16, art9_cap=2, n_negatives=2))
+    config = gen.GenerationConfig(
+        strategy="seeded", invalid_checksum_rate=0.0, retries=3, near_dup_threshold=0.7,
+        g7_policy="reject", batch_size=4, audit=True, dataset="benchmark", negative_bank=negative_bank)
+    states, _stats = gen.run_generation(plans, 11, taxonomy_index, bank, public_figures, place_names,
+                                        agency_names, MockBackend(), config)
+    accepted = sum(1 for st in states if st.result.get("accepted"))
+    g2 = sum(1 for st in states for e in st.gate_log if e["stage"] == "G2_verbatim")
+    passed = accepted == len(states) and g2 == 0
+    print(f"{'PASS' if passed else 'FAIL'} section {'dense_case_file_not_discarded':<28} "
+          f"accepted={accepted}/{len(states)} G2_failures={g2}")
+    return passed
+
+
+# ---------------------------------------------------------------------------
+# Planted near-miss negatives
+# ---------------------------------------------------------------------------
+
+def mock_dataset_run(dataset: str, n: int, seed: int, taxonomy_index, clause_bank, partition) -> dict:
+    """Run the whole generator on the mock backend, as `--dataset X --n N --coverage-target 3` does.
+
+    Returns:
+        `{"docs": accepted documents with id/text_input/output, "meta": the planted negatives
+        per document, "ledger": the run's reuse report, "states": every state, "stats": run stats,
+        "plans": the plans}`.
+    """
+    import random
+    mode = dataset_mod.MODES[dataset]
+    run_seed = seed + mode.seed_offset
+    rng = random.Random(run_seed)
+    bank = dataset_mod.select_clause_bank(clause_bank, partition, dataset)
+    negative_bank = bank.pop("negatives") if mode.negatives_by_profile else {}
+    bank.pop("negatives", None)
+    data.use_pools(dataset_mod.select_pools(partition, dataset))
+    try:
+        public_figures = set(data.PUBLIC_FIGURES)
+        place_names = {p for _c, p in data.POSTAL_PAIRS}
+        agency_names = set(data.AGENCY_NAMES)
+        types = [entry["name"] for entry in data.load_taxonomy("data/synthetic/taxonomy.json")["types"]]
+        plans, _plan_report = gen.plan_batch(
+            rng, n, genres_mod.genre_names(), [], 0.5, coverage_target=3,
+            schedulable_types=genres_mod.coverage_types(types), mode=mode, clause_bank=bank,
+            coverage_margin=1,
+            natural_probe=gen._make_natural_probe(run_seed, taxonomy_index, bank, public_figures))
+        config = gen.GenerationConfig(
+            strategy="seeded", invalid_checksum_rate=0.05, retries=4, near_dup_threshold=0.7,
+            g7_policy="reject", batch_size=4, audit=True, dataset=dataset,
+            difficulty_weights=mode.difficulty_weights, negative_bank=negative_bank)
+        states, stats = gen.run_generation(plans, run_seed, taxonomy_index, bank, public_figures,
+                                           place_names, agency_names, MockBackend(), config)
+    finally:
+        data.use_pools(data.full_pools())
+    docs, planted = [], []
+    for st in states:
+        if not st.result.get("accepted"):
+            continue
+        doc_id = f"{mode.id_prefix}-{st.plan.idx:06d}"
+        docs.append({"id": doc_id, "text_input": st.result["text"], "output": st.result["output"],
+                     "profile": st.plan.profile, "sectioned": st.section_plan is not None,
+                     "sections": len(st.section_plan.sections) if st.section_plan else 0})
+        planted.append({"id": doc_id, "planted_negatives": [
+            {"text": n_.text, "template": n_.template, "type": n_.type}
+            for n_ in st.record.planted_negatives]})
+    return {"docs": docs, "meta": planted, "ledger": config.negative_ledger.report(),
+            "states": states, "stats": stats, "plans": plans}
+
+
+def negative_checks(taxonomy_index, clause_bank, partition, out_dir: str, types_config: str) -> bool:
+    """The near-miss negatives: placeholders, planting, the per-run cap, the partition and leakage."""
+    import collections
+    import random
+    ok = True
+
+    def report(name: str, passed: bool, detail: str) -> None:
+        nonlocal ok
+        ok &= passed
+        print(f"{'PASS' if passed else 'FAIL'} negative {name:<30} {detail}")
+
+    # Pronoun filling by gender and form.
+    forms = {(f, g): dataset_mod.fill_pronouns("og {PRON} fant {POSS} sak, og {OBJ} også", g, f)
+             for f in ("nb", "nn") for g in ("M", "F")}
+    expected = {("nb", "M"): "og han fant hans sak, og ham også", ("nb", "F"): "og hun fant hennes sak, og henne også",
+                ("nn", "M"): "og han fant hans sak, og han også", ("nn", "F"): "og ho fant hennar sak, og henne også"}
+    report("pronouns_by_gender_and_form", forms == expected and
+           dataset_mod.fill_pronouns("ingen plassholder", "M", "nb") == "ingen plassholder",
+           str({k: v.split(",")[0] for k, v in forms.items()}))
+
+    # The planting itself: filled, verbatim, never labelled, never a leftover placeholder.
+    bench_bank = dataset_mod.select_clause_bank(clause_bank, partition, "benchmark")["negatives"]
+    nn_female = gen.Person("Sigrid", "Test", "F", gen.date(1985, 3, 3))
+    nb_male = gen.Person("Per", "Test", "M", gen.date(1985, 3, 3))
+    picks = {}
+    for person, form in ((nn_female, "nn"), (nb_male, "nb")):
+        for seed in range(40):
+            plan = gen.DocPlan(idx=0, genre="nav_decision", variant="prose_letter", form=form,
+                               length_band=(1600, 2800), forced_types=[], profile="typical", n_negatives=3)
+            spec = genres_mod.GENRES["nav_decision"]
+            chosen = gen._plant_negatives(random.Random(seed), plan, spec, person, form, set(), bench_bank, [])
+            for neg in chosen:
+                if "{" in neg.template:
+                    picks.setdefault(form, neg)
+    filled_ok = all("{" not in n_.text and n_.text != n_.template for n_ in picks.values())
+    word_ok = (re.search(r"\b(ho|hennar)\b", picks["nn"].text) is not None
+               and re.search(r"\b(han|hans|ham)\b", picks["nb"].text) is not None
+               and "hun" not in picks["nb"].text)
+    report("placeholders_filled_for_the_subject", bool(picks) and filled_ok and word_ok,
+           f"nn={picks['nn'].text!r} nb={picks['nb'].text!r}")
+
+    # Run the generator as the verification does, once per dataset.
+    bench = mock_dataset_run("benchmark", 100, 1, taxonomy_index, clause_bank, partition)
+    train = mock_dataset_run("train", 100, 1, taxonomy_index, clause_bank, partition)
+    for label, run in (("benchmark", bench), ("train", train)):
+        planted = [n_ for m in run["meta"] for n_ in m["planted_negatives"]]
+        use = collections.Counter(n_["template"] for n_ in planted)
+        per_doc = collections.Counter(len(m["planted_negatives"]) for m in run["meta"])
+        by_id = {d["id"]: d for d in run["docs"]}
+        verbatim = all(n_["text"] in by_id[m["id"]]["text_input"] for m in run["meta"]
+                       for n_ in m["planted_negatives"])
+        unlabelled = True
+        for m in run["meta"]:
+            spans = [sp for vals in by_id[m["id"]]["output"].values() for sp in vals]
+            for n_ in m["planted_negatives"]:
+                if any(n_["text"] in sp for sp in spans if len(sp) >= len(n_["text"])):
+                    unlabelled = False
+        allowed = {e["text"] for v in dataset_mod.select_clause_bank(clause_bank, partition, label)["negatives"].values()
+                   for e in v if e.get("plantable")}
+        own_partition = all(t in allowed for t in use)
+        cap_ok = max(use.values(), default=0) <= dataset_mod.NEGATIVE_CAP_PER_RUN
+        limit = 3 if label == "benchmark" else 1
+        count_ok = max(per_doc, default=0) <= limit and (label == "train" or min(
+            (len(m["planted_negatives"]) for m, d in zip(run["meta"], run["docs"])
+             if d["profile"] not in ("pii_free",) ), default=1) >= 0)
+        report(f"{label}_run_cap_and_partition",
+               cap_ok and own_partition and verbatim and unlabelled and count_ok and sum(use.values()) > 0
+               and run["ledger"]["max_reuse"] <= dataset_mod.NEGATIVE_CAP_PER_RUN,
+               f"accepted={len(run['docs'])} plantings={sum(use.values())} distinct={len(use)} "
+               f"max_reuse={max(use.values(), default=0)} per_doc={dict(sorted(per_doc.items()))} "
+               f"verbatim={verbatim} unlabelled={unlabelled}")
+    bench_planted = {n_["template"] for m in bench["meta"] for n_ in m["planted_negatives"]}
+    train_planted = {n_["template"] for m in train["meta"] for n_ in m["planted_negatives"]}
+    report("train_and_benchmark_plant_disjoint_texts", not (bench_planted & train_planted),
+           f"benchmark={len(bench_planted)} train={len(train_planted)} shared={sorted(bench_planted & train_planted)[:2]}")
+    leak = leakage.check(train["docs"], bench["docs"], clause_bank, partition,
+                         train_meta=train["meta"], benchmark_meta=bench["meta"])
+    report("leakage_none_between_mock_runs", leak["ok"] and not leak["shared_negative_texts"],
+           f"shared_clause={len(leak['shared_clause_texts'])} negatives={len(leak['shared_negative_texts'])} "
+           f"names={len(leak['shared_full_names'])} skeletons={len(leak['shared_skeleton_hashes'])}")
+
+    # G1 on both runs' labelled subsets, then the numbers the report asks for.
+    validator = os.path.join(os.path.dirname(os.path.abspath(__file__)), "validate_labels.py")
+    for label, run in (("benchmark", bench), ("train", train)):
+        path = os.path.join(out_dir, f"mock_{label}_labelled.jsonl")
+        with open(path, "w", encoding="utf-8") as handle:
+            for d in run["docs"]:
+                if d["output"]:
+                    handle.write(json.dumps({"id": d["id"], "text_input": d["text_input"],
+                                             "output": d["output"]}, ensure_ascii=False) + "\n")
+        proc = subprocess.run([sys.executable, validator, path, "--config", types_config],
+                              capture_output=True, text=True)
+        sectioned = [d for d in run["docs"] if d["sectioned"]]
+        big = [st for st in run["states"] if st.plan.profile in ("dense", "case_file")]
+        big_ok = sum(1 for st in big if st.result.get("accepted"))
+        report(f"{label}_g1_and_sectioned_share", proc.returncode == 0 and big_ok == len(big),
+               f"G1_exit={proc.returncode} sectioned={len(sectioned)}/{len(run['docs'])} "
+               f"dense_case_file_accepted={big_ok}/{len(big)} "
+               f"sections_per_doc={dict(sorted(collections.Counter(d['sections'] for d in sectioned).items()))}")
+
+    # The leakage check must catch a negative planted in both files.
+    shared_template = next(iter(sorted(bench_planted)))
+    entry = next(e for v in clause_bank["negatives"].values() for e in v if e["text"] == shared_template)
+    filled = dataset_mod.fill_pronouns(shared_template, "F", entry["form"])
+    leaky = leakage.check(
+        [{"id": "T1", "text_input": f"Saken er avsluttet, {filled}. Ferdig.", "output": {}}],
+        [{"id": "B1", "text_input": f"Et annet dokument; {filled}. Slutt.", "output": {}}],
+        clause_bank, partition,
+        train_meta=[{"id": "T1", "planted_negatives": [{"text": filled, "template": shared_template}]}],
+        benchmark_meta=[{"id": "B1", "planted_negatives": [{"text": filled, "template": shared_template}]}])
+    clean = leakage.check(
+        [{"id": "T1", "text_input": "Et vanlig dokument.", "output": {}}],
+        [{"id": "B1", "text_input": f"Et annet dokument; {filled}. Slutt.", "output": {}}],
+        clause_bank, partition)
+    report("leakage_catches_shared_negative",
+           not leaky["ok"] and shared_template in leaky["shared_negative_texts"]
+           and shared_template in leaky["shared_planted_negatives"] and clean["ok"],
+           f"shared={list(leaky['shared_negative_texts'])[:1]} clean_ok={clean['ok']}")
+
+    # The bank and the partition.
+    added = [(t, e) for t, v in clause_bank["negatives"].items() for e in v if e.get("origin") == "nearmiss_v5"]
+    bench_side = {s for v in partition["negatives"].values() for s in v}
+    train_listed = {s for v in partition.get("negatives_train", {}).items() for s in v[1]}
+    nn_share = sum(1 for _t, e in added if e["form"] == "nn") / max(1, len(added))
+    texts = [e["text"] for _t, e in added]
+    types_covered = {t for t, _e in added}
+    needed = {"RELIGIOUS_BELIEF", "TRADE_UNION", "ETHNICITY", "SEXUAL_ORIENTATION", "POLITICAL", "HEALTH",
+              "DISABILITY", "MEDICATION", "CRIMINAL", "BEHAVIORAL_PATTERN", "ECONOMIC_STATUS", "FINANCIAL",
+              "BIOMETRIC_DATA", "GENETIC_DATA", "IMMIGRATION_STATUS", "ACADEMIC_RECORD"}
+    report("new_negatives_cover_types_and_nynorsk",
+           len(added) >= 150 and nn_share >= 0.35 and needed <= types_covered and len(set(texts)) == len(texts)
+           and all(e.get("plantable") and e.get("why_not") for _t, e in added),
+           f"added={len(added)} nn_share={nn_share:.2f} types={len(types_covered)}")
+    in_bench = {e["text"] for _t, e in added if e["text"] in bench_side}
+    in_train = {e["text"] for _t, e in added if e["text"] not in bench_side}
+    report("new_negatives_partitioned_disjointly",
+           in_bench and in_train and not (in_bench & train_listed) and in_train == train_listed
+           and 0.2 <= len(in_train) / len(added) <= 0.4,
+           f"benchmark={len(in_bench)} train={len(in_train)} share_train={len(in_train) / len(added):.2f}")
+    # Every new negative reads as an ordinary clause when filled, and is a null under the spec's
+    # plainest tests: no digit unless it is an identifier-shaped one, no kinship or marital word, no capitals.
+    banned = re.compile(r"\b(barn|mor|far|søster|bror|kone|ektefelle|ektemann|samboer|gift|skilt|enke|sønn|datter|"
+                        r"norsk|svensk|polsk|januar|februar|mars|april|juni|juli|august|september|oktober|"
+                        r"november|desember|statsborger|hund|katt)\b", re.IGNORECASE)
+    bad = []
+    for _t, e in added:
+        for g in "MF":
+            filled = dataset_mod.fill_pronouns(e["text"], g, e["form"])
+            digits = re.search(r"\d", filled) and e.get("kind") != "id_shaped"
+            caps = [w for w in re.findall(r"\b[A-ZÆØÅ]\w*", filled) if w not in ("DNA",) and not re.fullmatch(r"[A-Z]{2}\d+", w)]
+            if (digits or caps or banned.search(filled) or "{" in filled or not filled[0].islower()
+                    or len(filled) < 12 or not e["genres"]):
+                bad.append(filled)
+    report("new_negatives_pass_plain_null_tests", not bad, f"bad={bad[:2]}")
+    # No text is a substring of one on the other side of the partition (a leak the checker would raise).
+    bench_clause = {s for v in partition["clauses"].values() for s in v}
+    side_bench, side_train = set(), set()
+    for v in clause_bank["negatives"].values():
+        for e in v:
+            for g in "MF":
+                (side_bench if e["text"] in bench_side else side_train).add(
+                    dataset_mod.fill_pronouns(e["text"], g, e["form"]))
+    for t, v in clause_bank.items():
+        if t != "negatives":
+            for e in v:
+                if e.get("genres"):
+                    (side_bench if e["text"] in bench_clause else side_train).add(e["text"])
+    new_texts = {dataset_mod.fill_pronouns(e["text"], g, e["form"]) for _t, e in added for g in "MF"}
+    crossing = [(a, b) for a in side_bench & new_texts if len(a) >= leakage.MIN_TEXT_CHARS
+                for b in side_train if a != b and a in b]
+    crossing += [(a, b) for a in side_train & new_texts if len(a) >= leakage.MIN_TEXT_CHARS
+                 for b in side_bench if a != b and a in b]
+    report("no_text_inside_a_text_of_the_other_side", not crossing, f"crossing={crossing[:2]}")
+    unplanted = [e for e in clause_bank["negatives"]["ETHNICITY"]
+                 if e["text"] in ("har utenlandsk klingende navn", "har utanlandsk klingande namn")]
+    report("v2_positive_negatives_unplanted", len(unplanted) == 2 and not any(e.get("plantable") for e in unplanted),
+           f"unplanted={[e['text'] for e in unplanted]}")
+    return ok
+
+
 def main() -> int:
     """Run every injected-failure case and report. Returns a process exit code."""
     parser = argparse.ArgumentParser(description=__doc__,
@@ -819,6 +1397,9 @@ def main() -> int:
             strategy="seeded", invalid_checksum_rate=0.0, retries=3,
             near_dup_threshold=0.5, g7_policy="reject", batch_size=4,
             audit=True, max_audit_repairs=1, dataset="benchmark", negative_bank=negative_bank,
+            # The cases below corrupt a whole document's first attempt; sectioned
+            # generation is exercised by its own cases further down.
+            sectioning="off",
         )
         states, stats = gen.run_generation(
             build_plans(), BASE_SEED, taxonomy_index, clause_bank, public_figures,
@@ -839,14 +1420,21 @@ def main() -> int:
     all_passed &= unit_checks(clause_bank, partition, args.gold_glob, args.pilot_dir)
     all_passed &= registry_identifier_checks(clause_bank, args.gold_v2_glob)
 
+    out_dir = args.out or tempfile.mkdtemp(prefix="gendoc_gate_check_")
+    os.makedirs(out_dir, exist_ok=True)
+    types_config = args.types_config
+    all_passed &= section_unit_checks(taxonomy_index, clause_bank, partition)
+    sections_ok, section_docs = section_cases(taxonomy_index, clause_bank, partition, out_dir)
+    all_passed &= sections_ok
+    all_passed &= no_discard_check(taxonomy_index, clause_bank, partition)
+    all_passed &= negative_checks(taxonomy_index, clause_bank, partition, out_dir, types_config)
+
     similarity = gates.jaccard(
         gates.word_ngrams(states[0].result.get("text", "")),
         gates.word_ngrams(first_texts.get(16, "")),
     )
     print(f"G6 5-gram similarity, doc 16 first attempt vs. doc 0: {similarity:.3f}")
 
-    out_dir = args.out or tempfile.mkdtemp(prefix="gendoc_gate_check_")
-    os.makedirs(out_dir, exist_ok=True)
     path = os.path.join(out_dir, "accepted.jsonl")
     with open(path, "w", encoding="utf-8") as handle:
         for state in states:
@@ -855,8 +1443,12 @@ def main() -> int:
                     "id": f"CHK-{state.plan.idx:03d}", "text_input": state.result["text"],
                     "output": state.result["output"],
                 }, ensure_ascii=False) + "\n")
+        for doc in section_docs:
+            if doc["output"]:
+                handle.write(json.dumps({k: doc[k] for k in ("id", "text_input", "output")},
+                                        ensure_ascii=False) + "\n")
     validator = os.path.join(os.path.dirname(os.path.abspath(__file__)), "validate_labels.py")
-    proc = subprocess.run([sys.executable, validator, path, "--config", args.types_config],
+    proc = subprocess.run([sys.executable, validator, path, "--config", types_config],
                           capture_output=True, text=True)
     print(f"G1 validate_labels.py on accepted output: exit {proc.returncode}")
     print("  " + (proc.stdout.strip().splitlines() or ["(no output)"])[-1])

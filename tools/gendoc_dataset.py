@@ -22,15 +22,26 @@ and a given name in another's.
 
 `DatasetMode` carries the other differences. A benchmark weights clause sampling
 toward `difficulty: hard`, draws more dense and case-file documents, and plants
-hard negatives: near-miss sentences from the bank's `negatives` that read like a
-sensitive disclosure and are not one ("nektet å oppgi om han er fagorganisert"),
-recorded in the metadata so a detector that flags one can be scored as a false
-positive. A training set keeps the distribution the generator had before datasets
-existed.
+one to three hard negatives per document: near-miss sentences from the bank's
+`negatives` that read like a sensitive disclosure and are not one ("nektet å
+oppgi om han er fagorganisert"), recorded in the metadata so a detector that
+flags one can be scored as a false positive. A training set keeps the
+distribution the generator had before datasets existed, plus zero or one planted
+negative per document from its own partition of the negatives, so the training
+set also teaches "do not label this" without the benchmark's texts ever appearing
+in it.
+
+The negatives were first partitioned together with the clauses (`build`). A later
+batch of near-misses (`origin: nearmiss_v5`) is partitioned by `extend-negatives`,
+which leaves every earlier assignment untouched: it adds the batch's benchmark
+share to `negatives`, lists its training share in `negatives_train` so the split is
+explicit and checkable, and records the batch in `negative_batches`. Running it
+twice for one batch is refused.
 
 Usage:
-    python3 tools/gendoc_dataset.py build      # write the partition file once
-    python3 tools/gendoc_dataset.py summary    # print its sizes
+    python3 tools/gendoc_dataset.py build                         # write the partition file once
+    python3 tools/gendoc_dataset.py extend-negatives nearmiss_v5  # partition a later batch of negatives
+    python3 tools/gendoc_dataset.py summary                       # print its sizes
 """
 
 from __future__ import annotations
@@ -49,9 +60,15 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import gendoc_data as data
 
 PARTITION_PATH = "data/synthetic/benchmark_partition.json"
-PARTITION_VERSION = 1
+PARTITION_VERSION = 2
 HOLDOUT_RATIO = 0.25
 SALT = "gendoc-benchmark-partition-v1"
+
+# Share of a later negatives batch that goes to the benchmark; the rest is the
+# training set's own partition. The benchmark plants one to three negatives per
+# document and the training set at most one, so it needs the larger pool.
+NEGATIVE_BATCH_BENCHMARK_RATIO = 0.70
+NEGATIVE_BATCH_SALT = "gendoc-negatives-batch-v1"
 
 # The two near-misses `PROJECT_SPEC_V2.md` found in the gold set (every apparent
 # trade-union hit was a case number containing "LO") and `ANNOTATION_SPEC.md` B7
@@ -61,6 +78,51 @@ PINNED_BENCHMARK_NEGATIVES = (
     "nektet å oppgi om han er fagorganisert",
     "saksnummer 2019/LO-4521",
 )
+
+
+# A negative's text may carry `{PRON}`, `{POSS}` and `{OBJ}` so it can hold its own
+# subject ("og {PRON} svarte at ..."): a bare predicate spliced into a sentence the
+# model had already given a different shape produced "Under ei samtale med
+# saksbehandlarane ville ikkje oppgi inntekta si". The sampler fills them from the
+# document subject's gender and the document's form, and the filled string is what
+# is planted and what G2 searches for. Bokmål `ham` is Nynorsk `han`.
+PRONOUN_FORMS: Dict[Tuple[str, str], Dict[str, str]] = {
+    ("nb", "M"): {"PRON": "han", "POSS": "hans", "OBJ": "ham"},
+    ("nb", "F"): {"PRON": "hun", "POSS": "hennes", "OBJ": "henne"},
+    ("nn", "M"): {"PRON": "han", "POSS": "hans", "OBJ": "han"},
+    ("nn", "F"): {"PRON": "ho", "POSS": "hennar", "OBJ": "henne"},
+}
+
+# No negative text may be planted more than this many times in one run: a model
+# trained on a sentence it sees every tenth document learns the sentence, and the
+# trap becomes a pattern. Pilot v4 planted one text seven times.
+NEGATIVE_CAP_PER_RUN = 2
+
+
+def fill_pronouns(text: str, gender: str, form: str) -> str:
+    """Fill a negative's pronoun placeholders for one subject.
+
+    Args:
+        text: Negative text, possibly holding `{PRON}`, `{POSS}` or `{OBJ}`.
+        gender: "M" or "F".
+        form: "nb" or "nn".
+
+    Returns:
+        The text with every placeholder replaced; unchanged when it has none.
+
+    Raises:
+        KeyError: `gender`/`form` is not a known pair.
+    """
+    if "{" not in text:
+        return text
+    for slot, word in PRONOUN_FORMS[(form, gender)].items():
+        text = text.replace("{" + slot + "}", word)
+    return text
+
+
+def pronoun_alternatives(slot: str) -> List[str]:
+    """Return every surface form of one placeholder across genders and forms."""
+    return sorted({forms[slot] for forms in PRONOUN_FORMS.values()})
 
 
 @dataclass(frozen=True)
@@ -79,7 +141,8 @@ class DatasetMode:
         profile_shares: Density-profile shares overriding
             `gendoc_genres.PROFILES`; None keeps the profile defaults.
         negatives_by_profile: (min, max) hard negatives planted per document of
-            each profile; empty means none are planted.
+            each profile, drawn from this dataset's own partition of the
+            negatives; empty means none are planted.
         seed_offset: Added to the run seed, so the same `--seed` for both sets
             does not hand them the same plans and the same PII-free documents.
     """
@@ -94,7 +157,14 @@ class DatasetMode:
 
 
 MODES: Dict[str, DatasetMode] = {
-    "train": DatasetMode("train", "SYN", "synthetic"),
+    # The training set plants at most one near-miss per document, from its own
+    # share of the negatives (never a benchmark text), so it also teaches "do not
+    # label this". Profiles with room for a planted sentence draw 0-1; a
+    # PII-free document draws none.
+    "train": DatasetMode(
+        "train", "SYN", "synthetic",
+        negatives_by_profile={"minimal": (0, 1), "light": (0, 1), "typical": (0, 1),
+                              "dense": (0, 1), "case_file": (0, 1)}),
     "benchmark": DatasetMode(
         "benchmark", "SYB", "benchmark",
         difficulty_weights={"easy": 1.0, "medium": 2.0, "hard": 5.0},
@@ -112,12 +182,12 @@ MODES: Dict[str, DatasetMode] = {
 }
 
 
-def _rank(*parts: str) -> str:
-    return hashlib.sha256("|".join((SALT,) + parts).encode("utf-8")).hexdigest()
+def _rank(*parts: str, salt: str = SALT) -> str:
+    return hashlib.sha256("|".join((salt,) + parts).encode("utf-8")).hexdigest()
 
 
 def _assign(strata: Dict[str, List[str]], assigned: Dict[str, bool], ratio: float,
-            singleton_to_benchmark: bool) -> None:
+            singleton_to_benchmark: bool, salt: str = SALT) -> None:
     """Assign every string of every stratum to the benchmark or training, in place.
 
     Each stratum holds out about `ratio` of its strings, ranked by hash so the
@@ -132,11 +202,12 @@ def _assign(strata: Dict[str, List[str]], assigned: Dict[str, bool], ratio: floa
         assigned: String -> True for benchmark; extended in place.
         ratio: Share to hold out.
         singleton_to_benchmark: Where a stratum of one string goes. Training
-            clauses need their only entry; the negatives are planted in the
+            clauses need their only entry; the negatives were first planted in the
             benchmark alone, so there a lone entry is better used there.
+        salt: Hash salt, so a later batch is ranked independently of the first.
     """
     for key in sorted(strata):
-        strings = sorted(set(strata[key]), key=lambda s: _rank(key, s))
+        strings = sorted(set(strata[key]), key=lambda s: _rank(key, s, salt=salt))
         n = len(strings)
         if n == 1:
             assigned.setdefault(strings[0], singleton_to_benchmark)
@@ -234,6 +305,7 @@ def _counts(bank: dict, bench_clauses: dict, bench_negatives: dict, pool_strata:
     plantable_bench = sum(
         len({e["text"] for e in negatives[t] if e.get("plantable") and e["text"] in set(bench_negatives.get(t, []))})
         for t in negatives)
+    plantable_train = n_plantable - plantable_bench
     pools = {}
     for key, strings in pool_strata.items():
         pools[key] = {"total": len(set(strings)), "benchmark": len(bench_names[key])}
@@ -241,9 +313,73 @@ def _counts(bank: dict, bench_clauses: dict, bench_negatives: dict, pool_strata:
         "clause_texts": {"total": n_clauses, "benchmark": n_bench_clauses,
                          "share": round(n_bench_clauses / n_clauses, 3) if n_clauses else 0.0},
         "negative_texts": {"total": n_neg, "benchmark": sum(len(v) for v in bench_negatives.values())},
-        "plantable_negative_texts": {"total": n_plantable, "benchmark": plantable_bench},
+        "plantable_negative_texts": {"total": n_plantable, "benchmark": plantable_bench,
+                                     "train": plantable_train},
         "name_pools": pools,
     }
+
+
+def extend_negatives(partition: dict, clause_bank: dict, batch: str,
+                     ratio: float = NEGATIVE_BATCH_BENCHMARK_RATIO) -> dict:
+    """Partition a later batch of negatives without touching any earlier assignment.
+
+    The partition lists only the benchmark share, and everything unlisted is
+    training, so adding a batch to the bank would silently put all of it in
+    training. This assigns the batch deterministically instead, per (type, form)
+    stratum and ranked by hash exactly as `build_partition` does, adds its
+    benchmark share to `negatives`, and lists its training share in
+    `negatives_train` so the split can be read and checked rather than inferred.
+
+    Args:
+        partition: The loaded partition.
+        clause_bank: The flat bank from `gendoc_data.load_clause_bank`; the batch
+            is every negative whose `origin` equals `batch`.
+        batch: Batch name, e.g. "nearmiss_v5".
+        ratio: Benchmark share of the batch.
+
+    Returns:
+        A new partition dict; the argument is not modified.
+
+    Raises:
+        ValueError: The batch is already recorded, is empty, or shares a text
+            with a clause or an earlier negative (a text is on one side only).
+    """
+    if batch in partition.get("negative_batches", {}):
+        raise ValueError(f"negatives batch {batch!r} is already in the partition")
+    negatives = clause_bank.get("negatives", {})
+    fresh = {t: [e for e in entries if e.get("origin") == batch] for t, entries in negatives.items()}
+    fresh = {t: v for t, v in fresh.items() if v}
+    if not fresh:
+        raise ValueError(f"no negatives with origin {batch!r} in the bank")
+    batch_texts = {e["text"] for v in fresh.values() for e in v}
+    earlier = ({e["text"] for t, v in negatives.items() for e in v if e.get("origin") != batch}
+               | {e["text"] for t, v in clause_bank.items() if t != "negatives" for e in v})
+    if batch_texts & earlier:
+        raise ValueError(f"batch shares texts with the bank: {sorted(batch_texts & earlier)[:3]}")
+
+    strata = {f"{t}:{form}": [e["text"] for e in entries if e["form"] == form]
+              for t, entries in sorted(fresh.items()) for form in ("nb", "nn", "en")}
+    assigned: Dict[str, bool] = {}
+    _assign({k: v for k, v in strata.items() if v}, assigned, ratio, True, salt=NEGATIVE_BATCH_SALT)
+
+    out = json.loads(json.dumps(partition))
+    bench = {t: set(v) for t, v in out["negatives"].items()}
+    train: Dict[str, Set[str]] = {t: set(v) for t, v in out.get("negatives_train", {}).items()}
+    for t, entries in fresh.items():
+        for e in entries:
+            (bench if assigned[e["text"]] else train).setdefault(t, set()).add(e["text"])
+    out["negatives"] = {t: sorted(v) for t, v in sorted(bench.items()) if v}
+    out["negatives_train"] = {t: sorted(v) for t, v in sorted(train.items()) if v}
+    out.setdefault("negative_batches", {})[batch] = {
+        "salt": NEGATIVE_BATCH_SALT, "ratio": ratio, "texts": len(batch_texts),
+        "benchmark": sum(1 for v in assigned.values() if v),
+        "train": sum(1 for v in assigned.values() if not v),
+    }
+    out["version"] = PARTITION_VERSION
+    bench_clauses = {t: set(v) for t, v in out["clauses"].items()}
+    pool_strata = _pool_strata(data.full_pools())
+    out["counts"] = _counts(clause_bank, bench_clauses, bench, pool_strata, out["names"])
+    return out
 
 
 def load_partition(path: str = PARTITION_PATH) -> dict:
@@ -316,7 +452,8 @@ def main() -> int:
     """CLI: build or summarise the partition file."""
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("command", choices=["build", "summary"])
+    parser.add_argument("command", choices=["build", "extend-negatives", "summary"])
+    parser.add_argument("batch", nargs="?", help="negatives batch name for extend-negatives")
     parser.add_argument("--clause-bank", default="data/synthetic/clause_bank.json")
     parser.add_argument("--partition", default=PARTITION_PATH)
     parser.add_argument("--force", action="store_true",
@@ -328,6 +465,15 @@ def main() -> int:
             print(f"{args.partition} exists; refusing to overwrite without --force", file=sys.stderr)
             return 2
         partition = build_partition(data.load_clause_bank(args.clause_bank))
+        with open(args.partition, "w", encoding="utf-8") as handle:
+            json.dump(partition, handle, ensure_ascii=False, indent=1)
+            handle.write("\n")
+    elif args.command == "extend-negatives":
+        if not args.batch:
+            print("extend-negatives needs a batch name", file=sys.stderr)
+            return 2
+        partition = extend_negatives(load_partition(args.partition),
+                                     data.load_clause_bank(args.clause_bank), args.batch)
         with open(args.partition, "w", encoding="utf-8") as handle:
             json.dump(partition, handle, ensure_ascii=False, indent=1)
             handle.write("\n")

@@ -1,5 +1,5 @@
 {
- "version": 1,
+ "version": 2,
  "salt": "gendoc-benchmark-partition-v1",
  "holdout_ratio": 0.25,
  "note": "Benchmark share only. Anything not listed here is training, so an entry added to the bank later can never appear in a benchmark already published.",
@@ -151,7 +151,14 @@
  },
  "negatives": {
   "ACADEMIC_RECORD": [
-   "dyktig og lærevillig"
+   "dyktig og lærevillig",
+   "men {PRON} så bare en reklame for et nettkurs og meldte seg ikke på",
+   "men {PRON} ville ikkje seie noko om utdanninga si",
+   "men {PRON} ønsket ikke å si noe om utdanningen sin",
+   "og {PRON} gikk forbi universitetsbygget på vei til bussen",
+   "og {PRON} las ein artikkel om opptakskrav til høgare utdanning",
+   "og {PRON} leste en artikkel om opptakskrav til høyere utdanning",
+   "og {PRON} ville ikkje gå inn på karakterane sine"
   ],
   "AGE_INFO": [
    "10 år"
@@ -159,22 +166,61 @@
   "BEHAVIORAL_PATTERN": [
    "Eg går tur forbi eigedomen jamleg",
    "Schæferen virker undervektig og har matt pels.",
-   "går tur med hunden min forbi eiendommen hver dag"
+   "går tur med hunden min forbi eiendommen hver dag",
+   "men {PRON} kunne ikke huske noen konkrete uenigheter da {PRON} ble spurt om det",
+   "men {PRON} las berre ein artikkel om konfliktløysing på arbeidsplassen",
+   "men {PRON} leste bare en artikkel om konfliktløsning på arbeidsplassen",
+   "men {PRON} ville ikkje svare på spørsmål om livsstil",
+   "men {PRON} ønsket ikke å svare på spørsmål om livsstil",
+   "og {PRON} ville ikke gå inn på hva {PRON} gjør på fritiden",
+   "og {PRON} ville ikkje gå inn på kva {PRON} gjer på fritida"
   ],
   "BIOMETRIC_DATA": [
    "hadde på seg briller og lue under hendinga",
-   "høy og mørkhåret"
+   "høy og mørkhåret",
+   "men {PRON} ble beskrevet som slank og middels høy",
+   "og {PRON} ble beskrevet med lys hud og mørkt hår",
+   "og {PRON} hadde på seg ei grøn jakke og ei grå lue",
+   "og {PRON} hadde på seg en grønn jakke og en grå lue",
+   "og {PRON} var kort og kraftig bygd",
+   "og {PRON} var låg og kraftig bygd",
+   "og {PRON} vart skildra med lys hud og mørkt hår"
   ],
   "CRIMINAL": [
    "aggressiv atferd overfor dyr og kolleger",
    "eier en registrert rifle",
-   "eig ei registrert rifle"
+   "eig ei registrert rifle",
+   "men {PRON} er ikkje registrert med nokon tidlegare straffesaker",
+   "og naboen fortalde at politiet har sett opp fartskontroll i gata",
+   "og serienummer AB12345 er preget på jaktriflen",
+   "og {PRON} gikk gjennom sikkerhetskontrollen uten merknader",
+   "og {PRON} har hatt gyldig førarkort heile tida",
+   "og {PRON} har hatt gyldig førerkort hele tiden",
+   "og {PRON} kjøpte jaktvåpenet lovlig hos en forhandler",
+   "og {PRON} leverte inn eit funne nøkkelknippe på politistasjonen",
+   "og {PRON} leverte inn et funnet nøkkelknippe på politistasjonen",
+   "og {PRON} oppbevarer jaktvåpenet i godkjent våpenskap, slik regelverket krever"
   ],
   "DISABILITY": [
-   "arbeidsledig"
+   "arbeidsledig",
+   "men {PRON} tok heisen fordi trappeoppgangen var stengd for maling",
+   "men {PRON} tok heisen fordi trappeoppgangen var stengt for maling",
+   "men {PRON} ville ikkje svare på spørsmål om funksjonsevne",
+   "og feltet om tilrettelagd arbeidsplass i søknadsskjemaet er ikkje fylt ut",
+   "og feltet om tilrettelagt arbeidsplass i søknadsskjemaet er ikke fylt ut",
+   "og {PRON} snakket høyt fordi det var mye støy i rommet",
+   "og {PRON} tok trappene opp til kontoret utan problem",
+   "og {PRON} tok trappene opp til kontoret uten problemer"
   ],
   "ECONOMIC_STATUS": [
+   "men {PRON} kommenterte bare at prisene i butikken har gått opp, slik mange andre også merker",
+   "men {PRON} kommenterte berre at prisane i butikken har auka, slik mange andre også merkar",
+   "men {PRON} ville ikkje seie noko om økonomien sin",
+   "men {PRON} ønsket ikke å si noe om økonomien sin",
    "mistet jobben",
+   "og {PRON} hørte en nyhetssak om renteøkningen",
+   "og {PRON} las ein artikkel om bustadprisane i avisa",
+   "og {PRON} leste en artikkel om boligprisene i avisen",
    "ville ikkje oppgi inntekta si"
   ],
   "EMPLOYMENT": [
@@ -183,45 +229,128 @@
   "ETHNICITY": [
    "bosatt i Norge siden barndommen",
    "har utenlandsk klingende navn",
+   "men {POSS} namn blir ofte feilstava av andre",
+   "men {POSS} navn blir ofte stavet feil av andre",
+   "men {PRON} ønsket ikke å svare på spørsmål om etnisk bakgrunn",
+   "og {PRON} bor i en bydel der folk har svært ulik bakgrunn",
+   "og {PRON} bur i ei bydel der folk har svært ulik bakgrunn",
+   "og {PRON} oppgav ikkje noko om etnisk tilhøyrsle, sidan feltet er frivillig",
+   "og {PRON} ville ikke si om {PRON} regner seg som del av en minoritet",
+   "og {PRON} ville ikkje seie om {PRON} reknar seg som del av ei minoritet",
    "snakkar flytande somali og norsk"
   ],
   "FAMILY_RELATION": [
    "nestlederen"
   ],
   "FINANCIAL": [
+   "men {PRON} så bare en reklame fra en bank på tv",
+   "men {PRON} ville ikkje oppgi kva bank {PRON} brukar",
+   "men {PRON} ønsket ikke å oppgi hvilken bank {PRON} bruker",
+   "og {PRON} bur i nærleiken av ein bankfilial",
+   "og {PRON} fekk nytt bankkort i posten som vanleg",
+   "og {PRON} står oppført med kundenummer 5530418 i bokhandelen",
+   "og {PRON} står oppført med kundenummer 7782193 i bokhandelen",
+   "og {PRON} svarte ikke på spørsmål om lønnen sin",
    "sliter økonomisk"
   ],
   "GENETIC_DATA": [
-   "arvelig i familien, ifølge eieren"
+   "arvelig i familien, ifølge eieren",
+   "men {PRON} ville ikkje svare på spørsmål om arvelege sjukdommar",
+   "men {PRON} ønsket ikke å svare på spørsmål om arvelige sykdommer",
+   "og {PRON} har lese ein artikkel om slektsgransking i eit lokalhistorisk tidsskrift",
+   "og {PRON} så en dokumentar om DNA på tv",
+   "og {PRON} takket nei til å delta i en spørreundersøkelse om genetikk"
   ],
   "HEALTH": [
    "Innhegningene er små og virker skitne",
    "aggressiv atferd",
-   "ingen synlege skadar"
+   "ingen synlege skadar",
+   "men {PRON} ville ikkje snakke om helsa si under samtalen",
+   "men {PRON} ønsket ikke å snakke om helsa si under samtalen",
+   "og naboen sa at legekontoret i nærheten har fått ny åpningstid",
+   "og {PRON} fremsto opplagt og våken under hele møtet",
+   "og {PRON} har meldt seg på tur- og treningsgruppa på jobben",
+   "og {PRON} las ein artikkel om influensavaksinering i avisa",
+   "og {PRON} leste en artikkel om influensavaksinering i avisen",
+   "og {PRON} verka opplagd og var vaken under heile møtet",
+   "og {PRON} viste ingen tegn til sykdom ved oppmøtet",
+   "og {PRON} viste ingen teikn til sjukdom ved oppmøtet"
   ],
   "IMMIGRATION_STATUS": [
-   "Visumnummer: UDI-2023-004521"
+   "Visumnummer: UDI-2023-004521",
+   "men {PRON} ønsket ikke å svare på spørsmål om oppholdsstatus",
+   "og {PRON} las ei nyheitssak om nye reglar for opphaldsløyve",
+   "og {PRON} leste en nyhetssak om nye regler for oppholdstillatelse",
+   "og {PRON} såg ein dokumentar om asylmottak på tv",
+   "og {PRON} ville ikke svare på hva {PRON} har søkt om hos myndighetene"
   ],
   "MEDICATION": [
-   "nektet å ta imot medisiner fra hjemmesykepleien"
+   "men {PRON} ville ikke si om {PRON} bruker faste medisiner",
+   "men {PRON} ville ikkje seie om {PRON} brukar faste medisinar",
+   "nektet å ta imot medisiner fra hjemmesykepleien",
+   "og førstehjelpsskapet på lageret ble etterfylt i forrige uke",
+   "og {PRON} las pakningsvedlegget til eit reinsemiddel for å sjå korleis det skulle brukast",
+   "og {PRON} leste pakningsvedlegget til et rengjøringsmiddel for å se hvordan det skulle brukes",
+   "og {PRON} svarte at spørsmål om medisinbruk ikke hørte hjemme i en saksbehandling",
+   "og {PRON} var innom apoteket for å handle tannkrem og solkrem"
   ],
   "POLITICAL": [
    "aktiv i lokalpolitikken",
    "lokal politiker",
+   "men {PRON} følger bare med på nyhetene om statsbudsjettet, som de fleste andre",
+   "og kommunen {PRON} bor i har fått ny ordfører",
+   "og naboen nemnde at partikontoret i sentrum har fått nye lokale",
+   "og {PRON} fekk valkortet i posten, slik alle røysteføre får",
+   "og {PRON} ga ikke uttrykk for noen politisk preferanse i samtalen",
+   "og {PRON} gav ikkje uttrykk for noka politisk preferanse i samtalen",
+   "og {PRON} mottok valgkortet i posten, slik alle stemmeberettigede gjør",
+   "og {PRON} svara at politiske spørsmål ikkje var aktuelle for saka",
+   "og {PRON} svarte at politiske spørsmål ikke var aktuelle for saken",
+   "og {PRON} tok imot ein brosjyre frå ein partistand i gågata utan å kommentere innhaldet",
+   "og {PRON} tok imot en brosjyre fra en partistand i gågata uten å kommentere innholdet",
    "var til stades på eit ope folkemøte om vegprosjektet"
   ],
   "RELIGIOUS_BELIEF": [
+   "men feltet om trosretning i søknadsskjemaet er frivillig og ble stående tomt",
+   "men feltet om trusretning i søknadsskjemaet er frivillig og vart ståande tomt",
+   "og det finnes både kirke, moské og idrettshall i området der {PRON} bor",
+   "og kirken ligger ved veien {PRON} bruker til bussen om morgenen",
+   "og naboen opplyste at menighetshuset blir leigd ut til private selskap",
+   "og {PRON} las ein artikkel om religionshistorie i ei avis",
+   "og {PRON} leste en artikkel om religionshistorie i en avis",
+   "og {PRON} svarte at spørsmål om tro ikke hører hjemme i en saksbehandling",
+   "og {PRON} tok ikke stilling til spørsmålet om livssynet sitt",
+   "og {PRON} tok ikkje stilling til spørsmålet om livssynet sitt",
    "tok fri på langfredag, slik som mange andre",
    "ønsket ikke å svare på spørsmål om livssyn"
   ],
   "SEXUAL_ORIENTATION": [
+   "men {PRON} sat ved sida av ein mannleg kollega under kurset",
+   "men {PRON} ville ikke svare på spørsmål om {POSS} seksuelle legning",
+   "men {PRON} ville ikkje svare på spørsmål om den seksuelle orienteringa si",
    "min seksuelle legning er privat og irrelevant",
    "nektet å oppgi sin seksuelle orientering",
+   "og {PRON} svara at privatlivet ikkje vedkjem arbeidsgjevaren",
+   "og {PRON} svarte at privatlivet ikke angår arbeidsgiveren",
+   "og {PRON} så et tv-program om samliv og forhold i helgen",
+   "og {PRON} såg eit tv-program om samliv og forhold i helga",
+   "og {PRON} valgte å ikke kommentere privatlivet sitt",
    "ville ikkje oppgi seksuell orientering"
   ],
   "TRADE_UNION": [
    "har lese ein artikkel om tariffoppgjeret",
+   "men {PRON} kjenner bare til at det finnes flere forbund i bransjen",
+   "men {PRON} ville ikke si om {PRON} er fagorganisert",
    "nektet å oppgi om han er fagorganisert",
+   "og kollegaen opplyste at lokalet til fagforeningen leies ut til møter",
+   "og {PRON} ba om en kopi av tariffavtalen som gjelder for stillingen",
+   "og {PRON} fekk informasjon om forsikringsordningar frå arbeidsgjevaren, slik alle tilsette får",
+   "og {PRON} gjekk forbi demonstrasjonstoget i sentrum utan å stoppe",
+   "og {PRON} står oppført med medlemsnummer 3318806 i burettslaget",
+   "og {PRON} står oppført med medlemsnummer 4471882 i borettslaget",
+   "og {PRON} svara ikkje på spørsmålet frå arbeidsgjevaren om organisasjonstilknyting",
+   "og {PRON} svarte ikke på arbeidsgiverens spørsmål om organisasjonstilhørighet",
+   "og {PRON} såg ein tv-debatt om lønsoppgjeret i helga",
    "saksnummer 2019/LO-4521"
   ]
  },
@@ -478,12 +607,13 @@
    "share": 0.258
   },
   "negative_texts": {
-   "total": 104,
-   "benchmark": 36
+   "total": 280,
+   "benchmark": 165
   },
   "plantable_negative_texts": {
-   "total": 39,
-   "benchmark": 18
+   "total": 206,
+   "benchmark": 143,
+   "train": 63
   },
   "name_pools": {
    "first_male": {
@@ -626,6 +756,96 @@
     "total": 8,
     "benchmark": 2
    }
+  }
+ },
+ "negatives_train": {
+  "ACADEMIC_RECORD": [
+   "og {PRON} gjekk forbi universitetsbygget på veg til bussen",
+   "og {PRON} ville ikke gå inn på karakterene sine"
+  ],
+  "BEHAVIORAL_PATTERN": [
+   "men {PRON} kunne ikkje hugse nokon konkrete usemjer då {PRON} vart spurt om det",
+   "og {PRON} ga ikke uttrykk for noen misnøye med arbeidsgiveren i samtalen"
+  ],
+  "BIOMETRIC_DATA": [
+   "og nøkkelkortet ble brukt til å låse opp døren",
+   "og nøkkelkortet vart brukt til å låse opp døra"
+  ],
+  "CRIMINAL": [
+   "men {PRON} er ikke registrert med noen tidligere straffesaker",
+   "og naboen fortalte at politiet har satt opp fartskontroll i gata",
+   "og serienummeret KM48213 er prega på jaktrifla",
+   "og {PRON} oppbevarer jaktvåpenet i godkjent våpenskåp, slik regelverket krev"
+  ],
+  "DISABILITY": [
+   "men {PRON} leste bare en brosjyre om universell utforming av kontorbygg",
+   "men {PRON} ønsket ikke å svare på spørsmål om funksjonsevne",
+   "og {PRON} snakka høgt fordi det var mykje støy i rommet"
+  ],
+  "ECONOMIC_STATUS": [
+   "og {PRON} høyrde ei nyheitssak om renteauken",
+   "og {PRON} ville ikke vurdere økonomien sin overfor saksbehandleren"
+  ],
+  "ETHNICITY": [
+   "men {PRON} ville ikkje svare på spørsmål om etnisk bakgrunn",
+   "og {PRON} oppga ikke noe om etnisk tilhørighet, siden feltet er frivillig"
+  ],
+  "FINANCIAL": [
+   "og {PRON} bor i nærheten av en bankfilial",
+   "og {PRON} fikk nytt bankkort i posten som vanlig",
+   "og {PRON} svara ikkje på spørsmål om løna si"
+  ],
+  "GENETIC_DATA": [
+   "og {PRON} har lest en artikkel om slektsforskning i et lokalhistorisk tidsskrift",
+   "og {PRON} såg ein dokumentar om DNA på tv"
+  ],
+  "HEALTH": [
+   "og naboen sa at legekontoret i nærleiken har fått ny opningstid",
+   "og {PRON} har journalnummer 504417 ved legesenteret",
+   "og {PRON} har journalnummer 618203 ved legesenteret",
+   "og {PRON} har meldt seg på tur- og treningsgruppen på jobben"
+  ],
+  "IMMIGRATION_STATUS": [
+   "men {PRON} ville ikkje svare på spørsmål om opphaldsstatus",
+   "og {PRON} så en dokumentar om asylmottak på tv"
+  ],
+  "MEDICATION": [
+   "og førstehjelpsskapet på lageret vart etterfylt i førre veke",
+   "og {PRON} var innom apoteket for å kjøpe tannkrem og solkrem"
+  ],
+  "POLITICAL": [
+   "men {PRON} følgjer berre med på nyhenda om statsbudsjettet, som dei fleste andre",
+   "men {PRON} ville ikkje fortelje kven {PRON} røysta på ved førre val",
+   "men {PRON} ønsket ikke å fortelle hvem {PRON} stemte på ved forrige valg",
+   "og naboen nevnte at partikontoret i sentrum har fått nye lokaler"
+  ],
+  "RELIGIOUS_BELIEF": [
+   "men {PRON} ville ikke svare på hva {PRON} tror på",
+   "men {PRON} ville ikkje seie kva {PRON} trur på",
+   "og kyrkja ligg ved vegen {PRON} brukar til bussen om morgonen",
+   "og naboen opplyste at menighetshuset leies ut til private selskaper",
+   "og {PRON} hadde ferie i julen og påsken, slik alle ansatte har ifølge avtalen"
+  ],
+  "SEXUAL_ORIENTATION": [
+   "men {PRON} satt ved siden av en mannlig kollega under kurset",
+   "og {PRON} likte ikke at spørsmål om privatlivet kom opp i møtet",
+   "og {PRON} valde å ikkje kommentere privatlivet sitt"
+  ],
+  "TRADE_UNION": [
+   "men {PRON} ville ikkje seie om {PRON} er fagorganisert",
+   "og kollegaen opplyste at lokalet til fagforeininga blir leigd ut til møte",
+   "og {PRON} fikk informasjon om forsikringsordninger fra arbeidsgiveren, slik alle ansatte gjør",
+   "og {PRON} gikk forbi demonstrasjonstoget i sentrum uten å stoppe",
+   "og {PRON} så en tv-debatt om lønnsoppgjøret i helgen"
+  ]
+ },
+ "negative_batches": {
+  "nearmiss_v5": {
+   "salt": "gendoc-negatives-batch-v1",
+   "ratio": 0.7,
+   "texts": 176,
+   "benchmark": 129,
+   "train": 47
   }
  }
 }
