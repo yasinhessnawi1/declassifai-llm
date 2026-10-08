@@ -9,7 +9,7 @@ import logging
 from pathlib import Path
 
 import torch
-from datasets import load_dataset
+from datasets import Dataset, load_dataset
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
@@ -137,6 +137,16 @@ def _formatting_func(example, tokenizer):
     return text
 
 
+def _load_messages(path) -> Dataset:
+    """Load a chat-format JSONL split, keeping only the `messages` column."""
+    rows = []
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            if line.strip():
+                rows.append({"messages": json.loads(line)["messages"]})
+    return Dataset.from_list(rows)
+
+
 def train(cfg: Config):
     """Run the full QLoRA training pipeline.
 
@@ -190,8 +200,11 @@ def train(cfg: Config):
             "Run 'python main.py prepare' first to process the dataset."
         )
 
-    train_dataset = load_dataset("json", data_files=str(train_path), split="train")
-    val_dataset = load_dataset("json", data_files=str(val_path), split="train") if val_path.exists() else None
+    # Read only the chat messages. Prebuilt splits also carry the raw `output` dict,
+    # whose keys differ per example (each has its own type scope); letting `datasets`
+    # infer one schema over those fails, and the trainer does not need them.
+    train_dataset = _load_messages(train_path)
+    val_dataset = _load_messages(val_path) if val_path.exists() else None
 
     print(f"  Train samples: {len(train_dataset)}")
     if val_dataset:
