@@ -63,6 +63,7 @@ import gendoc_genres as genres_mod
 MANIFEST_SENTINEL = "<<<MANIFEST>>>"
 DRAFT_OPEN = "<<<UTKAST>>>"
 DRAFT_CLOSE = "<<<SLUTT PÅ UTKAST>>>"
+CUDA_CONTEXT_MB = 500  # a CUDA context costs this much beyond what torch reports as reserved
 
 
 def model_visible(prompt: str) -> str:
@@ -74,6 +75,13 @@ class GenerationBackend(abc.ABC):
     """Contract every generation backend implements."""
 
     last_finished: List[bool] = []
+
+    def close(self) -> None:
+        """Release the device memory this backend holds; the default holds none."""
+
+    def gpu_memory_mb(self) -> Optional[int]:
+        """Return the device memory this backend's process holds in MiB, or None if it holds none."""
+        return None
 
     @abc.abstractmethod
     def generate(
@@ -477,6 +485,24 @@ class HFBackend(GenerationBackend):
         self.model.eval()
         self.device = device
         self._supports_enable_thinking = self._probe_enable_thinking()
+
+    def close(self) -> None:
+        """Drop the model and return its memory to the driver, so another job can have the card."""
+        import gc
+        import torch
+
+        self.model = None
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+    def gpu_memory_mb(self) -> Optional[int]:
+        """Return reserved device memory plus a CUDA-context allowance, in MiB."""
+        import torch
+
+        if not torch.cuda.is_available() or self.model is None:
+            return None
+        return int(torch.cuda.memory_reserved() / 2**20) + CUDA_CONTEXT_MB
 
     def _probe_enable_thinking(self) -> bool:
         try:

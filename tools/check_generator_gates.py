@@ -54,7 +54,9 @@ from __future__ import annotations
 
 import argparse
 import collections
+import contextlib
 import glob
+import io
 import json
 import os
 import re
@@ -75,6 +77,7 @@ import gendoc_gates as gates  # noqa: E402
 import gendoc_genres as genres_mod  # noqa: E402
 import gendoc_sections as sections_mod  # noqa: E402
 import generate_documents as gen  # noqa: E402
+import gendoc_store as store_mod  # noqa: E402
 from gendoc_backends import (  # noqa: E402
     MANIFEST_SENTINEL, MOCK_ELABORATION_CUE, MOCK_FRAMING_CUE, MockBackend, model_visible,
 )
@@ -1934,6 +1937,397 @@ def record_checks(taxonomy_index, clause_bank: dict, partition: dict, out_dir: s
     return ok
 
 
+_DRIVER = r"""
+import os, signal, sys
+sys.path.insert(0, os.environ["GD_TOOLS"])
+import gendoc_store as store_mod
+import generate_documents as gen
+
+after = int(os.environ.get("GD_AFTER", "0"))
+action = os.environ.get("GD_ACTION", "")
+flag = os.environ.get("GD_FLAG", "")
+count = [0]
+real_append = store_mod.append_line
+
+
+def counting_append(path, line):
+    real_append(path, line)
+    count[0] += 1
+    if after and count[0] == after:
+        if action == "sigkill":
+            os.kill(os.getpid(), signal.SIGKILL)
+        elif action == "sigterm":
+            os.kill(os.getpid(), signal.SIGTERM)
+        elif action == "sigint2":
+            os.kill(os.getpid(), signal.SIGINT)
+            os.kill(os.getpid(), signal.SIGINT)
+        elif action in ("stopfile", "busy"):
+            open(flag, "w").close()
+
+
+store_mod.append_line = counting_append
+if os.environ.get("GD_MUTATE") == "empty_state":
+    real_rebuild = gen.rebuild_cross_doc_state
+
+    def empty_rebuild(store, below_idx, known, cap):
+        return [], gen.NegativeLedger(cap)
+
+    gen.rebuild_cross_doc_state = empty_rebuild
+sys.argv = ["generate_documents.py"] + sys.argv[1:]
+sys.exit(gen.main())
+"""
+
+_TIMING_KEYS = {"gen_seconds", "audit_seconds"}
+
+
+def _strip_timing(value):
+    if isinstance(value, dict):
+        return {k: (0.0 if k in _TIMING_KEYS else _strip_timing(v)) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_strip_timing(v) for v in value]
+    return value
+
+
+def _document_files(out_dir: str) -> Dict[str, bytes]:
+    """Every shard file and the discard file of a run, by name."""
+    names = sorted(n for n in os.listdir(out_dir)
+                   if re.match(r"^(synthetic|benchmark)_batch_\d{5}", n) or n == "discarded.jsonl")
+    return {n: open(os.path.join(out_dir, n), "rb").read() for n in names}
+
+
+def _normalised(files: Dict[str, bytes]) -> Dict[str, list]:
+    """Parse the files with wall-clock timing fields zeroed, the only fields a re-run changes."""
+    return {n: [_strip_timing(json.loads(line)) for line in raw.decode("utf-8").splitlines()]
+            for n, raw in files.items()}
+
+
+def resume_checks(out_root: str) -> bool:
+    """Prove a mock run can be killed, stopped and resumed without changing what it produces.
+
+    Every case runs `generate_documents.py` in a subprocess through a driver that counts durable
+    appends and, after the K-th, kills the process (SIGKILL, so possibly between a document's
+    text line and its meta line), raises a signal or creates the stop file. The reference is the
+    same run, uninterrupted.
+    """
+    import shutil
+    import stat
+    tools = os.path.dirname(os.path.abspath(__file__))
+    script = os.path.join(tools, "generate_documents.py")
+    root = os.path.join(out_root, "resume_checks")
+    shutil.rmtree(root, ignore_errors=True)
+    os.makedirs(root)
+    results: List[Tuple[str, bool, str]] = []
+
+    def record(name: str, ok: bool, detail: str = "") -> bool:
+        results.append((name, ok, detail))
+        print(f"{'PASS' if ok else 'FAIL'} resume: {name} {detail}")
+        return ok
+
+    base = ["--n", "40", "--seed", "7", "--dataset", "benchmark", "--near-dup-threshold", "0.2",
+            "--negative-cap", "1", "--batch-size", "4", "--shard-size", "7"]
+
+    def run(out: str, extra: List[str], env: Optional[dict] = None, resume: bool = False,
+            use_base: bool = True):
+        cmd = [sys.executable, "-c", _DRIVER] + (base if use_base else []) + ["--out", out] + extra
+        if resume:
+            cmd.append("--resume")
+        full_env = {**os.environ, "GD_TOOLS": tools, **(env or {})}
+        return subprocess.run(cmd, capture_output=True, text=True, env=full_env, timeout=600)
+
+    def manifest_of(out: str) -> dict:
+        return json.load(open(os.path.join(out, "run_manifest.json"), encoding="utf-8"))
+
+    ref = os.path.join(root, "reference")
+    proc = run(ref, [])
+    ref_files = _document_files(ref)
+    ref_docs = {n: len(raw.splitlines()) for n, raw in ref_files.items()}
+    record("uninterrupted reference run completes", proc.returncode == 0 and bool(ref_files),
+           f"exit {proc.returncode}, {sum(v for n, v in ref_docs.items() if n.endswith('_meta.jsonl'))} "
+           f"accepted, {ref_docs.get('discarded.jsonl', 0)} discarded")
+    if proc.returncode != 0:
+        print(proc.stderr[-2000:])
+        return False
+    ref_report = open(os.path.join(ref, "gate_report.json"), "rb").read()
+
+    # Shard rollover.
+    metas = sorted(n for n in ref_files if n.endswith("_meta.jsonl"))
+    sizes = [len(ref_files[n].splitlines()) for n in metas]
+    texts = [n.replace("_meta", "") for n in metas]
+    lab_ok = all(
+        [json.loads(l)["id"] for l in ref_files[n.replace(".jsonl", "_labelled.jsonl")].decode().splitlines()]
+        == [json.loads(l)["id"] for l in ref_files[n].decode().splitlines()
+            if json.loads(l)["output"]] for n in texts)
+    ids = [json.loads(l)["id"] for n in metas for l in ref_files[n].decode().splitlines()]
+    record("shards roll over at --shard-size, one text/labelled/meta triple per shard",
+           all(s == 7 for s in sizes[:-1]) and 0 < sizes[-1] <= 7 and len(sizes) == -(-sum(sizes) // 7)
+           and [len(ref_files[n].splitlines()) for n in texts] == sizes and lab_ok
+           and metas[0] == "benchmark_batch_00000_meta.jsonl" and len(set(ids)) == len(ids),
+           f"shard sizes {sizes}")
+
+    # Kill -9 at arbitrary appends, three times, then finish.
+    killed = os.path.join(root, "killed")
+    codes = [run(killed, [], {"GD_AFTER": "11", "GD_ACTION": "sigkill"}).returncode]
+    for after in ("17", "10"):
+        codes.append(run(killed, [], {"GD_AFTER": after, "GD_ACTION": "sigkill"}, resume=True,
+                         use_base=False).returncode)
+    mid = manifest_of(killed)
+    mid_state = (mid["progress"]["status"], mid["progress"]["done"])
+    final = run(killed, [], resume=True, use_base=False)
+    killed_files = _document_files(killed)
+    same_bytes = killed_files == ref_files
+    same_norm = _normalised(killed_files) == _normalised(ref_files)
+    record("kill -9 three times (between a document's lines too), resume: killed codes are SIGKILL",
+           codes == [-9, -9, -9] and final.returncode == 0, f"codes {codes}, final exit {final.returncode}")
+    record("killed-and-resumed run is byte-identical to the uninterrupted run (batch, labelled, meta, "
+           "discarded)", same_bytes, "" if same_bytes else
+           f"differs in {[n for n in ref_files if killed_files.get(n) != ref_files[n]]}; "
+           f"identical once wall-clock seconds are zeroed: {same_norm}")
+    record("manifest was left 'running' by the kill and is 'finished' after resume",
+           mid_state[0] == "running" and manifest_of(killed)["progress"]["status"] == "finished"
+           and manifest_of(killed)["progress"]["done"] == 40,
+           f"after kills: {mid_state}")
+    history = [h["event"] for h in manifest_of(killed)["history"]]
+    record("manifest history lists start and each resume", history == ["start", "resume", "resume", "resume"],
+           str(history))
+    resumed_report = _strip_report(json.loads(open(os.path.join(killed, "gate_report.json")).read()))
+    reference_report = _strip_report(json.loads(ref_report))
+    record("report of the resumed run equals the uninterrupted run's apart from wall-clock fields",
+           resumed_report == reference_report,
+           f"differs in {[k for k in reference_report if resumed_report.get(k) != reference_report[k]]}")
+
+    # Mutation: with the rebuilt state discarded, the same kill/resume must NOT match.
+    mutant = os.path.join(root, "mutant")
+    run(mutant, [], {"GD_AFTER": "30", "GD_ACTION": "sigkill"})
+    run(mutant, [], {"GD_MUTATE": "empty_state"}, resume=True, use_base=False)
+    mutant_files = _document_files(mutant)
+    record("sensitivity: resuming with the G6 list and negative ledger NOT rebuilt changes the output",
+           _normalised(mutant_files) != _normalised(ref_files),
+           "(proves the rebuild is what makes the resumed run identical)")
+
+    # G6 list and ledger rebuilt from disk equal the live ones of an uninterrupted run.
+    live = {}
+    real_run_generation = gen.run_generation
+
+    def capture(plans, *a, **kw):
+        live.setdefault("ngrams", kw.get("accepted_ngrams"))
+        live["config"] = a[-1] if a else kw.get("config")
+        return real_run_generation(plans, *a, **kw)
+
+    inproc = os.path.join(root, "inproc")
+    argv_before, gen.run_generation = sys.argv, capture
+    sys.argv = ["generate_documents.py"] + base + ["--out", inproc]
+    try:
+        with contextlib.redirect_stderr(io.StringIO()), contextlib.redirect_stdout(io.StringIO()):
+            gen.main()
+    finally:
+        gen.run_generation, sys.argv = real_run_generation, argv_before
+    store = store_mod.ShardStore(inproc, "benchmark", 7).load(repair=False)
+    ngrams, ledger = gen.rebuild_cross_doc_state(store, 40, live["config"].known_clause_texts, 1)
+    record("rebuilt G6 5-gram list equals the live list, entry for entry and in order",
+           ngrams == live["ngrams"] and len(ngrams) == store.n_accepted, f"{len(ngrams)} documents")
+    record("rebuilt negative ledger equals the live ledger and respects the cap",
+           +ledger.used == +live["config"].negative_ledger.used and max(ledger.used.values(), default=0) <= 1,
+           f"{sum(ledger.used.values())} plantings, cap 1")
+    first_text = store.accepted[0][0]["text_input"]
+    ngrams_partial, _ = gen.rebuild_cross_doc_state(store, 5, live["config"].known_clause_texts, 1)
+    own = gates.word_ngrams(first_text, exempt=store.accepted[0][1]["seeded_clause_literals"]
+                            + live["config"].known_clause_texts)
+    dup_ok, dup_sim = gates.gate_near_duplicate(first_text, own, ngrams_partial, 0.2)
+    record("a duplicate of a document written before the stop is still caught by G6 after resume",
+           not dup_ok and dup_sim >= 0.99, f"similarity {dup_sim:.2f}")
+
+    # Stop file.
+    stopped = os.path.join(root, "stopfile")
+    flag = os.path.join(root, "STOP_FLAG")
+    proc = run(stopped, ["--stop-file", flag], {"GD_AFTER": "14", "GD_ACTION": "stopfile", "GD_FLAG": flag})
+    prog = manifest_of(stopped)["progress"]
+    done_files = _document_files(stopped)
+    n_done = (sum(len(r.splitlines()) for n, r in done_files.items() if n.endswith("_meta.jsonl"))
+              + len(done_files.get("discarded.jsonl", b"").splitlines()))
+    record("stop file: exit 0, in-flight window finished, progress recorded",
+           proc.returncode == 0 and prog["status"] == "stopped" and prog["done"] == n_done
+           and 0 < n_done < 40 and prog["remaining"] == 40 - n_done and prog["stop_reason"]
+           and prog["last_update"] and "Stopped cleanly" in proc.stdout and n_done % 4 == 0,
+           f"exit {proc.returncode}, done {n_done}, reason {prog['stop_reason']!r}")
+    partial_report = json.load(open(os.path.join(stopped, "gate_report.json")))
+    record("partial progress is inspectable: the stop wrote a report with complete=false",
+           partial_report["complete"] is False and partial_report["done"] == n_done)
+    status = subprocess.run([sys.executable, script, "--status", "--out", stopped],
+                            capture_output=True, text=True)
+    record("--status prints progress, ETA, profiles and coverage",
+           status.returncode == 0 and f"{n_done}/40 done" in status.stdout and "by profile" in status.stdout
+           and "coverage" in status.stdout and "state      stopped" in status.stdout, "")
+    stale = run(stopped, ["--stop-file", flag], resume=True, use_base=False)
+    record("a leftover stop file stops the resume at once, without generating",
+           stale.returncode == 0 and manifest_of(stopped)["progress"]["done"] == n_done,
+           stale.stdout.strip().splitlines()[-2] if stale.stdout.strip() else "")
+    os.remove(flag)
+    rep_before = subprocess.run([sys.executable, script, "--report-only", "--out", stopped],
+                                capture_output=True, text=True)
+    partial_again = json.load(open(os.path.join(stopped, "gate_report.json")))
+    record("--report-only rebuilds the partial report identically",
+           rep_before.returncode == 0 and partial_again == partial_report)
+    run(stopped, ["--stop-file", flag], resume=True, use_base=False)
+    record("resuming a stop-file stop gives byte-identical files to the uninterrupted run",
+           _document_files(stopped) == ref_files)
+
+    # SIGTERM and SIGINT.
+    term = os.path.join(root, "sigterm")
+    proc = run(term, [], {"GD_AFTER": "9", "GD_ACTION": "sigterm"})
+    prog = manifest_of(term)["progress"]
+    record("SIGTERM: graceful stop, exit 0, in-flight window finished",
+           proc.returncode == 0 and prog["status"] == "stopped" and 0 < prog["done"] < 40
+           and prog["done"] % 4 == 0 and "signal SIGTERM" in prog["stop_reason"], f"done {prog['done']}")
+    run(term, [], resume=True, use_base=False)
+    record("resuming after SIGTERM is byte-identical", _document_files(term) == ref_files)
+    sigint = os.path.join(root, "sigint")
+    proc = run(sigint, [], {"GD_AFTER": "9", "GD_ACTION": "sigint2"})
+    rows_ok = all(raw.endswith(b"\n") for raw in _document_files(sigint).values() if raw)
+    record("second SIGINT exits immediately (130) leaving no torn line",
+           proc.returncode == 130 and rows_ok, f"exit {proc.returncode}")
+    run(sigint, [], resume=True, use_base=False)
+    record("resuming after the double SIGINT is byte-identical", _document_files(sigint) == ref_files)
+
+    # Torn trailing lines.
+    torn = os.path.join(root, "torn")
+    run(torn, [], {"GD_AFTER": "25", "GD_ACTION": "sigkill"})
+    files = _document_files(torn)
+    victim_meta = sorted(n for n in files if n.endswith("_meta.jsonl"))[-1]
+    victim_text = victim_meta.replace("_meta", "")
+    with open(os.path.join(torn, victim_meta), "ab") as handle:
+        handle.write(b'{"id": "SYB-000999", "genre": "gp_ref')
+    with open(os.path.join(torn, victim_text), "ab") as handle:
+        handle.write(b'{"id": "SYB-000999", "text_input": "cut o')
+    with open(os.path.join(torn, "discarded.jsonl"), "ab") as handle:
+        handle.write(b'{"index": 39, "genre"')
+    proc = run(torn, [], resume=True, use_base=False)
+    record("torn trailing lines (meta, text, discarded) are detected, reported and dropped on resume",
+           proc.returncode == 0 and proc.stderr.count("dropped") >= 3 and _document_files(torn) == ref_files,
+           "files byte-identical to the reference after the repair")
+    garbage = os.path.join(root, "garbage_tail")
+    run(garbage, [], {"GD_AFTER": "25", "GD_ACTION": "sigkill"})
+    with open(os.path.join(garbage, victim_meta), "ab") as handle:
+        handle.write(b'{"id": "SYB-000998", "genre"\n')
+    proc = run(garbage, [], resume=True, use_base=False)
+    record("a complete-looking final line that is not valid JSON is dropped too",
+           proc.returncode == 0 and _document_files(garbage) == ref_files)
+    middle = os.path.join(root, "middle")
+    run(middle, [], {"GD_AFTER": "25", "GD_ACTION": "sigkill"})
+    meta0 = os.path.join(middle, "benchmark_batch_00000_meta.jsonl")
+    lines = open(meta0, "rb").read().split(b"\n")
+    lines[1] = b"{not json"
+    open(meta0, "wb").write(b"\n".join(lines))
+    proc = run(middle, [], resume=True, use_base=False)
+    record("corruption before the last line is refused, not guessed at",
+           proc.returncode == 2 and "cannot resume" in proc.stderr)
+
+    # Hash guard.
+    guard = os.path.join(root, "guard")
+    run(guard, [], {"GD_AFTER": "12", "GD_ACTION": "sigterm"})
+    manifest_path = os.path.join(guard, "run_manifest.json")
+    manifest = manifest_of(guard)
+    tampered = json.loads(json.dumps(manifest))
+    tampered["source_hashes"]["gendoc_gates.py"] = "0" * 64
+    json.dump(tampered, open(manifest_path, "w"))
+    before = _document_files(guard)
+    proc = run(guard, [], resume=True, use_base=False)
+    record("resume refuses when a generator source hash differs, naming the file, and writes nothing",
+           proc.returncode == 2 and "gendoc_gates.py" in proc.stderr and "--resume-force" in proc.stderr
+           and _document_files(guard) == before, proc.stderr.strip().splitlines()[0] if proc.stderr else "")
+    tampered = json.loads(json.dumps(manifest))
+    tampered["data_hashes"]["clause_bank"] = "f" * 64
+    json.dump(tampered, open(manifest_path, "w"))
+    proc = run(guard, [], resume=True, use_base=False)
+    record("resume refuses when a data file hash differs", proc.returncode == 2
+           and "data:clause_bank" in proc.stderr)
+    tampered = json.loads(json.dumps(manifest))
+    tampered["source_hashes"]["gendoc_gates.py"] = "0" * 64
+    json.dump(tampered, open(manifest_path, "w"))
+    proc = run(guard, ["--resume-force"], resume=True, use_base=False)
+    forced = manifest_of(guard)
+    last = forced["history"][-1]
+    record("--resume-force continues and records the override, with old and new hashes, in the history",
+           proc.returncode == 0 and last["event"] == "resume-force"
+           and last["overridden"]["source:gendoc_gates.py"]["was"] == "0" * 64
+           and last["overridden"]["source:gendoc_gates.py"]["now"] == store_mod.code_hashes(tools)["gendoc_gates.py"]
+           and forced["source_hashes"] == store_mod.code_hashes(tools)
+           and forced["progress"]["status"] == "finished",
+           f"history events {[h['event'] for h in forced['history']]}")
+    proc = run(guard, [], resume=True, use_base=False)
+    record("after a forced resume the new hashes are the baseline (a further plain resume is allowed)",
+           proc.returncode == 0)
+
+    # Argument and directory guards.
+    proc = run(ref, [])
+    record("starting a new run in a directory that holds one is refused", proc.returncode == 2
+           and "already holds a run" in proc.stderr)
+    proc = run(ref, ["--seed", "8"], resume=True, use_base=False)
+    record("--resume with a conflicting seed is refused", proc.returncode == 2 and "--seed" in proc.stderr)
+    proc = run(os.path.join(root, "nothing_here"), [], resume=True, use_base=False)
+    record("--resume with nothing to resume is refused", proc.returncode == 2)
+    proc = run(ref, ["--window", "4"], resume=True, use_base=False)
+    record("a plain --resume of a finished run does nothing and reports", proc.returncode == 0
+           and _document_files(ref) == ref_files)
+    record("--report-only equals the end-of-run report, byte for byte",
+           subprocess.run([sys.executable, script, "--report-only", "--out", ref],
+                          capture_output=True, text=True).returncode == 0
+           and open(os.path.join(ref, "gate_report.json"), "rb").read() == ref_report)
+
+    # Yield when the GPU is busy.
+    bin_dir = os.path.join(root, "bin")
+    os.makedirs(bin_dir)
+    fake = os.path.join(bin_dir, "nvidia-smi")
+    with open(fake, "w") as handle:
+        handle.write('#!/bin/sh\necho "$PPID, 20000"\necho "4242, 100"\n'
+                     'if [ -e "$GD_FLAG" ]; then echo "31337, 9000"; echo "31338, 700"; fi\n')
+    os.chmod(fake, os.stat(fake).st_mode | stat.S_IEXEC)
+    busy_flag = os.path.join(root, "BUSY")
+    env = {"PATH": bin_dir + os.pathsep + os.environ["PATH"], "GD_FLAG": busy_flag}
+    quiet = os.path.join(root, "yield_quiet")
+    proc = run(quiet, ["--yield-when-gpu-busy", "1000"], env)
+    record("yield: own PID and a 100 MiB neighbour are below the limit, the run completes",
+           proc.returncode == 0 and manifest_of(quiet)["progress"]["status"] == "finished"
+           and _document_files(quiet) == ref_files)
+    busy = os.path.join(root, "yield_busy")
+    proc = run(busy, ["--yield-when-gpu-busy", "1000"], {**env, "GD_AFTER": "14", "GD_ACTION": "busy"})
+    prog = manifest_of(busy)["progress"]
+    record("yield: other processes above MB stop the run gracefully, logging the PIDs that triggered it",
+           proc.returncode == 0 and prog["status"] == "stopped" and 0 < prog["done"] < 40
+           and prog["done"] % 4 == 0 and "yielding the GPU" in prog["stop_reason"]
+           and "PID 31337 9000 MiB" in proc.stderr and "PID 31338 700 MiB" in proc.stderr
+           and f"PID {os.getpid()}" not in proc.stderr, prog["stop_reason"][:120])
+    proc = run(busy, ["--yield-when-gpu-busy", "1000"], env, resume=True, use_base=False)
+    record("yield: while the other job is still there a resume steps aside before generating anything",
+           proc.returncode == 0 and manifest_of(busy)["progress"]["done"] == prog["done"], "")
+    os.remove(busy_flag)
+    run(busy, ["--yield-when-gpu-busy", "1000"], env, resume=True, use_base=False)
+    record("yield: once the GPU is free the resume completes byte-identically",
+           _document_files(busy) == ref_files)
+    controller = store_mod.StopController("/nonexistent/stop", 1000, lambda m: None)
+    controller.gpu_query = lambda: [(900001, 15000)]
+    controller.own_gpu_mb = lambda: 14800
+    unlisted_self_ok = controller.gpu_contention() is None
+    controller.own_gpu_mb = lambda: 100
+    record("yield: a process not identifiable by PID is subtracted using the backend's own figure",
+           unlisted_self_ok and controller.gpu_contention() is not None)
+    controller.gpu_query = lambda: None
+    record("yield: an unavailable nvidia-smi never stops a run", controller.gpu_contention() is None)
+
+    return all(ok for _n, ok, _d in results)
+
+
+def _strip_report(report: dict) -> dict:
+    """The report without the fields that measure wall-clock time or name the run's directory."""
+    out = _strip_timing(report)
+    for key in ("wall_seconds", "wall_seconds_per_requested_doc", "wall_seconds_per_accepted_doc",
+                "run_stats"):
+        out.pop(key, None)
+    out.get("G11_content_audit", {}).pop("audit_share_of_wall_time", None)
+    for key in ("G1_validate_labels", "G1_validate_labels_full_batch"):
+        out[key].pop("path", None)
+    return out
+
+
 def main() -> int:
     """Run every injected-failure case and report. Returns a process exit code."""
     parser = argparse.ArgumentParser(description=__doc__,
@@ -2019,6 +2413,7 @@ def main() -> int:
     all_passed &= no_discard_check(taxonomy_index, clause_bank, partition)
     all_passed &= negative_checks(taxonomy_index, clause_bank, partition, out_dir, types_config)
     all_passed &= record_checks(taxonomy_index, clause_bank, partition, out_dir)
+    all_passed &= resume_checks(out_dir)
 
     clause_literals = ([pv.value for pv in states[16].record.planned if pv.value_kind == "clause" and pv.value]
                        + config.known_clause_texts)

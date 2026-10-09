@@ -53,8 +53,8 @@ G1, G3, G4, G6, G12 across sections, G11 and the total length run on the joined 
 and a failure there that can be traced to one section regenerates that section.
 Labels are still found by exact search over the joined text.
 
-then, over the whole accepted batch: G1 (schema validation via
-`tools/validate_labels.py`), G5 (genre/form/length/type distribution vs the
+then, over the accepted documents on disk: G1 (schema validation via
+`tools/validate_labels.py`, per shard as it closes and over all shards), G5 (genre/form/length/type distribution vs the
 plan), the coverage and density reports, and G8 (a human-readable sample dump).
 
 Three things the pilots changed, each because a measurement said so:
@@ -96,10 +96,30 @@ twice in a run (`NegativeLedger`): pilot v4 planted 37 negatives from 13 distinc
 texts, and a model memorises a sentence it sees every tenth document. Benchmark ids
 are `SYB-`, training ids `SYN-`.
 
+**A run survives being stopped.** The GPU is shared and a full run is days of it, so the run
+yields to other jobs and picks up later (`tools/gendoc_store.py`). Every finished document,
+accepted or discarded, is appended to disk and fsynced the moment it finishes, into shards of
+`--shard-size` accepted documents (`synthetic_batch_00000.jsonl` with its `_labelled` and `_meta`
+files); the meta line is written last and commits the document. `run_manifest.json` records the
+arguments, the git commit and the hashes of the generator source and data files. `--resume`
+re-derives the identical plan from the seed, skips every index already on disk, and rebuilds the
+cross-document state from the files: the G6 5-gram list in write order and the negative-reuse
+ledger. It refuses when the code or data hashes changed, unless `--resume-force`, which records
+the override in the manifest. Documents are generated in windows of `--window` plans (default
+`--batch-size`); cross-document state is exact at window boundaries, so a killed window is
+generated again from its start and the run's files are byte-identical to an uninterrupted run's
+(under the mock backend; see the harness). A stop (SIGTERM, SIGINT, the stop file, or
+`--yield-when-gpu-busy`) finishes the window in flight, writes it, records progress and exits 0.
+`--status` reports progress and `--report-only` rebuilds the gate report from the shards.
+
 Usage:
     python3 tools/generate_documents.py --backend hf --model Qwen/Qwen3.5-9B \\
         --n 50 --strategy seeded --seed 1 --batch-size 4 --coverage-target 3 \\
-        --dataset train --out data/synthetic/pilot_v4_train/
+        --dataset train --out data/synthetic/full_train/
+    python3 tools/generate_documents.py --resume --out data/synthetic/full_train/
+    touch data/synthetic/full_train/STOP        # graceful stop
+    python3 tools/generate_documents.py --status --out data/synthetic/full_train/
+    python3 tools/generate_documents.py --report-only --out data/synthetic/full_train/
 """
 
 from __future__ import annotations
@@ -107,6 +127,7 @@ from __future__ import annotations
 import argparse
 import collections
 import dataclasses
+import hashlib
 import json
 import math
 import os
@@ -117,6 +138,7 @@ import sys
 import time
 import unicodedata
 from dataclasses import dataclass, field
+from types import SimpleNamespace
 from datetime import date, timedelta
 from typing import Callable, Dict, List, Optional, Sequence, Set, Tuple
 
@@ -130,6 +152,7 @@ import gendoc_gates as gates
 import gendoc_genres as genres_mod
 import gendoc_identifiers as ident
 import gendoc_sections as sections_mod
+import gendoc_store as store_mod
 from gendoc_backends import DRAFT_CLOSE, DRAFT_OPEN, MANIFEST_SENTINEL, build_backend
 from validate_labels import load_types as validate_labels_load_types  # noqa: E402
 
@@ -2384,6 +2407,8 @@ class DocState:
     section_plan: Optional["sections_mod.SectionPlan"] = None
     queued: Set[int] = field(default_factory=set)  # sections with a job queued or in flight
     section_calls: int = 0
+    coherence_log: List[dict] = field(default_factory=list)  # this document's share of `config.coherence_log`
+    coherence_rejected: int = 0  # this document's share of `config.coherence_rejected`
 
 
 def _doc_seed(base_seed: int, idx: int, attempt: int) -> int:
@@ -2434,11 +2459,13 @@ def new_attempt_record(state: DocState, base_seed: int, taxonomy_index: Dict[str
         if not check_record_coherence(record):
             break
         config.coherence_rejected += 1
+        state.coherence_rejected += 1
         config.negative_ledger.release(record.planted_negatives)
     else:
         raise RuntimeError(f"no coherent record for plan {plan.idx} after {config.max_coherence_redraws} redraws")
     if record.coherence is not None:
         config.coherence_log.append(record.coherence)
+        state.coherence_log.append(record.coherence)
     for pv in record.planned:
         if pv.tier == "A" and pv.checksum_valid is not None and rng.random() < config.invalid_checksum_rate:
             value, valid = _generate_value_kind(pv.type, random.Random(doc_seed + 1), record.person,
@@ -2867,10 +2894,19 @@ def _token_budget(config: GenerationConfig, max_chars: int) -> int:
                int(config.hard_max_chars / 2.6) + 120)
 
 
+def known_clause_texts_of(clause_bank: dict) -> List[str]:
+    """Every literal clause text of a bank: the wording G6 must not count as the model's prose."""
+    return sorted({
+        e["text"] for etype, entries in clause_bank.items() if etype != "negatives"
+        for e in entries if "{" not in e["text"] and len(e["text"].split()) >= 3})
+
+
 def run_generation(
     plans: List[DocPlan], base_seed: int, taxonomy_index: Dict[str, dict], clause_bank: dict,
     public_figures: Set[str], place_names: Set[str], agency_names: Set[str], backend,
     config: GenerationConfig, progress=None,
+    accepted_ngrams: Optional[List[Set[Tuple[str, ...]]]] = None,
+    before_generate: Optional[Callable[[str, int], None]] = None,
 ) -> Tuple[List[DocState], dict]:
     """Generate every planned document, `config.batch_size` prompts per backend call.
 
@@ -2913,6 +2949,12 @@ def run_generation(
         backend: Generation backend.
         config: Run configuration.
         progress: Optional callable(state) invoked when a document finishes.
+        accepted_ngrams: The near-duplicate reference list (G6). Documents accepted here are appended
+            to it, so a caller that runs the plans in several calls, or resumes a run, passes the
+            list it rebuilt from the documents already written. None starts empty.
+        before_generate: Optional callable(kind, n_jobs) invoked before every backend call, for
+            stop-file and GPU-contention checks. It cannot cancel the call; a stop is honoured by
+            the caller once the documents in flight are finished.
 
     Returns:
         Tuple of (final states in plan order, run statistics).
@@ -2920,12 +2962,11 @@ def run_generation(
     states = [DocState(plan) for plan in plans]
     queue: collections.deque = collections.deque()
     if not config.known_clause_texts:
-        config.known_clause_texts = sorted({
-            e["text"] for etype, entries in clause_bank.items() if etype != "negatives"
-            for e in entries if "{" not in e["text"] and len(e["text"].split()) >= 3})
+        config.known_clause_texts = known_clause_texts_of(clause_bank)
     if config.negative_ledger is None:
         config.negative_ledger = NegativeLedger(config.negative_cap)
-    accepted_ngrams: List[Set[Tuple[str, ...]]] = []
+    if accepted_ngrams is None:
+        accepted_ngrams = []
     stats: collections.Counter = collections.Counter()
 
     def _purge(st: DocState) -> None:
@@ -3117,6 +3158,8 @@ def run_generation(
             "section_audit_repair": config.repair_temperature,
             "audit": 0.0, "audit_repair": config.repair_temperature,
         }[kind]
+        if before_generate is not None:
+            before_generate(kind, len(jobs))
         started = time.time()
         texts = backend.generate(prompts, max_new_tokens=max(budgets), temperature=temperature,
                                  seed=call_seed)
@@ -3778,7 +3821,7 @@ def coverage_report(
     """
     counts: collections.Counter = collections.Counter()
     for meta in accepted_meta:
-        counts.update(set(meta["types"]))
+        counts.update(sorted(set(meta["types"])))
     below = [{"type": t, "documents": counts.get(t, 0), "target": target}
              for t in schedulable if counts.get(t, 0) < target]
     return {
@@ -4122,8 +4165,233 @@ def _make_natural_probe(run_seed: int, taxonomy_index: Dict[str, dict], clause_b
     return probe
 
 
-def main() -> int:
-    """CLI entry point."""
+def state_stats(st: DocState) -> dict:
+    """Everything the gate report needs from a document's state, as plain JSON.
+
+    Written into every accepted document's metadata and every discard record, so the report can
+    be rebuilt from the files alone, mid-run or after.
+    """
+    plan = st.section_plan
+    return {
+        "attempts": st.attempt, "repairs": st.repairs_total, "audit_repairs": st.audit_repairs_total,
+        "audit_calls": st.audit_calls, "audit_seconds": round(st.audit_seconds, 1),
+        "generate_calls": st.generate_calls, "gen_seconds": round(st.gen_seconds, 1),
+        "section_calls": st.section_calls,
+        "section_attempts": sum(s.attempts for s in plan.sections) if plan else 0,
+        "section_repairs": sum(s.repairs_total for s in plan.sections) if plan else 0,
+        "redos_after_join": plan.redos_after_join if plan else 0,
+        "headings_visible": plan.headings_visible if plan else None,
+        "coherence_log": st.coherence_log, "coherence_rejected": st.coherence_rejected,
+    }
+
+
+def discard_record(st: DocState, dataset: str) -> dict:
+    """The line `discarded.jsonl` gets for a document that was given up on."""
+    return {
+        "index": st.plan.idx, "genre": st.plan.genre, "variant": st.plan.variant,
+        "form": st.plan.form, "profile": st.plan.profile, "pii_free": st.plan.pii_free,
+        "dataset": dataset, "reason": st.result.get("reason"), "gate_log": st.gate_log,
+        "sectioned": st.section_plan is not None,
+        "section_plan": (sections_mod.summary(st.section_plan, st.record)
+                         if st.section_plan is not None and st.record else None),
+        "audit_log": st.audit_log, "last_text": st.last_text,
+        "planned": [dataclasses.asdict(pv) for pv in st.record.planned] if st.record else None,
+        "state_stats": state_stats(st),
+    }
+
+
+def accepted_lines(st: DocState, mode: dataset_mod.DatasetMode, strategy: str) -> Tuple[dict, dict]:
+    """Return `(batch line, meta line)` for an accepted document."""
+    rec, result = st.record, st.result
+    doc_id = f"{mode.id_prefix}-{st.plan.idx:06d}"
+    text, output = result["text"], result["output"]
+    batch_line = {"id": doc_id, "text_input": text, "output": output}
+    meta = {
+        "id": doc_id, "dataset": rec.dataset, "genre": rec.genre, "variant": rec.variant,
+        "form": rec.form,
+        "profile": rec.profile, "pii_free": rec.pii_free,
+        "strategy": strategy, "seed": rec.doc_seed, "length": len(text),
+        "length_band": list(rec.length_band),
+        "planned_types": sorted({pv.type for pv in rec.planned}),
+        "planned_items": len(rec.planned) + len(rec.planted_negatives),
+        "instances_planned": rec.instances_planned, "instances_realised": rec.instances_realised,
+        "id_block": st.plan.id_block, "cast_coherence": rec.coherence,
+        "forced_types": st.plan.forced_types, "dropped_forced": rec.dropped_forced,
+        "planted_negatives": [
+            {"type": neg.type, "text": neg.text, "template": neg.template,
+             "why_not": neg.why_not, "also_labelled": neg.also_labelled,
+             "in_text": neg.text in text}
+            for neg in rec.planted_negatives],
+        "tabular": result["tabular"],
+        "type_target": st.plan.type_target, "art9_cap": st.plan.art9_cap,
+        "realised_types": sorted(output),
+        "distinct_spans": sum(len(v) for v in output.values()),
+        "parties": [{"role": p.role or ("subject" if p.is_subject else None),
+                     "gender": p.person.gender, "age": p.person.age(),
+                     "nationality": p.person.nationality} for p in rec.parties],
+        "subject": ({"gender": rec.person.gender, "age": rec.person.age(),
+                     "nationality": rec.person.nationality} if rec.person else None),
+        "sectioned": st.section_plan is not None,
+        "section_plan": (sections_mod.summary(st.section_plan, rec)
+                         if st.section_plan is not None else None),
+        "section_calls": st.section_calls,
+        "section_attempts": ([s.attempts for s in st.section_plan.sections]
+                             if st.section_plan is not None else None),
+        "section_repairs": ([s.repairs_total for s in st.section_plan.sections]
+                            if st.section_plan is not None else None),
+        "section_redos_after_join": (st.section_plan.redos_after_join
+                                     if st.section_plan is not None else None),
+        "num_attempts": st.attempt, "num_repairs": st.repairs_total,
+        "num_audit_repairs": st.audit_repairs_total,
+        "generate_calls": st.generate_calls, "gen_seconds": round(st.gen_seconds, 1),
+        "audit_calls": st.audit_calls, "audit_seconds": round(st.audit_seconds, 1),
+        "audit_log": st.audit_log,
+        "clause_extensions": result.get("clause_extensions", {}),
+        "g7_labelled": result["g7_labelled"],
+        "gate_log": st.gate_log, "tier_a_findings": result["tier_a_findings"],
+        "seeded_clause_literals": _seeded_clause_literals(rec),
+        "state_stats": state_stats(st),
+    }
+    return batch_line, meta
+
+
+# ---------------------------------------------------------------------------
+# Rebuilding a run from its files
+# ---------------------------------------------------------------------------
+
+@dataclass
+class StoredState:
+    """A finished document's state as far as the gate report reads it, rebuilt from its record."""
+
+    plan: DocPlan
+    attempt: int
+    result: dict
+    gate_log: List[dict]
+    audit_log: List[dict]
+    audit_calls: int
+    audit_seconds: float
+    audit_repairs_total: int
+    section_calls: int
+    section_plan: Optional[SimpleNamespace]
+
+
+def doc_index(doc_id: str) -> int:
+    """Return the plan index encoded in a document id such as `SYN-000042`."""
+    return int(doc_id.rsplit("-", 1)[1])
+
+
+def _stored_section_plan(summary: Optional[List[dict]], stats: dict) -> Optional[SimpleNamespace]:
+    if summary is None:
+        return None
+    return SimpleNamespace(
+        sections=[SimpleNamespace(
+            index=s["index"], kind=s["kind"], heading=s["heading"], role_heading=s["role_heading"],
+            load=s["items"] + s["negatives"], attempts=s["attempts"], repairs_total=s["repairs"])
+            for s in summary],
+        headings_visible=stats.get("headings_visible"), redos_after_join=stats["redos_after_join"])
+
+
+def _stored_state(plan: DocPlan, record: dict, accepted: bool, reason: Optional[str]) -> StoredState:
+    stats = record["state_stats"]
+    result = {"accepted": True} if accepted else {"accepted": False, "reason": reason}
+    return StoredState(
+        plan=plan, attempt=stats["attempts"], result=result, gate_log=record["gate_log"],
+        audit_log=record["audit_log"], audit_calls=stats["audit_calls"],
+        audit_seconds=stats["audit_seconds"], audit_repairs_total=stats["audit_repairs"],
+        section_calls=stats["section_calls"],
+        section_plan=_stored_section_plan(record.get("section_plan"), stats))
+
+
+def stored_accepted(batch_line: dict, meta: dict, plan: DocPlan) -> dict:
+    """Rebuild the accepted-document dict the report functions take, from its two lines."""
+    subject = meta["subject"]
+    record = SimpleNamespace(
+        genre=meta["genre"], variant=meta["variant"], form=meta["form"], profile=meta["profile"],
+        pii_free=meta["pii_free"], dataset=meta["dataset"], length_band=tuple(meta["length_band"]),
+        person=SimpleNamespace(age=lambda age=subject["age"]: age) if subject else None,
+        parties=[None] * len(meta["parties"]),
+        planned=[None] * (meta["planned_items"] - len(meta["planted_negatives"])),
+        planted_negatives=[PlantedNegative(n["type"], n["text"], n["why_not"], n["also_labelled"],
+                                           template=n["template"]) for n in meta["planted_negatives"]],
+        instances_planned=meta["instances_planned"], instances_realised=meta["instances_realised"],
+        dropped_forced=meta["dropped_forced"])
+    return {
+        "id": batch_line["id"], "record": record, "text": batch_line["text_input"],
+        "output": batch_line["output"], "gate_log": meta["gate_log"],
+        "tier_a_findings": meta["tier_a_findings"], "g7_labelled": meta["g7_labelled"],
+        "clause_extensions": meta["clause_extensions"], "tabular": meta["tabular"],
+        "clause_literals": meta["seeded_clause_literals"],
+        "state": _stored_state(plan, meta, True, None),
+    }
+
+
+def rebuild_cross_doc_state(
+    store: store_mod.ShardStore, below_idx: int, known_clause_texts: List[str], cap: int,
+) -> Tuple[List[Set[Tuple[str, ...]]], NegativeLedger]:
+    """Rebuild what documents share, from the accepted documents with a plan index below `below_idx`.
+
+    The near-duplicate reference list is each accepted document's 5-grams, in write order -- the
+    order a live run appends them, which matters because G6 stops at the first match over the
+    threshold and logs that similarity. The reuse ledger is the planted-negative templates of the
+    accepted documents; a discarded document gave its claims back when it was given up.
+
+    Args:
+        store: A loaded store.
+        below_idx: Only documents with a smaller plan index count.
+        known_clause_texts: The bank's literal clause texts (G6 exempts them).
+        cap: Most plantings of one negative text in the run.
+
+    Returns:
+        Tuple of (5-gram sets, ledger).
+    """
+    ngrams: List[Set[Tuple[str, ...]]] = []
+    ledger = NegativeLedger(cap)
+    for batch_line, meta in store.accepted:
+        if doc_index(meta["id"]) >= below_idx:
+            continue
+        ngrams.append(gates.word_ngrams(
+            batch_line["text_input"], exempt=meta["seeded_clause_literals"] + known_clause_texts))
+        for neg in meta["planted_negatives"]:
+            ledger.used[neg["template"]] += 1
+    return ngrams, ledger
+
+
+# ---------------------------------------------------------------------------
+# Context, plan and manifest
+# ---------------------------------------------------------------------------
+
+TOOLS_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Arguments that change where or how a run is operated but not which documents it produces.
+OPERATIONAL_ARGS = {"out", "resume", "resume_force", "report_only", "status", "stop_file",
+                    "yield_when_gpu_busy", "sample_dump_n", "gold_sample_glob", "types_config"}
+EPHEMERAL_ARGS = {"resume", "resume_force", "report_only", "status"}
+
+
+@dataclass
+class RunContext:
+    """Everything loaded from the arguments and the data files, shared by run, resume and report."""
+
+    mode: dataset_mod.DatasetMode
+    run_seed: int
+    taxonomy: dict
+    taxonomy_index: Dict[str, dict]
+    clause_bank: dict
+    negative_bank: dict
+    partition: dict
+    public_figures: Set[str]
+    place_names: Set[str]
+    agency_names: Set[str]
+    genre_list: List[str]
+    forced_types: List[str]
+    schedulable: List[str]
+    types_config_path: str
+    used_fallback_taxonomy: bool
+    used_fallback_clause_bank: bool
+
+
+def build_parser() -> argparse.ArgumentParser:
+    """Return the command-line parser."""
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--backend", choices=["mock", "hf"], default="mock")
     parser.add_argument("--model", help="HF repo id, required for --backend hf")
@@ -4177,204 +4445,259 @@ def main() -> int:
                              "sensitive content")
     parser.add_argument("--gold-sample-glob", nargs="*", default=[],
                          help="gold files to spot-measure the G7 false-positive rate on (read-only)")
-    args = parser.parse_args()
+    parser.add_argument("--shard-size", type=int, default=250,
+                        help="accepted documents per output shard (synthetic_batch_00000.jsonl, ...); "
+                             "fixed for the life of a run")
+    parser.add_argument("--window", type=int, default=None,
+                        help="documents generated together before the next ones start; defaults to "
+                             "--batch-size. Cross-document state (G6, the negative ledger) is exact at "
+                             "window boundaries, which is what makes a resume reproduce an "
+                             "uninterrupted run; a stop finishes the current window, so a smaller "
+                             "window yields the GPU sooner and a larger one batches better")
+    parser.add_argument("--resume", action="store_true",
+                        help="continue the run in --out from its run_manifest.json; refuses when the "
+                             "generator source or the data files changed since it started")
+    parser.add_argument("--resume-force", action="store_true",
+                        help="with --resume, continue although the code or data hashes differ; the "
+                             "override is recorded in the manifest history")
+    parser.add_argument("--stop-file", default=None,
+                        help="a graceful stop is requested when this file exists (default OUT/STOP)")
+    parser.add_argument("--yield-when-gpu-busy", type=int, default=None, metavar="MB",
+                        help="before each generate() call, stop gracefully if other processes use more "
+                             "than MB of GPU memory according to nvidia-smi")
+    parser.add_argument("--report-only", action="store_true",
+                        help="rebuild gate_report.json and sample_dump.md from the shards in --out "
+                             "and exit; safe while a run is writing")
+    parser.add_argument("--status", action="store_true",
+                        help="print progress, ETA, accepted/discarded by profile and coverage for --out")
+    return parser
 
-    os.makedirs(args.out, exist_ok=True)
+
+def merge_with_manifest(parser: argparse.ArgumentParser, cli: argparse.Namespace,
+                        manifest: dict) -> Tuple[Optional[argparse.Namespace], List[str]]:
+    """Take the run-defining arguments from the manifest, the operational ones from the command line.
+
+    A run-defining flag given on the command line with a value that is neither its default nor the
+    manifest's is a conflict: it would describe a different run.
+
+    Returns:
+        Tuple of (merged namespace, conflict descriptions); the namespace is None on conflict.
+    """
+    stored = manifest["args"]
+    defaults = vars(parser.parse_args(["--out", cli.out]))
+    merged = dict(vars(cli))
+    conflicts = []
+    for key, value in stored.items():
+        if key in OPERATIONAL_ARGS or key not in merged:
+            continue
+        given = merged[key]
+        if given != defaults.get(key) and given != value:
+            conflicts.append(f"--{key.replace('_', '-')}: manifest has {value!r}, command line has {given!r}")
+        merged[key] = value
+    return (None, conflicts) if conflicts else (argparse.Namespace(**merged), [])
+
+
+def load_context(args: argparse.Namespace) -> Optional[RunContext]:
+    """Load the taxonomy, banks and pools a run draws from; None if the genre list is invalid."""
     mode = dataset_mod.MODES[args.dataset]
-    run_seed = args.seed + mode.seed_offset
-    rng = random.Random(run_seed)
-
     taxonomy = data.load_taxonomy(args.taxonomy if os.path.exists(args.taxonomy) else None)
-    taxonomy_index = data.taxonomy_index(taxonomy)
     full_bank = data.load_clause_bank(args.clause_bank if os.path.exists(args.clause_bank) else None)
     partition = dataset_mod.load_partition(args.partition)
     clause_bank = dataset_mod.select_clause_bank(full_bank, partition, args.dataset)
     negative_bank = clause_bank.pop("negatives") if mode.negatives_by_profile else {}
     clause_bank.pop("negatives", None)
     data.use_pools(dataset_mod.select_pools(partition, args.dataset))
-    used_fallback_taxonomy = not os.path.exists(args.taxonomy)
-    used_fallback_clause_bank = not os.path.exists(args.clause_bank)
-
+    genre_list = [g.strip() for g in args.genres.split(",") if g.strip()]
+    unknown = [g for g in genre_list if g not in genres_mod.GENRES]
+    if unknown:
+        print(f"unknown genres: {unknown}", file=sys.stderr)
+        return None
     types_config_path = args.types_config
     if not os.path.exists(types_config_path):
         types_config_path = os.path.join(args.out, "types_config.generated.yaml")
         data.write_types_config_yaml(taxonomy, types_config_path)
+    return RunContext(
+        mode=mode, run_seed=args.seed + mode.seed_offset, taxonomy=taxonomy,
+        taxonomy_index=data.taxonomy_index(taxonomy), clause_bank=clause_bank,
+        negative_bank=negative_bank, partition=partition, public_figures=set(data.PUBLIC_FIGURES),
+        place_names={p for _c, p in data.POSTAL_PAIRS}, agency_names=set(data.AGENCY_NAMES),
+        genre_list=genre_list, forced_types=[t.strip() for t in args.force_types.split(",") if t.strip()],
+        schedulable=genres_mod.coverage_types([entry["name"] for entry in taxonomy["types"]]),
+        types_config_path=types_config_path,
+        used_fallback_taxonomy=not os.path.exists(args.taxonomy),
+        used_fallback_clause_bank=not os.path.exists(args.clause_bank))
 
-    public_figures = set(data.PUBLIC_FIGURES)
-    place_names = {p for _c, p in data.POSTAL_PAIRS}
-    agency_names = set(data.AGENCY_NAMES)
 
-    backend = build_backend(args.backend, args.model)
-    genre_list = [g.strip() for g in args.genres.split(",") if g.strip()]
-    unknown_genres = [g for g in genre_list if g not in genres_mod.GENRES]
-    if unknown_genres:
-        print(f"unknown genres: {unknown_genres}", file=sys.stderr)
-        return 2
-    forced_types = [t.strip() for t in args.force_types.split(",") if t.strip()]
-
-    config = GenerationConfig(
+def make_config(args: argparse.Namespace, ctx: RunContext) -> GenerationConfig:
+    """Build the generation configuration a run uses."""
+    return GenerationConfig(
         strategy=args.strategy, invalid_checksum_rate=args.invalid_checksum_rate,
         retries=args.retries, near_dup_threshold=args.near_dup_threshold,
         g7_policy=args.g7_policy, batch_size=args.batch_size, max_repairs=args.max_repairs,
         audit=args.audit, max_audit_repairs=args.max_audit_repairs,
-        dataset=args.dataset, difficulty_weights=mode.difficulty_weights, negative_bank=negative_bank,
-        negative_cap=args.negative_cap, sectioning=args.sectioning, section_retries=args.section_retries,
-    )
+        dataset=args.dataset, difficulty_weights=ctx.mode.difficulty_weights,
+        negative_bank=ctx.negative_bank, negative_cap=args.negative_cap, sectioning=args.sectioning,
+        section_retries=args.section_retries,
+        known_clause_texts=known_clause_texts_of(ctx.clause_bank))
 
-    schedulable = genres_mod.coverage_types([entry["name"] for entry in taxonomy["types"]])
-    plans, plan_report = plan_batch(
-        rng, args.n, genre_list, forced_types, args.rare_force_share,
-        coverage_target=args.coverage_target, schedulable_types=schedulable,
-        mode=mode, clause_bank=clause_bank, coverage_margin=args.coverage_margin,
-        natural_probe=_make_natural_probe(run_seed, taxonomy_index, clause_bank, public_figures),
-    )
 
-    run_started = time.time()
-    finished_count = [0]
+def derive_plans(args: argparse.Namespace, ctx: RunContext) -> Tuple[List[DocPlan], dict]:
+    """Derive the whole run's plan from the seed. Pure: the same arguments give the same plan."""
+    return plan_batch(
+        random.Random(ctx.run_seed), args.n, ctx.genre_list, ctx.forced_types, args.rare_force_share,
+        coverage_target=args.coverage_target, schedulable_types=ctx.schedulable,
+        mode=ctx.mode, clause_bank=ctx.clause_bank, coverage_margin=args.coverage_margin,
+        natural_probe=_make_natural_probe(ctx.run_seed, ctx.taxonomy_index, ctx.clause_bank,
+                                          ctx.public_figures))
 
-    def _progress(st: DocState) -> None:
-        finished_count[0] += 1
-        ok = st.result and st.result.get("accepted")
-        print(
-            f"[{finished_count[0]}/{args.n}] {mode.id_prefix}#{st.plan.idx} {st.plan.genre}/{st.plan.form}/"
-            f"{st.plan.profile} {'accepted' if ok else 'DISCARDED'} after {st.attempt} attempt(s), "
-            f"{st.repairs_total} repair(s), {st.audit_repairs_total} audit repair(s), "
-            f"{time.time() - run_started:.0f}s elapsed",
-            file=sys.stderr, flush=True,
-        )
 
-    states, run_stats = run_generation(
-        plans, run_seed, taxonomy_index, clause_bank, public_figures, place_names,
-        agency_names, backend, config, progress=_progress,
-    )
-    wall_seconds = time.time() - run_started
+def plans_as_json(plans: List[DocPlan]) -> List[dict]:
+    """Return the plans as JSON-normalised dicts, the form they are stored and compared in."""
+    return json.loads(json.dumps([dataclasses.asdict(p) for p in plans]))
 
-    accepted, discarded_records = [], []
-    for st in states:
-        if not st.result.get("accepted"):
-            discarded_records.append({
-                "index": st.plan.idx, "genre": st.plan.genre, "variant": st.plan.variant,
-                "form": st.plan.form, "profile": st.plan.profile, "pii_free": st.plan.pii_free,
-                "dataset": args.dataset, "reason": st.result.get("reason"), "gate_log": st.gate_log,
-                "sectioned": st.section_plan is not None,
-                "section_plan": (sections_mod.summary(st.section_plan, st.record)
-                                 if st.section_plan is not None and st.record else None),
-                "audit_log": st.audit_log, "last_text": st.last_text,
-                "planned": [dataclasses.asdict(pv) for pv in st.record.planned] if st.record else None,
-            })
-            continue
-        accepted.append({
-            "id": f"{mode.id_prefix}-{st.plan.idx:06d}", "record": st.result["record"],
-            "text": st.result["text"],
-            "output": st.result["output"], "gate_log": st.gate_log,
-            "tier_a_findings": st.result["tier_a_findings"], "g7_labelled": st.result["g7_labelled"],
-            "clause_extensions": st.result.get("clause_extensions", {}),
-            "tabular": st.result.get("tabular", {}),
-            "state": st,
-        })
-    discarded = len(discarded_records)
 
-    batch_path = os.path.join(args.out, f"{mode.file_stem}_batch.jsonl")
-    labelled_path = os.path.join(args.out, f"{mode.file_stem}_batch_labelled.jsonl")
-    meta_path = os.path.join(args.out, f"{mode.file_stem}_batch_meta.jsonl")
-    with open(os.path.join(args.out, "discarded.jsonl"), "w", encoding="utf-8") as disc_f:
-        for d in discarded_records:
-            disc_f.write(json.dumps(d, ensure_ascii=False, default=str) + "\n")
-    with open(batch_path, "w", encoding="utf-8") as batch_f, \
-            open(labelled_path, "w", encoding="utf-8") as lab_f, \
-            open(meta_path, "w", encoding="utf-8") as meta_f:
-        for r in accepted:
-            line = json.dumps({"id": r["id"], "text_input": r["text"], "output": r["output"]},
-                              ensure_ascii=False)
-            batch_f.write(line + "\n")
-            if r["output"]:
-                lab_f.write(line + "\n")
-            rec, st = r["record"], r["state"]
-            meta_f.write(json.dumps({
-                "id": r["id"], "dataset": rec.dataset, "genre": rec.genre, "variant": rec.variant,
-                "form": rec.form,
-                "profile": rec.profile, "pii_free": rec.pii_free,
-                "strategy": config.strategy, "seed": rec.doc_seed, "length": len(r["text"]),
-                "length_band": list(rec.length_band),
-                "planned_types": sorted({pv.type for pv in rec.planned}),
-                "planned_items": len(rec.planned) + len(rec.planted_negatives),
-                "instances_planned": rec.instances_planned, "instances_realised": rec.instances_realised,
-                "id_block": st.plan.id_block, "cast_coherence": rec.coherence,
-                "forced_types": st.plan.forced_types, "dropped_forced": rec.dropped_forced,
-                "planted_negatives": [
-                    {"type": neg.type, "text": neg.text, "template": neg.template,
-                     "why_not": neg.why_not, "also_labelled": neg.also_labelled,
-                     "in_text": neg.text in r["text"]}
-                    for neg in rec.planted_negatives],
-                "tabular": r["tabular"],
-                "type_target": st.plan.type_target, "art9_cap": st.plan.art9_cap,
-                "realised_types": sorted(r["output"]),
-                "distinct_spans": sum(len(v) for v in r["output"].values()),
-                "parties": [{"role": p.role or ("subject" if p.is_subject else None),
-                             "gender": p.person.gender, "age": p.person.age(),
-                             "nationality": p.person.nationality} for p in rec.parties],
-                "subject": ({"gender": rec.person.gender, "age": rec.person.age(),
-                             "nationality": rec.person.nationality} if rec.person else None),
-                "sectioned": st.section_plan is not None,
-                "section_plan": (sections_mod.summary(st.section_plan, rec)
-                                 if st.section_plan is not None else None),
-                "section_calls": st.section_calls,
-                "section_attempts": ([s.attempts for s in st.section_plan.sections]
-                                     if st.section_plan is not None else None),
-                "section_repairs": ([s.repairs_total for s in st.section_plan.sections]
-                                    if st.section_plan is not None else None),
-                "section_redos_after_join": (st.section_plan.redos_after_join
-                                             if st.section_plan is not None else None),
-                "num_attempts": st.attempt, "num_repairs": st.repairs_total,
-                "num_audit_repairs": st.audit_repairs_total,
-                "generate_calls": st.generate_calls, "gen_seconds": round(st.gen_seconds, 1),
-                "audit_calls": st.audit_calls, "audit_seconds": round(st.audit_seconds, 1),
-                "audit_log": st.audit_log,
-                "clause_extensions": r["clause_extensions"],
-                "g7_labelled": r["g7_labelled"],
-                "gate_log": r["gate_log"], "tier_a_findings": r["tier_a_findings"],
-            }, ensure_ascii=False) + "\n")
+def plans_from_json(rows: List[dict]) -> List[DocPlan]:
+    return [DocPlan(**{**row, "length_band": tuple(row["length_band"])}) for row in rows]
 
-    # `validate_labels.py` exits 1 on any record with an empty output, by
-    # design: an unfinished annotation run looks exactly like a clean document.
-    # PII-free documents are legitimately empty, so G1 runs on the labelled
-    # subset for the pass/fail verdict and on the whole batch for the record.
-    # The validator's semantics are not changed here; whether it should grow an
-    # opt-in flag for deliberately empty records is the owner's call.
-    g1_ok, g1_output = run_g1_validate_labels(labelled_path, types_config_path)
-    g1_full_ok, g1_full_output = run_g1_validate_labels(batch_path, types_config_path)
 
+def plan_digest(plan_rows: List[dict]) -> str:
+    return hashlib.sha256(json.dumps(plan_rows, sort_keys=True).encode()).hexdigest()
+
+
+def data_file_hashes(args: argparse.Namespace) -> Dict[str, Optional[str]]:
+    """Hash the data files whose contents decide what is generated."""
+    return {"taxonomy": store_mod.sha256_file(args.taxonomy),
+            "clause_bank": store_mod.sha256_file(args.clause_bank),
+            "benchmark_partition": store_mod.sha256_file(args.partition)}
+
+
+def plan_summary(plan_rows: List[dict], plan_report: dict, window: int) -> dict:
+    """The planned schedule in brief, for the manifest; the full plan is in `plan.json`."""
+    keys = ("planned_profiles", "planned_pii_free", "planned_negatives", "planned_nn_share",
+            "planned_type_target", "planned_id_block_address", "dataset")
+    return {"documents": len(plan_rows), "window": window,
+            "windows": -(-len(plan_rows) // window), "plan_sha256": plan_digest(plan_rows),
+            "genres": dict(collections.Counter(p["genre"] for p in plan_rows)),
+            **{k: plan_report.get(k) for k in keys}}
+
+
+def fresh_progress(n: int) -> dict:
+    return {"status": "not started", "done": 0, "accepted": 0, "discarded": 0, "remaining": n,
+            "last_update": store_mod.now_iso(), "wall_seconds_total": 0.0, "run_stats": {},
+            "run_stats_through_idx": 0, "stop_reason": None, "pid": None}
+
+
+# ---------------------------------------------------------------------------
+# Reports
+# ---------------------------------------------------------------------------
+
+def shard_g1(store: store_mod.ShardStore, shard: int, types_config_path: str) -> dict:
+    """Validate one closed shard (its labelled file and its whole batch) and cache the verdict."""
+    cache_path = os.path.join(store.out_dir, store_mod.G1_NAME)
+    cache = json.load(open(cache_path, encoding="utf-8")) if os.path.exists(cache_path) else {}
+    digest = store_mod.sha256_file(store.path(shard))
+    entry = cache.get(str(shard))
+    if entry and entry.get("sha256") == digest:
+        return entry
+    ok, output = run_g1_validate_labels(store.path(shard, "labelled"), types_config_path)
+    full_ok, full_output = run_g1_validate_labels(store.path(shard), types_config_path)
+    entry = {"sha256": digest, "checked": store_mod.now_iso(), "passed": ok, "output": output,
+             "full_batch_passed": full_ok, "full_batch_output": full_output}
+    cache[str(shard)] = entry
+    store_mod.atomic_write_json(cache_path, cache)
+    return entry
+
+
+def g1_over_all_shards(store: store_mod.ShardStore, types_config_path: str) -> dict:
+    """Run G1 over every committed document of every shard, and per closed shard."""
+    tag = os.getpid()
+    batch_path = os.path.join(store.out_dir, f".g1_all_batch.{tag}.jsonl")
+    labelled_path = os.path.join(store.out_dir, f".g1_all_labelled.{tag}.jsonl")
+    try:
+        with open(batch_path, "w", encoding="utf-8") as batch_f, \
+                open(labelled_path, "w", encoding="utf-8") as lab_f:
+            for line, _meta in store.accepted:
+                text = json.dumps(line, ensure_ascii=False) + "\n"
+                batch_f.write(text)
+                if line["output"]:
+                    lab_f.write(text)
+        ok, output = run_g1_validate_labels(labelled_path, types_config_path)
+        full_ok, full_output = run_g1_validate_labels(batch_path, types_config_path)
+    finally:
+        for path in (batch_path, labelled_path):
+            if os.path.exists(path):
+                os.remove(path)
+    per_shard = {str(s): shard_g1(store, s, types_config_path) for s in store.closed_shards()}
+    pattern = os.path.join(store.out_dir, f"{store.stem}_batch_*_labelled.jsonl")
+    return {
+        "G1_validate_labels": {
+            "passed": ok and all(e["passed"] for e in per_shard.values()), "path": pattern,
+            "output": output, "per_shard": {s: e["passed"] for s, e in per_shard.items()}},
+        "G1_validate_labels_full_batch": {
+            "passed": full_ok, "path": pattern.replace("_labelled", ""),
+            "note": "exits 1 when the batch contains PII-free documents; validate_labels.py "
+                    "treats any empty output as an unfinished annotation. Semantics unchanged.",
+            "output": full_output},
+    }
+
+
+def build_report(args: argparse.Namespace, ctx: RunContext, plans: List[DocPlan], plan_report: dict,
+                 store: store_mod.ShardStore, manifest: dict) -> Tuple[dict, List[dict]]:
+    """Build the gate report from what is on disk.
+
+    The same function produces the report at the end of a run, when a run stops, and for
+    `--report-only`, and it reads nothing but the shards, `plan.json` and the manifest's progress,
+    so the three cannot differ.
+
+    Returns:
+        Tuple of (the report, the accepted-document dicts in plan order).
+    """
+    by_idx = {p.idx: p for p in plans}
+    accepted = sorted((stored_accepted(line, meta, by_idx[doc_index(meta["id"])])
+                       for line, meta in store.accepted), key=lambda r: doc_index(r["id"]))
+    discarded_records = sorted(store.discarded, key=lambda d: d["index"])
+    states = sorted(
+        [r["state"] for r in accepted]
+        + [_stored_state(by_idx[d["index"]], d, False, d.get("reason")) for d in discarded_records],
+        key=lambda st: st.plan.idx)
+    progress = manifest["progress"]
+    wall_seconds = progress["wall_seconds_total"]
+    n_done = len(accepted) + len(discarded_records)
+    stats_all = [m["state_stats"] for _l, m in store.accepted] + [d["state_stats"] for d in discarded_records]
+    coherence_log = [entry for s in stats_all for entry in s["coherence_log"]]
+    coherence_rejected = sum(s["coherence_rejected"] for s in stats_all)
+
+    g1 = g1_over_all_shards(store, ctx.types_config_path)
     accepted_meta_for_g5 = [
         {"genre": r["record"].genre, "form": r["record"].form, "length": len(r["text"]),
          "band": r["record"].length_band, "types": list(r["output"])}
-        for r in accepted
-    ]
-    g5_report = gate_g5_distribution(accepted_meta_for_g5, genre_list)
+        for r in accepted]
+    g5_report = gate_g5_distribution(accepted_meta_for_g5, ctx.genre_list)
     g6_report = gate_g6_aggregate([r["text"] for r in accepted])
-
-    dump_path = os.path.join(args.out, "sample_dump.md")
-    if accepted:
-        write_sample_dump(dump_path, accepted, args.sample_dump_n, rng)
-
-    g7_fp_report = (measure_g7_false_positive_rate(args.gold_sample_glob, place_names, agency_names)
+    g7_fp_report = (measure_g7_false_positive_rate(args.gold_sample_glob, ctx.place_names, ctx.agency_names)
                     if args.gold_sample_glob else None)
     g7_mock_findings = sum(
         1 for r in accepted for entry in r["gate_log"] if entry.get("stage") == "accepted"
-        for f in entry.get("g7_findings", []) if f.get("action") == "reject"
-    )
-
+        for f in entry.get("g7_findings", []) if f.get("action") == "reject")
     total_spans = sum(len(v) for r in accepted for v in r["output"].values())
     labelled_spans = sum(len(r["g7_labelled"]) for r in accepted)
     types_per_doc = [len(r["output"]) for r in accepted]
+    ledger = NegativeLedger(args.negative_cap)
+    for r in accepted:
+        for neg in r["record"].planted_negatives:
+            ledger.used[neg.template] += 1
+    window = args.window or args.batch_size
     report = {
-        "requested": args.n, "accepted": len(accepted), "discarded": discarded,
+        "requested": args.n, "done": n_done, "remaining": args.n - n_done,
+        "complete": n_done == args.n, "accepted": len(accepted), "discarded": len(discarded_records),
         "backend": args.backend, "model": args.model, "strategy": args.strategy,
-        "batch_size": args.batch_size, "audit_enabled": config.audit,
+        "batch_size": args.batch_size, "window": window, "shard_size": args.shard_size,
+        "shards": len(store.shard_numbers()), "audit_enabled": args.audit,
         "wall_seconds": round(wall_seconds, 1),
         "wall_seconds_per_requested_doc": round(wall_seconds / max(1, args.n), 1),
         "wall_seconds_per_accepted_doc": round(wall_seconds / len(accepted), 1) if accepted else None,
         "attempts_total": sum(st.attempt for st in states),
-        "run_stats": run_stats,
+        "run_stats": progress["run_stats"], "run_stats_through_idx": progress["run_stats_through_idx"],
         "types_per_accepted_doc": {"min": min(types_per_doc, default=None),
                                    "max": max(types_per_doc, default=None),
                                    "mean": round(sum(types_per_doc) / len(types_per_doc), 2)
@@ -4382,9 +4705,9 @@ def main() -> int:
         "g7_labelled_spans": {"count": labelled_spans, "total_spans": total_spans,
                               "share": round(labelled_spans / total_spans, 4) if total_spans else 0.0},
         "repetition_share": {
-            "max": max((gates.repetition_share(r["text"], exempt=_seeded_clause_literals(r["record"]))
+            "max": max((gates.repetition_share(r["text"], exempt=r["clause_literals"])
                         for r in accepted), default=None),
-            "threshold": config.repetition_threshold,
+            "threshold": GenerationConfig.repetition_threshold,
         },
         "clause_extension_fired": sum(len(r["clause_extensions"]) for r in accepted),
         "clause_extension_docs": sum(1 for r in accepted if r["clause_extensions"]),
@@ -4392,47 +4715,384 @@ def main() -> int:
             e["stage"] for st in states for e in st.gate_log if not e.get("ok"))),
         "discard_reasons": dict(collections.Counter(
             d.get("reason") or "unknown" for d in discarded_records)),
-        "used_fallback_taxonomy": used_fallback_taxonomy,
-        "used_fallback_clause_bank": used_fallback_clause_bank,
-        "types_config_used": types_config_path,
-        "G1_validate_labels": {"passed": g1_ok, "path": labelled_path, "output": g1_output},
-        "G1_validate_labels_full_batch": {
-            "passed": g1_full_ok, "path": batch_path,
-            "note": "exits 1 when the batch contains PII-free documents; validate_labels.py "
-                    "treats any empty output as an unfinished annotation. Semantics unchanged.",
-            "output": g1_full_output,
-        },
+        "used_fallback_taxonomy": ctx.used_fallback_taxonomy,
+        "used_fallback_clause_bank": ctx.used_fallback_clause_bank,
+        "types_config_used": ctx.types_config_path,
+        **g1,
         "G5_distribution": g5_report,
         "G6_diversity": g6_report,
         "G7_unplanned_pii_on_accepted": {"policy": args.g7_policy, "residual_findings": g7_mock_findings},
         "G7_false_positive_measurement_on_gold": g7_fp_report,
         "G11_content_audit": audit_report(states, accepted, wall_seconds),
-        "coverage": coverage_report(accepted_meta_for_g5, schedulable, args.coverage_target, plan_report),
+        "coverage": coverage_report(accepted_meta_for_g5, ctx.schedulable, args.coverage_target, plan_report),
         "density": density_report(accepted, plans),
         "sectioning": sectioning_report(accepted, states, plans),
         "dataset": args.dataset,
-        "partition": {"path": args.partition, "counts": partition.get("counts")},
-        "hard_negatives": {**negatives_report(accepted, states, plans),
-                           "run_ledger": config.negative_ledger.report() if config.negative_ledger else None},
+        "partition": {"path": args.partition, "counts": ctx.partition.get("counts")},
+        "hard_negatives": {**negatives_report(accepted, states, plans), "run_ledger": ledger.report()},
         "tabular": tabular_report(accepted),
         "multi_instance": multi_instance_report(accepted, plans, sorted(
-            t for t, entry in taxonomy_index.items() if entry.get("value_kind") == "clause")),
-        "cast_coherence": coherence_report(config),
+            t for t, entry in ctx.taxonomy_index.items() if entry.get("value_kind") == "clause")),
+        "cast_coherence": coherence.summarise(coherence_log, coherence_rejected),
         "identification_block": identification_report(accepted),
         "forced_types_dropped_by_sampler": dict(collections.Counter(
             t for r in accepted for t in r["record"].dropped_forced)),
     }
-    report_path = os.path.join(args.out, "gate_report.json")
-    with open(report_path, "w", encoding="utf-8") as handle:
-        json.dump(report, handle, ensure_ascii=False, indent=2, default=lambda o: str(o))
+    return report, accepted
 
+
+def write_report(args: argparse.Namespace, ctx: RunContext, plans: List[DocPlan], plan_report: dict,
+                 store: store_mod.ShardStore, manifest: dict) -> Tuple[dict, str]:
+    """Build the report and write `gate_report.json` and `sample_dump.md`; return the report and its path."""
+    report, accepted = build_report(args, ctx, plans, plan_report, store, manifest)
+    report_path = os.path.join(args.out, "gate_report.json")
+    store_mod.atomic_write_json(report_path, report)
+    if accepted:
+        write_sample_dump(os.path.join(args.out, "sample_dump.md"), accepted, args.sample_dump_n,
+                          random.Random(ctx.run_seed ^ 0xD0C5))
+    return report, report_path
+
+
+def print_report(report: dict, report_path: str, store: store_mod.ShardStore) -> None:
     printable = {k: v for k, v in report.items()
                  if k not in ("G1_validate_labels", "G1_validate_labels_full_batch")}
     print(json.dumps(printable, ensure_ascii=False, indent=2, default=str))
-    print("\nG1 validate_labels.py output (labelled subset):\n" + g1_output)
-    print(f"\nWrote {len(accepted)}/{args.n} accepted documents to {batch_path}")
+    print("\nG1 validate_labels.py output (labelled subset, all shards):\n"
+          + report["G1_validate_labels"]["output"])
+    print(f"\n{report['accepted']}/{report['requested']} accepted, {report['discarded']} discarded, "
+          f"in {report['shards']} shard(s) under {store.out_dir}")
     print(f"Gate report: {report_path}")
-    return 0 if g1_ok else 1
+
+
+# ---------------------------------------------------------------------------
+# Status
+# ---------------------------------------------------------------------------
+
+def _duration(seconds: float) -> str:
+    seconds = int(seconds)
+    days, rest = divmod(seconds, 86400)
+    hours, rest = divmod(rest, 3600)
+    return (f"{days}d " if days else "") + f"{hours}h {rest // 60:02d}m"
+
+
+def print_status(out_dir: str) -> int:
+    """Print where a run in `out_dir` stands, from its files, without modifying anything."""
+    manifest_path = os.path.join(out_dir, store_mod.MANIFEST_NAME)
+    if not os.path.exists(manifest_path):
+        print(f"no {store_mod.MANIFEST_NAME} in {out_dir}: nothing has been started here", file=sys.stderr)
+        return 2
+    manifest = json.load(open(manifest_path, encoding="utf-8"))
+    args = manifest["args"]
+    mode = dataset_mod.MODES[args["dataset"]]
+    store = store_mod.ShardStore(out_dir, mode.file_stem, args["shard_size"]).load(repair=False)
+    n = args["n"]
+    progress = manifest["progress"]
+    accepted, discarded = store.n_accepted, len(store.discarded)
+    done = accepted + discarded
+    stats = [m["state_stats"] for _l, m in store.accepted] + [d["state_stats"] for d in store.discarded]
+    seconds = sum(s["gen_seconds"] + s["audit_seconds"] for s in stats)
+    per_doc = seconds / done if done else None
+    state = progress["status"]
+    pid = progress.get("pid")
+    if state == "running" and pid:
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            state = "interrupted (the process is gone without a clean stop; resume is safe)"
+        except PermissionError:
+            pass
+    print(f"run        {out_dir}  dataset={args['dataset']} backend={args['backend']} model={args['model']}"
+          f" seed={args['seed']}")
+    print(f"state      {state}" + (f"  (stopped: {progress['stop_reason']})" if progress.get("stop_reason") else ""))
+    print(f"progress   {done}/{n} done ({accepted} accepted, {discarded} discarded), {n - done} remaining;"
+          f" {len(store.shard_numbers())} shard(s) of {args['shard_size']}")
+    print(f"last update {progress['last_update']}   wall time generating {_duration(progress['wall_seconds_total'])}")
+    if per_doc and seconds >= 1:
+        print(f"speed      {per_doc:.1f} s per finished document (model time, gaps excluded);"
+              f" ETA {_duration((n - done) * per_doc)} of GPU time for the remaining {n - done}")
+    else:
+        print("speed      nothing measurable yet, no ETA")
+    profiles = collections.defaultdict(lambda: [0, 0])
+    for _l, m in store.accepted:
+        profiles[m["profile"]][0] += 1
+    for d in store.discarded:
+        profiles[d["profile"]][1] += 1
+    print("by profile (accepted / discarded):")
+    for name in genres_mod.PROFILE_ORDER:
+        if name in profiles:
+            print(f"  {name:<12} {profiles[name][0]:>5} / {profiles[name][1]}")
+    reasons = collections.Counter(d.get("reason") or "unknown" for d in store.discarded)
+    if reasons:
+        print("discard reasons: " + ", ".join(f"{k}={v}" for k, v in reasons.most_common()))
+    taxonomy = data.load_taxonomy(args["taxonomy"] if os.path.exists(args["taxonomy"]) else None)
+    schedulable = genres_mod.coverage_types([e["name"] for e in taxonomy["types"]])
+    counts: collections.Counter = collections.Counter()
+    for _l, m in store.accepted:
+        counts.update(set(m["realised_types"]))
+    target = args["coverage_target"]
+    absent = sorted(t for t in schedulable if not counts.get(t))
+    below = sorted(t for t in schedulable if 0 < counts.get(t, 0) < target)
+    print(f"coverage   {len(schedulable) - len(absent)}/{len(schedulable)} schedulable types seen;"
+          f" target {target} documents per type: {len(schedulable) - len(absent) - len(below)} reached,"
+          f" {len(below)} below, {len(absent)} absent")
+    if absent:
+        print("  absent: " + ", ".join(absent))
+    if below:
+        print("  below target: " + ", ".join(f"{t}({counts[t]})" for t in below))
+    for note in store.repairs:
+        print(f"note       a writer is mid-append or a kill left: {note} (ignored; a resume repairs it)")
+    return 0
+
+
+# ---------------------------------------------------------------------------
+# The run
+# ---------------------------------------------------------------------------
+
+def _log(message: str) -> None:
+    print(message, file=sys.stderr, flush=True)
+
+
+def _refuse(message: str) -> int:
+    print(message, file=sys.stderr)
+    return 2
+
+
+def new_manifest(args: argparse.Namespace, ctx: RunContext, plan_rows: List[dict], plan_report: dict,
+                 window: int) -> dict:
+    code = store_mod.code_hashes(TOOLS_DIR)
+    return {
+        "format": store_mod.MANIFEST_FORMAT, "created": store_mod.now_iso(),
+        "args": {k: v for k, v in vars(args).items() if k not in EPHEMERAL_ARGS}, "model": args.model, "dataset": args.dataset, "seed": args.seed,
+        "run_seed": ctx.run_seed, "n": args.n,
+        "git_commit": store_mod.git_commit(TOOLS_DIR),
+        "source_hashes": code, "source_sha256": store_mod.combined_hash(code),
+        "data_hashes": data_file_hashes(args),
+        "plan_summary": plan_summary(plan_rows, plan_report, window),
+        "history": [{"event": "start", "time": store_mod.now_iso(), "argv": sys.argv,
+                     "git_commit": store_mod.git_commit(TOOLS_DIR)}],
+        "progress": fresh_progress(args.n),
+    }
+
+
+def check_resumable(manifest: dict, args: argparse.Namespace, force: bool) -> Tuple[bool, dict, str]:
+    """Compare the manifest's code and data hashes with the files now on disk.
+
+    Returns:
+        Tuple of (may continue, changed files as `{name: {was, now}}`, a refusal message).
+    """
+    changed = {
+        **{f"source:{k}": v for k, v in store_mod.changed_hashes(
+            manifest["source_hashes"], store_mod.code_hashes(TOOLS_DIR)).items()},
+        **{f"data:{k}": v for k, v in store_mod.changed_hashes(
+            manifest["data_hashes"], data_file_hashes(args)).items()}}
+    if not changed:
+        return True, {}, ""
+    listing = "\n".join(f"  {name}: {(v['was'] or 'missing')[:12]} -> {(v['now'] or 'missing')[:12]}"
+                        for name, v in changed.items())
+    if force:
+        return True, changed, ""
+    return False, changed, (
+        "refusing to resume: the generator or its data changed since this run started:\n" + listing +
+        "\nA changed generator mid-run mixes two data distributions in one dataset. If that is what "
+        "you want, repeat the command with --resume-force; the override is recorded in the "
+        f"history of {store_mod.MANIFEST_NAME}.")
+
+
+def save_progress(manifest: dict, manifest_path: str, store: store_mod.ShardStore, n: int,
+                  status: str, reason: Optional[str] = None) -> None:
+    done = store.n_accepted + len(store.discarded)
+    manifest["progress"].update({
+        "status": status, "done": done, "accepted": store.n_accepted, "discarded": len(store.discarded),
+        "remaining": n - done, "last_update": store_mod.now_iso(), "stop_reason": reason,
+        "pid": os.getpid() if status == "running" else None})
+    store_mod.atomic_write_json(manifest_path, manifest)
+
+
+def run_windows(args: argparse.Namespace, ctx: RunContext, plans: List[DocPlan],
+                store: store_mod.ShardStore, manifest: dict, manifest_path: str,
+                controller: store_mod.StopController) -> Tuple[bool, Optional[object]]:
+    """Generate the plans window by window, writing each document as it finishes.
+
+    A window is `--window` consecutive plan indices generated together. Cross-document state is
+    exact at window boundaries, so a window interrupted by a kill is generated again from its
+    start with the state of the windows before it; documents of it already on disk are not
+    written twice, and the ones still missing come out as an uninterrupted run would have
+    produced them.
+
+    Returns:
+        Tuple of (whether every document is done, the backend if one was loaded).
+    """
+    n = args.n
+    window = args.window or args.batch_size
+    config = make_config(args, ctx)
+    done = {doc_index(m["id"]) for _l, m in store.accepted} | {d["index"] for d in store.discarded}
+    spans = [(s, min(s + window, n)) for s in range(0, n, window)]
+    first = next((i for i, (a, b) in enumerate(spans) if any(k not in done for k in range(a, b))), len(spans))
+    if first < len(spans) and any(k >= spans[first][1] for k in done):
+        raise store_mod.StoreError("documents exist beyond the first incomplete window; the files do "
+                                   "not belong to this plan")
+    below = spans[first][0] if first < len(spans) else n
+    ngrams, config.negative_ledger = rebuild_cross_doc_state(
+        store, below, config.known_clause_texts, args.negative_cap)
+    stats = collections.Counter(manifest["progress"]["run_stats"])
+    backend = None
+    session_started = time.time()
+    wall_base = manifest["progress"]["wall_seconds_total"]
+
+    def on_finished(st: DocState) -> None:
+        idx = st.plan.idx
+        if idx in done:
+            return
+        if st.result.get("accepted"):
+            batch_line, meta = accepted_lines(st, ctx.mode, args.strategy)
+            closed = store.append_accepted(batch_line, meta)
+            outcome = "accepted"
+        else:
+            store.append_discarded(discard_record(st, args.dataset))
+            closed, outcome = None, "DISCARDED"
+        done.add(idx)
+        _log(f"[{len(done)}/{n}] {ctx.mode.id_prefix}#{idx} {st.plan.genre}/{st.plan.form}/"
+             f"{st.plan.profile} {outcome} after {st.attempt} attempt(s), {st.repairs_total} repair(s), "
+             f"{st.audit_repairs_total} audit repair(s), {wall_base + time.time() - session_started:.0f}s")
+        if closed is not None:
+            verdict = shard_g1(store, closed, ctx.types_config_path)
+            _log(f"shard {closed:05d} closed ({args.shard_size} documents): G1 validate_labels "
+                 f"{'passed' if verdict['passed'] else 'FAILED, see ' + store_mod.G1_NAME}")
+
+    for position in range(first, len(spans)):
+        if controller.poll():
+            break
+        start, end = spans[position]
+        if backend is None:
+            loading = time.time()
+            backend = build_backend(args.backend, args.model)
+            controller.own_gpu_mb = backend.gpu_memory_mb
+            manifest["progress"]["model_load_seconds"] = round(time.time() - loading, 1)
+        replay = any(k in done for k in range(start, end))
+        _, window_stats = run_generation(
+            plans[start:end], ctx.run_seed, ctx.taxonomy_index, ctx.clause_bank, ctx.public_figures,
+            ctx.place_names, ctx.agency_names, backend, config, progress=on_finished,
+            accepted_ngrams=ngrams, before_generate=lambda _kind, _jobs: controller.poll())
+        if replay:
+            ngrams, config.negative_ledger = rebuild_cross_doc_state(
+                store, end, config.known_clause_texts, args.negative_cap)
+        stats.update(window_stats)
+        manifest["progress"]["run_stats"] = dict(stats)
+        manifest["progress"]["run_stats_through_idx"] = end
+        manifest["progress"]["wall_seconds_total"] = round(
+            wall_base + time.time() - session_started, 1)
+        save_progress(manifest, manifest_path, store, n, "running")
+    return len(done) == n, backend
+
+
+def main() -> int:
+    """CLI entry point."""
+    parser = build_parser()
+    cli = parser.parse_args()
+    if cli.status:
+        return print_status(cli.out)
+    out = cli.out
+    manifest_path = os.path.join(out, store_mod.MANIFEST_NAME)
+    plan_path = os.path.join(out, store_mod.PLAN_NAME)
+    resuming = cli.resume or cli.report_only
+    if resuming:
+        if not os.path.exists(manifest_path):
+            return _refuse(f"nothing to {'resume' if cli.resume else 'report on'}: no "
+                           f"{store_mod.MANIFEST_NAME} in {out}")
+        manifest = json.load(open(manifest_path, encoding="utf-8"))
+        args, conflicts = merge_with_manifest(parser, cli, manifest)
+        if args is None:
+            return _refuse("these flags describe a different run than the one in " + out + ":\n  "
+                           + "\n  ".join(conflicts))
+    else:
+        args = cli
+        stem = dataset_mod.MODES[args.dataset].file_stem
+        if os.path.exists(manifest_path) or store_mod.ShardStore(out, stem, args.shard_size).has_output():
+            return _refuse(f"{out} already holds a run; continue it with --resume or choose a new --out "
+                           f"(an existing run is never overwritten)")
+    os.makedirs(out, exist_ok=True)
+    args.stop_file = args.stop_file or os.path.join(out, "STOP")
+    if args.window is not None and args.window < 1 or args.shard_size < 1:
+        return _refuse("--window and --shard-size must be at least 1")
+    window = args.window = args.window or args.batch_size
+    ctx = load_context(args)
+    if ctx is None:
+        return 2
+    store = store_mod.ShardStore(out, ctx.mode.file_stem, args.shard_size)
+
+    if cli.report_only:
+        store.load(repair=False)
+        stored = json.load(open(plan_path, encoding="utf-8"))
+        report, report_path = write_report(args, ctx, plans_from_json(stored["plans"]),
+                                           stored["plan_report"], store, manifest)
+        print_report(report, report_path, store)
+        return 0 if report["G1_validate_labels"]["passed"] else 1
+
+    if cli.resume:
+        try:
+            store.load(repair=True)
+        except store_mod.StoreError as err:
+            return _refuse(f"cannot resume: {err}")
+        for note in store.repairs:
+            _log(f"repaired on load: {note}")
+        ok, changed, message = check_resumable(manifest, args, cli.resume_force)
+        if not ok:
+            return _refuse(message)
+        stored = json.load(open(plan_path, encoding="utf-8"))
+        plans, plan_report = derive_plans(args, ctx)
+        rows = plans_as_json(plans)
+        plan_differs = rows != stored["plans"]
+        if plan_differs and not changed:
+            return _refuse("refusing to resume: the plan derived from the seed differs from plan.json "
+                           "although no source or data file changed; the generator is not deterministic here")
+        plan_rows, plan_report = (stored["plans"], stored["plan_report"]) if plan_differs else (rows, plan_report)
+        history = {"event": "resume-force" if changed else "resume", "time": store_mod.now_iso(),
+                   "argv": sys.argv, "git_commit": store_mod.git_commit(TOOLS_DIR),
+                   "documents_done": store.n_accepted + len(store.discarded)}
+        if changed:
+            history.update({"overridden": changed, "plan_rederived_differs": plan_differs,
+                            "plan_used": "stored plan.json" if plan_differs else "re-derived (identical)"})
+            code = store_mod.code_hashes(TOOLS_DIR)
+            manifest.update({"source_hashes": code, "source_sha256": store_mod.combined_hash(code),
+                             "data_hashes": data_file_hashes(args), "git_commit": history["git_commit"]})
+            _log("--resume-force: continuing with changed code or data; recorded in " + store_mod.MANIFEST_NAME)
+        manifest["history"].append(history)
+        plans = plans_from_json(plan_rows)
+    else:
+        plans, plan_report = derive_plans(args, ctx)
+        plan_rows = plans_as_json(plans)
+        store_mod.atomic_write_json(plan_path, {"plan_report": plan_report, "plans": plan_rows})
+        manifest = new_manifest(args, ctx, plan_rows, plan_report, window)
+        store_mod.atomic_write_json(manifest_path, manifest)
+        store_mod.touch(store.discarded_path)
+    stored = json.load(open(plan_path, encoding="utf-8"))
+    plan_report = stored["plan_report"]
+
+    controller = store_mod.StopController(args.stop_file, args.yield_when_gpu_busy, _log)
+    controller.install_signal_handlers()
+    save_progress(manifest, manifest_path, store, args.n, "running")
+    backend = None
+    try:
+        complete, backend = run_windows(args, ctx, plans, store, manifest, manifest_path, controller)
+    except BaseException as err:
+        save_progress(manifest, manifest_path, store, args.n, "crashed", f"{type(err).__name__}: {err}")
+        raise
+    if backend is not None:
+        backend.close()
+    done = store.n_accepted + len(store.discarded)
+    if complete:
+        save_progress(manifest, manifest_path, store, args.n, "finished")
+    else:
+        save_progress(manifest, manifest_path, store, args.n, "stopped", controller.reason)
+    report, report_path = write_report(args, ctx, plans, plan_report, store, manifest)
+    print_report(report, report_path, store)
+    if complete:
+        return 0 if report["G1_validate_labels"]["passed"] else 1
+    print(f"\nStopped cleanly ({controller.reason}): {done}/{args.n} documents are on disk "
+          f"({store.n_accepted} accepted, {len(store.discarded)} discarded), {args.n - done} remaining.\n"
+          f"Continue with: python3 tools/generate_documents.py --resume --out {out}"
+          + (f"   (remove {args.stop_file} first)" if os.path.exists(args.stop_file) else ""))
+    return 0
 
 
 if __name__ == "__main__":
