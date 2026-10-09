@@ -2375,7 +2375,7 @@ def role_word_checks(taxonomy_index, clause_bank: dict, partition: dict) -> bool
         ("Lars Ottesen, psykologspesialist, undersøkte ham.", indefinite),
         ("Psykologspesialist Lars Ottesen undersøkte ham.", indefinite),
         ("Det var psykologspesialist ved klinikken Lars Ottesen som undersøkte.", indefinite),
-        ("Hun møtte legen Oda Rørvik. Senere sa legen at det var ugrunnet.", definite),
+        ("Hun møtte legen Oda Rørvik og takket henne.", definite),
     ]
     bad = [
         ("Han bør kontakte psykologspesialist ved behov.", indefinite, "not_beside_the_name"),
@@ -2384,6 +2384,8 @@ def role_word_checks(taxonomy_index, clause_bank: dict, partition: dict) -> bool
         ("Den nye psykologspesialistutdanningen er vedtatt.", indefinite, "embedded_in_word"),
         ("Psykologspesialisten Lars Ottesen undersøkte ham.", indefinite, "embedded_in_word"),
         ("Hun ble henvist til legen ved sykehuset. Legen Oda Rørvik svarte.", definite, "not_beside_the_name"),
+        # B12 (e81b639): a later unnamed back-reference is untagged in gold, so it is a stray use.
+        ("Hun møtte legen Oda Rørvik. Senere sa legen at det var ugrunnet.", definite, "not_beside_the_name"),
         ("Hun fikk legemidler av legen Oda Rørvik.", [{"word": "lege", "name": "Oda Rørvik", "definite": False}],
          "embedded_in_word"),
         ("Overlege Oda Rørvik ringte.", [{"word": "lege", "name": "Oda Rørvik", "definite": False}],
@@ -2397,7 +2399,7 @@ def role_word_checks(taxonomy_index, clause_bank: dict, partition: dict) -> bool
            f"cases={len(bad)} missed={[(t, got) for t, got, want in bad_hits if want not in got]}")
     prior = gates.role_word_violations("Legen svarte raskt.", definite, earlier="Oda Rørvik møtte henne.")
     prior_missing = gates.role_word_violations("legen svarte raskt.", definite, earlier="")
-    report("definite_form_refers_back_only_to_a_named_person", not prior and bool(prior_missing),
+    report("definite_form_never_refers_back_unnamed", bool(prior) and bool(prior_missing),
            f"after_name_in_earlier_section={len(prior)} without_name={len(prior_missing)}")
     present = (gates.role_present("lege", "Legen Oda") is False and gates.role_present("lege", "Lege Oda Rørvik")
                and gates.role_present("lege", "overlege Oda") is False and gates.role_present("lege", "lege Oda"))
@@ -2407,7 +2409,10 @@ def role_word_checks(taxonomy_index, clause_bank: dict, partition: dict) -> bool
     lex = genres_mod.professional_lexicon()
     cases = [
         ("Saken ble drøftet med lege Kari Hansen.", "label", "lege"),
+        # Labels are case-sensitive strings: "Legen" at a sentence start is another string, left
+        # unlabelled as B12 wants for an unnamed back-reference, so "legen" can still be labelled.
         ("Saken ble drøftet med legen Kari Hansen. Legen svarte raskt.", "label", "legen"),
+        ("Saken ble drøftet med legen Kari Hansen. Etterpå svarte legen raskt.", "reject", "legen"),
         ("Saken ble drøftet med lege Kari Hansen. Ellers bør man kontakte lege.", "reject", "lege"),
         ("Kari Hansen, fysioterapeut, møtte henne. Hun brukte legemidler.", "label", "fysioterapeut"),
         ("Hun bruker legemidler. Kari Hansen er lege.", "reject", "lege"),

@@ -1381,12 +1381,13 @@ def _adjacent(text: str, start: int, end: int, mentions: Sequence[Tuple[int, int
 def role_word_violations(text: str, roles: Sequence[dict], earlier: str = "") -> List[dict]:
     """Return every occurrence of a planted role word that is not that person's role.
 
-    An occurrence is the person's role when it stands directly beside their name (within
-    `ROLE_ADJACENT_TOKENS` words, in one sentence, before or after it), or, when the planted
-    form is the definite one, when the person has been named earlier in the document:
-    "veterinæren som undersøkte hunden". An indefinite word away from the name is the generic
-    use the ruling excludes ("ta kontakt med lege"), and so is any occurrence inside a longer
-    word or in an inflected form, since the label is a substring match and would cover part of it.
+    An occurrence is the person's role only when it stands directly beside their name (within
+    `ROLE_ADJACENT_TOKENS` words, in one sentence, before or after it). ANNOTATION_SPEC B12
+    (commit e81b639) tags a professional title only when it is attached to a named person:
+    gold leaves an unnamed reference untagged ("Veterinæren mente…", "inspektørene"), even when
+    the person was named earlier, so the planted string anywhere else would be over-labelled.
+    The generic use ("ta kontakt med lege") and any occurrence inside a longer word or in an
+    inflected form are violations for the same reason.
 
     Args:
         text: The document, or a section of it.
@@ -1409,9 +1410,7 @@ def role_word_violations(text: str, roles: Sequence[dict], earlier: str = "") ->
             if occ["embedded_before"] or occ["tail"] not in _ROLE_TAILS:
                 reason = "embedded_in_word"
             elif not _adjacent(text, occ["start"], occ["end"], mentions):
-                introduced = named_before or any(ms < occ["start"] for ms, _me in mentions)
-                if not (role["definite"] and introduced):
-                    reason = "not_beside_the_name"
+                reason = "not_beside_the_name"
             if reason:
                 violations.append({
                     "kind": "generic_role_word", "reason": reason, "value": word, "name": name,
@@ -1433,8 +1432,8 @@ def sweep_unplanned_roles(
     cannot:
 
     * **label** (`action: "label"`, `label_type: "EMPLOYMENT"`): every occurrence of the string
-      in the document is a role word of a labelled person (beside a name, or the definite form
-      after the person was named), so the one-string-per-type output labels nothing wrongly;
+      in the document stands beside a labelled person's name, so the one-string-per-type output
+      labels nothing wrongly;
     * **reject**: some other occurrence of the string is generic, inside a longer word
       (`lege` in `legemiddel`) or a different inflection of it. The string cannot be labelled
       without over-labelling, and leaving it unlabelled is the incompleteness being avoided,
@@ -1468,9 +1467,10 @@ def sweep_unplanned_roles(
                 continue
             unit_end = occ["end"] + len(_LEXICON_TAILS[occ["tail"]])
             beside = _adjacent(text, occ["start"], unit_end, mentions)
-            after_named = bool(occ["tail"]) and any(ms < occ["start"] for ms, _me in mentions)
+            # Only a title beside a name is EMPLOYMENT (B12, e81b639); a later unnamed reference
+            # to the same professional is untagged in gold, so it counts as a stray use.
             candidates[text[occ["start"]:unit_end]].append(
-                {"start": occ["start"], "end": unit_end, "beside": beside, "attached": beside or after_named})
+                {"start": occ["start"], "end": unit_end, "beside": beside, "attached": beside})
     findings: List[dict] = []
     for unit, occs in sorted(candidates.items()):
         # A longer lexicon word that holds this one (`overlege` holds `lege`) is a different word,
