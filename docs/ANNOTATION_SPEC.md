@@ -141,6 +141,14 @@ span is additionally ORGANIZATION (nested).
   ORGANIZATION.
 - Two spans: `utdannet veterinærassistent` **+** `jobber for tiden i en dyrebutikk`
   (joined by `men`, two distinct facts).
+- **Role words of named professionals** (decided 2026-10-09). A professional title attached
+  to a named person who appears in the document is EMPLOYMENT; the name stays PERSON:
+  `Inspektør` in `Inspektør Ingrid Olsen`, `saksbehandler` in `saksbehandler Anne Berit
+  Olsen`, `fastlege` in `hans fastlege Dr. Aase Hansen`. Not tagged: generic or institutional
+  role words (`kontakte veterinær`, `behandling hos psykolog`, `Mattilsynets inspektører`),
+  role words for unnamed actors (`inspektørene`, `Veterinæren mente…`), negated ones (`jeg er
+  ikke veterinær`), and form labels (`Kontaktperson:`). `dommer` meaning court rulings is
+  CRIMINAL context, never a role word.
 
 **B13 — A date inside a narrative clause is also tagged DATE_TIME.** When a clause tagged
 as CRIMINAL, HEALTH or any other narrative type contains a calendar date or a
