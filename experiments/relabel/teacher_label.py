@@ -77,6 +77,9 @@ def main():
     ap.add_argument("--batch", type=int, default=8)
     ap.add_argument("--max-new-tokens", type=int, default=1024)
     ap.add_argument("--limit", type=int, default=None)
+    ap.add_argument("--gpu-fraction", type=float, default=None,
+                    help="cap this process's share of GPU memory so a shared GPU keeps headroom "
+                         "for other jobs; an over-cap batch is split like any other OOM")
     args = ap.parse_args()
 
     import glob, hashlib
@@ -98,6 +101,8 @@ def main():
     todo.sort(key=lambda x: len(x[1]))
     print(f"{len(done)} already labelled, {len(todo)} to go", flush=True)
 
+    if args.gpu_fraction and torch.cuda.is_available():
+        torch.cuda.set_per_process_memory_fraction(args.gpu_fraction)
     cfg = load_config(args.config)
     model, tok = load_model_for_eval(cfg)
     tok.padding_side = "left"
