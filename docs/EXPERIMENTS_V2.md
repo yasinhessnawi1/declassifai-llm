@@ -71,3 +71,9 @@ tier C (clauses), where span boundaries are long and judgement-heavy.
 - 2026-10-09 — T2 (xs) scored. CPU latency measured on 20 gold docs after capping torch threads at the
   cgroup quota (6 CPUs): torch defaulted to 96 threads (host count) and was ~400x slower. HF scouting →
   Candidates table; NorBERT4 (16k context) is the top new find.
+- 2026-10-09 — D2 relabelling started (E0 teacher, 4-bit), split by digest across two V100s (this box +
+  anward/tm-to-llm). Paused ~12-15 h for B3 training. QA on the first 2,136 docs (`tools/qa_teacher_labels.py`;
+  shortest-first, so interview template only): spans/doc within ±10% of length-matched slice for every
+  major type; under-recall on ECONOMIC_STATUS (0.69x) and CRIMINAL (0.70x), matching E0's weak types;
+  0.7% of spans dropped as non-verbatim; template conventions (e.g. `Referanse:` numbers untagged)
+  match gold. Re-run when the dossier template (longer docs) comes through.

@@ -77,6 +77,9 @@ def main():
     ap.add_argument("--batch", type=int, default=8)
     ap.add_argument("--max-new-tokens", type=int, default=1024)
     ap.add_argument("--limit", type=int, default=None)
+    ap.add_argument("--shard", default=None, metavar="I/N",
+                    help="label only documents whose digest falls in shard I of N, so N machines "
+                         "can split the corpus with no overlap; outputs are concatenated after")
     ap.add_argument("--gpu-fraction", type=float, default=None,
                     help="cap this process's share of GPU memory so a shared GPU keeps headroom "
                          "for other jobs; an over-cap batch is split like any other OOM")
@@ -96,6 +99,9 @@ def main():
             if l.strip():
                 done.add(json.loads(l)["digest"])
     todo = [(d, t) for d, t in corpus_docs(args.clean, held) if d not in done]
+    if args.shard:
+        i, n = map(int, args.shard.split("/"))
+        todo = [(d, t) for d, t in todo if int(d, 16) % n == i]
     if args.limit:
         todo = todo[: args.limit]
     todo.sort(key=lambda x: len(x[1]))
