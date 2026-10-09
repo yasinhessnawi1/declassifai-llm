@@ -16,7 +16,8 @@ throughput on this machine's 2 CPU cores.
 |---|---|---|---|---|---|---|---|
 | B0 | Raw Gemini corpus labels (v2-converted) | — | — | 0.521 | 0.705 | 0.166 | — |
 | E0 | Qwen3.5-9B QLoRA (teacher) | 9B | D1 | 0.814 | 0.907 | — | no |
-| T1 | NorBERT3-small span tagger | 40.6M | D1 | 0.769 | 0.902 | 0.560 | tbd (0.53 s/doc on GPU) |
+| T1 | NorBERT3-small span tagger | 40.6M | D1 | 0.769 | 0.902 | 0.560 | **0.28 s/doc** (6 CPUs) |
+| T2 | NorBERT3-xs span tagger | 15M | D1 | 0.760 | 0.899 | — | **0.17 s/doc** (6 CPUs) |
 
 E0: 1 epoch, 10.3 h on the V100; 41 s/doc to evaluate on GPU. Weak types: BEHAVIORAL_PATTERN,
 ECONOMIC_STATUS, MEDICATION, CRIMINAL/HEALTH/FAMILY_RELATION boundaries.
@@ -36,13 +37,24 @@ anchor and is up-weighted; gold stays untouched.
 
 ## Candidates
 
-| Track | Model | Size | Why |
-|---|---|---|---|
-| Encoder tagger | ltg/norbert3-xs / -small / -base | 15M / 40M / 123M | Norwegian-native, CPU-cheap; multi-label per-type tagging handles nested spans |
-| Encoder tagger | NbAiLab/nb-bert-base | 178M | Norwegian BERT baseline; the thesis's BERT track |
-| Span model | GLiNER multi v2.1 (mDeBERTa) | ~200M | span-level, nested, label-prompted; strong small-model NER |
-| Small LLM | Qwen3.5-0.8B / 2B, Qwen2.5-0.5B / 1.5B | 0.5–2B | same generative format as E0; GGUF int4 for CPU |
-| Teacher | Qwen3.5-9B (E0) | 9B | upper bound and pseudo-labeller |
+Scouted on the Hub 2026-10-09 (incl. lesser-known checkpoints). Ranked by expected value for
+"smallest model, CPU first".
+
+| Pri | Track | Model | Size | Licence | Why |
+|---|---|---|---|---|---|
+| 1 | Encoder tagger | ltg/norbert4-xsmall / -small / -base | 17M / 40M / 149M | Apache-2.0 | NorBERT3's successor (2025): trained from scratch on 600B Norwegian tokens with 16k-token sequences and sliding-window attention, so a whole document fits in one pass (no 512-token windows). Drop-in for `experiments/tagger`. Card asks for FlashAttention2, which the V100 lacks; check the custom code falls back |
+| 1 | Encoder tagger | ltg/norbert3-xs / -small / -base | 15M / 40M / 123M | Apache-2.0 | already running (T1/T2) |
+| 2 | Span extractor | fastino/gliner2.5-multi-v1 | 287M | Apache-2.0 | mDeBERTa-v3 boundary model: any span length (start/end pairing, no width grid), so long tier-C clauses fit. Fine-tunable, CPU via `gliner2[local]`. Needs its own venv |
+| 3 | Encoder from an LLM | perplexity-ai/PII-Tracer | 596M | MIT | Qwen3-0.6B run **bidirectionally** (decoder turned encoder), already PII-tuned, 4k context, ships GGUF. Swap its 37-tag head for our 59×3 heads. Thesis angle: architecture edit of a small LLM. Needs transformers ≥5.2 |
+| 4 | Small LLM | NbAiLab/borealis-270m / -1b (Gemma 3, Norwegian SFT); Qwen3.5-0.8B / 2B | 0.27–2B | borealis "other" (check); Qwen Apache | same generative output as E0; LoRA, GGUF int4 for CPU |
+| 5 | Encoder tagger | jhu-clsp/mmBERT-small; jonasaise/scandmmBERT-base | ~140M / 308M | MIT / Apache | multilingual ModernBERT (8k context); scand variant continued on Scandinavian text. Comparison point against the Norwegian-native encoders |
+| 5 | Encoder tagger | NbAiLab/nb-bert-base | 178M | CC-BY-4.0 | thesis BERT baseline (retry when the GPU is free) |
+| — | Zero-shot baselines | knowledgator/gliner-x-large (lists no); saattrupdan/nbailab-base-ner-scandi; bardsai/eu-pii-anonimization-multilang | 865M / 178M / 278M | Apache / MIT / Apache | no training: one gold eval each, to show what off-the-shelf gets |
+| — | Second teacher | ltg/normistral-11b-warm, NbAiLab/borealis-12b | 11–12B | Apache / other | optional cross-check of the E0 pseudo-labels |
+| — | Teacher | Qwen3.5-9B (E0) | 9B | Apache | upper bound and pseudo-labeller |
+
+Rejected: iiiorg/piiranha-v1 (CC-BY-NC-ND), OpenMed-PII (English clinical),
+knowledgator/gliner-pii-edge (English only), fastino gliner2-privacy-filter (no Nordic languages).
 
 Encoder/span models are expected to win on CPU cost; the question is how close they get on
 tier C (clauses), where span boundaries are long and judgement-heavy.
@@ -56,3 +68,6 @@ tier C (clauses), where span boundaries are long and judgement-heavy.
   0.827 lenient: it finds the clauses but misplaces their boundaries (CRIMINAL 0.459,
   BEHAVIORAL_PATTERN 0.225, ECONOMIC_STATUS 0.344 exact). ANIMAL_INFO and ORGANIZATION lose
   precision (0.67, 0.72). The format's own ceiling is 0.962 exact.
+- 2026-10-09 — T2 (xs) scored. CPU latency measured on 20 gold docs after capping torch threads at the
+  cgroup quota (6 CPUs): torch defaulted to 96 threads (host count) and was ~400x slower. HF scouting →
+  Candidates table; NorBERT4 (16k context) is the top new find.

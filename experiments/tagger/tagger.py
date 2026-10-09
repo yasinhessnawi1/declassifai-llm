@@ -247,10 +247,27 @@ def train(args):
     print("saved", args.out)
 
 
+def cpu_budget():
+    """Return the CPUs this process may actually use.
+
+    os.cpu_count() reports the host (96 here), but the container's cgroup quota
+    allows far fewer; running 96 threads against a 6-CPU quota throttles every
+    matmul and made CPU inference ~100x slower than it should be.
+    """
+    n = len(os.sched_getaffinity(0))
+    try:
+        quota, period = open("/sys/fs/cgroup/cpu.max").read().split()
+        if quota != "max":
+            n = min(n, int(quota) // int(period))
+    except (OSError, ValueError):
+        pass
+    return max(1, n)
+
+
 def predict(args):
     meta = json.load(open(os.path.join(args.ckpt, "tagger.json")))
     assert meta["types"] == TYPES, "type list changed since training"
-    torch.set_num_threads(max(1, os.cpu_count() or 1))
+    torch.set_num_threads(cpu_budget())
     tok = AutoTokenizer.from_pretrained(args.ckpt, trust_remote_code=True)
     model = Tagger(meta["base"])
     model.load_state_dict(torch.load(os.path.join(args.ckpt, "tagger.pt"), map_location="cpu"))
