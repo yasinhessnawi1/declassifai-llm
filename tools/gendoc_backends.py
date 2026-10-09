@@ -545,7 +545,7 @@ class HFBackend(GenerationBackend):
 
     def __init__(
         self, model_repo_id: str, device: str = "cuda", dtype: str = "float16",
-        attn_implementation: str = "sdpa",
+        attn_implementation: str = "sdpa", load_in_4bit: bool = False,
     ) -> None:
         """Load the tokenizer and model.
 
@@ -555,6 +555,10 @@ class HFBackend(GenerationBackend):
             dtype: torch dtype name; "float16" per the measured Volta guidance,
                 never "bfloat16" on this hardware.
             attn_implementation: SDPA backend name passed to `from_pretrained`.
+            load_in_4bit: Load the weights as bitsandbytes NF4 with fp16 compute.
+                The fp16 9B model holds 18 GB of weights alone and peaks near 29 GB,
+                so it can never share the V100 with the relabeller and the image
+                team's training; 4-bit brings it to roughly a third of that.
         """
         import torch
         from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -564,9 +568,18 @@ class HFBackend(GenerationBackend):
         self.tokenizer.padding_side = "left"
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
-        self.model = AutoModelForCausalLM.from_pretrained(
-            model_repo_id, torch_dtype=torch_dtype, attn_implementation=attn_implementation,
-        ).to(device)
+        if load_in_4bit:
+            from transformers import BitsAndBytesConfig
+            quant = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
+                                       bnb_4bit_compute_dtype=torch_dtype, bnb_4bit_use_double_quant=True)
+            self.model = AutoModelForCausalLM.from_pretrained(
+                model_repo_id, dtype=torch_dtype, attn_implementation=attn_implementation,
+                quantization_config=quant, device_map={"": device},
+            )
+        else:
+            self.model = AutoModelForCausalLM.from_pretrained(
+                model_repo_id, torch_dtype=torch_dtype, attn_implementation=attn_implementation,
+            ).to(device)
         self.model.eval()
         self.device = device
         self._supports_enable_thinking = self._probe_enable_thinking()
@@ -647,12 +660,13 @@ class HFBackend(GenerationBackend):
         return self.tokenizer.batch_decode(generated, skip_special_tokens=True)
 
 
-def build_backend(name: str, model: Optional[str] = None) -> GenerationBackend:
+def build_backend(name: str, model: Optional[str] = None, load_in_4bit: bool = False) -> GenerationBackend:
     """Construct a backend by name.
 
     Args:
         name: "mock" or "hf".
         model: Required Hugging Face repo id when `name == "hf"`.
+        load_in_4bit: For "hf", load the weights in bitsandbytes NF4.
 
     Returns:
         A `GenerationBackend` instance.
@@ -662,5 +676,5 @@ def build_backend(name: str, model: Optional[str] = None) -> GenerationBackend:
     if name == "hf":
         if not model:
             raise ValueError("--backend hf requires --model <repo_id>")
-        return HFBackend(model)
+        return HFBackend(model, load_in_4bit=load_in_4bit)
     raise ValueError(f"unknown backend: {name}")

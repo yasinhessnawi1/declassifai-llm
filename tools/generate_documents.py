@@ -4778,6 +4778,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--backend", choices=["mock", "hf"], default="mock")
     parser.add_argument("--model", help="HF repo id, required for --backend hf")
+    parser.add_argument("--load-in-4bit", action="store_true",
+                        help="load the hf model in bitsandbytes NF4 (fp16 compute) to fit beside other GPU jobs")
     parser.add_argument("--n", type=int, default=50)
     parser.add_argument("--genres", default=",".join(genres_mod.genre_names()))
     parser.add_argument("--strategy", choices=["seeded", "marked"], default="seeded")
@@ -5348,7 +5350,7 @@ def run_windows(args: argparse.Namespace, ctx: RunContext, plans: List[DocPlan],
         start, end = spans[position]
         if backend is None:
             loading = time.time()
-            backend = build_backend(args.backend, args.model)
+            backend = build_backend(args.backend, args.model, load_in_4bit=args.load_in_4bit)
             controller.own_gpu_mb = backend.gpu_memory_mb
             manifest["progress"]["model_load_seconds"] = round(time.time() - loading, 1)
         replay = any(k in done for k in range(start, end))
