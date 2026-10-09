@@ -14,7 +14,9 @@ out, run over finished files rather than trusted from the sampler:
 * **Planted negatives.** Both sets plant near-miss sentences, each from its own
   partition, so a negative found in both is the one leak that teaches a detector
   exactly what the benchmark will ask. A negative's `{PRON}`/`{POSS}`/`{OBJ}` is
-  filled per document ("han"/"hun"/"ho"), so it is searched for as a pattern.
+  filled per document ("han"/"hun"/"ho"), so it is searched for as a pattern, and with
+  its first letter in either case: a negative that opens a sentence is capitalised by
+  the model. Only negatives the sampler can plant are searched for.
   They are reported on their own (`shared_negative_texts`) as well as inside the
   clause-text checks, and, when the metadata files are given, the recorded
   `planted_negatives` of the two runs are compared too (`shared_planted_negatives`).
@@ -74,9 +76,16 @@ def load_documents(paths: Iterable[str]) -> List[dict]:
 
 
 def _pattern(text: str) -> "re.Pattern":
+    """Return the regex for a text with placeholders, its first letter in either case.
+
+    A negative that opens a sentence is capitalised by the model, so "han ville ikke ..." is
+    also found as "Han ville ikke ...".
+    """
     escaped = _PLACEHOLDER.sub(lambda _m: _NAME_TOKEN, re.escape(text))
     escaped = _PRONOUN_PLACEHOLDER.sub(
-        lambda m: "(?:" + "|".join(dataset_mod.pronoun_alternatives(m.group(1))) + ")", escaped)
+        lambda m: "(?i:" + "|".join(dataset_mod.pronoun_alternatives(m.group(1))) + ")", escaped)
+    if not escaped.startswith("(?i:") and escaped[:1].isalpha():
+        escaped = "(?i:" + escaped[0] + ")" + escaped[1:]
     return re.compile(r"(?<!\w)" + escaped + r"(?!\w)")
 
 
@@ -88,9 +97,10 @@ def texts_in(docs: List[dict], texts: Iterable[str]) -> Dict[str, List[str]]:
             continue
         plain = "{" not in text
         pattern = None if plain else _pattern(text)
+        swapped = text[:1].swapcase() + text[1:] if text[:1].isalpha() else text
         for doc in docs:
             haystack = doc["text_input"]
-            if (text in haystack) if plain else pattern.search(haystack):
+            if (text in haystack or swapped in haystack) if plain else pattern.search(haystack):
                 found[text].append(doc["id"])
     return dict(found)
 
@@ -132,7 +142,11 @@ def check(train: List[dict], benchmark: List[dict], clause_bank: dict, partition
     bench_clause = {s for v in partition["clauses"].values() for s in v}
     bench_negative = {s for v in partition["negatives"].values() for s in v}
     sampled = {e["text"] for t, v in clause_bank.items() if t != "negatives" for e in v if e.get("genres")}
-    negatives = {e["text"] for v in clause_bank.get("negatives", {}).values() for e in v}
+    # Only a negative the sampler can plant can reach a document. The others (a bare "Kirkeveien 22")
+    # sit on a side of the partition by hash, and a document that happens to contain one in either case
+    # of its first letter -- "Saksnummer 2019/LO-4521" is the capitalised form of the benchmark's planted
+    # "saksnummer 2019/LO-4521" -- is not a leak from a side that never planted it.
+    negatives = {e["text"] for v in clause_bank.get("negatives", {}).values() for e in v if e.get("plantable")}
     universe = sampled | negatives
     bench_texts = bench_clause | bench_negative
     train_texts = universe - bench_texts

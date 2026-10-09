@@ -166,7 +166,26 @@ _MOCK_TOPIC_STEMS = {
     "TRADE_UNION": re.compile(r"\b(?:fagforen\w*|fagorganis\w*|tillitsvald|tillitsvalgt)", re.I),
 }
 
+# The mock's stand-in for the auditor's reading of a planted negative: a sentence that holds
+# one and says it is relevant, important, striking or suspicious. A negative has no category
+# word, so `_MOCK_SPECIAL_RE` never fires on it; what makes the sentence a framing finding is
+# the cue alone. A negated cue ("ikke relevant", "uten betydning") is not one.
+_MOCK_NEGATIVE_FRAMING_RE = re.compile(
+    r"\b(?:relevant\w*|viktig\w*|betydning|avgjørende|avgjerande|sentral\w*|mistenk\w*|mistenkjeleg|"
+    r"påfallende|påfallande|tydeleg\w* bilde|tydelig\w* bilde|gir grunn|tyder på|indikerer|kan gjelde for|"
+    r"vektlegg\w*|bekymr\w*|særleg|spesielt)\b", re.IGNORECASE)
+
 MOCK_HEADER_FIELDS = 4
+
+
+def _mock_negative_sentence(text: str) -> str:
+    """Return a planted negative as a sentence of its own, first letter capitalised.
+
+    A negative is a clause with its own subject, so the mock writes it the way the prompt
+    allows a model to: as a sentence. That also exercises the gates' first-letter-insensitive
+    match on every document rather than only on injected ones.
+    """
+    return text[:1].upper() + text[1:] + "."
 
 _BOILERPLATE_NB = [
     "Saken er behandlet i samsvar med gjeldende regelverk.",
@@ -281,6 +300,8 @@ class MockBackend(GenerationBackend):
         document = self._audited_document(prompt)
         manifest = prompt.split(MANIFEST_SENTINEL, 1)[1] if MANIFEST_SENTINEL in prompt else ""
         clauses = [tuple(line.split("|", 2)[1:]) for line in manifest.splitlines() if line.startswith("CLAUSE|")]
+        negatives = [line.split("|", 2)[2].lower() for line in manifest.splitlines()
+                     if line.startswith("NEGATIVE|") and line.count("|") >= 2]
         findings = []
         for sentence in re.split(r"(?<=[.!?])\s+|\n+", document):
             stripped = sentence.strip().rstrip(".")
@@ -295,9 +316,28 @@ class MockBackend(GenerationBackend):
                   and any(not _MOCK_NEGATED_RE.search(stripped[max(0, m.start() - 25):m.start()])
                           for m in _MOCK_RELEVANCE_RE.finditer(stripped))):
                 findings.append(f"FUNN|RAMME|{stripped}")
+            elif self._frames_negative(lowered, negatives):
+                findings.append(f"FUNN|RAMME|{stripped}")
             elif self._contradicts(lowered, clauses):
                 findings.append(f"FUNN|MOTSIGELSE|{stripped}")
         return "\n".join(findings) if findings else "INGEN"
+
+    @staticmethod
+    def _frames_negative(sentence: str, negatives) -> bool:
+        """Whether a (lower-cased) sentence holds a planted negative and presents it as relevant.
+
+        The cue must lie outside the negative's own words and must not be negated within
+        25 characters before it.
+        """
+        for negative in negatives:
+            start = sentence.find(negative)
+            if start < 0:
+                continue
+            rest = sentence[:start] + " " + sentence[start + len(negative):]
+            for match in _MOCK_NEGATIVE_FRAMING_RE.finditer(rest):
+                if not _MOCK_NEGATED_RE.search(rest[max(0, match.start() - 25):match.start()]):
+                    return True
+        return False
 
     @staticmethod
     def _contradicts(sentence: str, clauses) -> bool:
@@ -397,7 +437,7 @@ class MockBackend(GenerationBackend):
         header_label = lambda etype: genres_mod.field_label(etype, form)  # noqa: E731
         sentences = [f"Opplysning ({etype}) i saken er {value}." for etype, value in prose_items]
         sentences += [f"Videre er det opplyst at vedkommende {text}." for _etype, text in seeded_clauses]
-        sentences += [f"Det er også notert at vedkommende {text}." for text in negatives]
+        sentences += [_mock_negative_sentence(text) for text in negatives]
         sentences += [f"⟦{etype}: vedkommende har forhold av denne typen som er nærmere beskrevet i saken⟧."
                       for etype in marked_types]
         rng.shuffle(sentences)
@@ -431,7 +471,7 @@ class MockBackend(GenerationBackend):
         for etype, text in seeded_clauses:
             body_sentences.append(f"Videre er det opplyst at vedkommende {text}.")
         for text in negatives:
-            body_sentences.append(f"Det er også notert at vedkommende {text}.")
+            body_sentences.append(_mock_negative_sentence(text))
         for etype in marked_types:
             body_sentences.append(f"⟦{etype}: vedkommende har forhold av denne typen som er nærmere beskrevet i saken⟧.")
 

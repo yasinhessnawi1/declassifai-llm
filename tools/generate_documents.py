@@ -19,7 +19,9 @@ any plan of more than about ten items, are written in sections instead, see belo
     plan_batch -> sample_record -> build_prompt -> backend.generate (batched)
         -> marker check, truncation, G0 placeholders, length
         -> G2 verbatim (1-2 missing values: targeted repair of the draft)
-        -> G9 slot labels, G13 tabular dumps, G3 names, G4 checksums, G6
+        -> G15 negative placement (one planted negative per sentence, none chained to a
+           seeded clause with "og"/"men", none repeated), G9 slot labels, G13 tabular
+           dumps, G3 names, G4 checksums, G6
            near-duplicate, seeded-clause boundary extension, G7 (unplanned names
            and dates labelled, other unplanned PII rejected)
         -> G11 content audit (a second, temperature-0 pass of the same model:
@@ -87,14 +89,29 @@ employer pools, fixed in `data/synthetic/benchmark_partition.json`
 (`tools/gendoc_dataset.py`), so no string a benchmark scores on was generated into
 training data; `tools/check_dataset_leakage.py` verifies that on finished files.
 The benchmark also leans on `difficulty: hard` clauses and on dense and case-file
-documents, and plants one to three hard negatives per document -- near-miss sentences
-such as "men han ville ikke si om han er fagorganisert" -- that must stay verbatim
+documents, and plants one to three hard negatives per document -- near-miss clauses
+such as "under samtalen ville han ikke si om han er fagorganisert" -- that must stay verbatim
 and unlabelled, recorded in the metadata as `planted_negatives`. The training set
 plants zero or one, from its own share of the negatives. A negative's pronoun
 placeholders are filled from the subject, and no negative text is planted more than
 twice in a run (`NegativeLedger`): pilot v4 planted 37 negatives from 13 distinct
-texts, and a model memorises a sentence it sees every tenth document. Benchmark ids
-are `SYB-`, training ids `SYN-`.
+texts, and a model memorises a sentence it sees every tenth document.
+
+**A negative is a clause with its own subject, not a fragment that opens with "og" or "men".**
+Pilot v5 planted 62 negatives and kept all 62 verbatim, but every new bank text began with
+"og " or "men ", so the model chained them into run-ons ("..., og han bur i ei bydel ..., og
+han tok ikkje stilling til ...") and a fixed opening was itself a surface mark of a trap. The
+bank texts now start at the subject (`{PRON}`) or at a lead word that varies ("under samtalen
+ville han ...", "i helgen leste han ..."), and the prompt lets the model write one as a
+sentence of its own or build it into a longer one. When it opens a sentence the model
+capitalises it, so the first letter is matched in either case and the rest exactly
+(`PlantedNegative.surface`, `gendoc_gates.resolve_surfaces`); the labels and every later gate
+use that surface. G15 rejects a document or section where two negatives share a sentence,
+where a negative is coordinated with a seeded clause by "og", "men" or "samt", or where one
+negative stands twice; G11 asks the auditor whether a sentence presents a negative as
+relevant or suspicious, and a finding is repaired like any other framing finding.
+
+Benchmark ids are `SYB-`, training ids `SYN-`.
 
 **A run survives being stopped.** The GPU is shared and a full run is days of it, so the run
 yields to other jobs and picks up later (`tools/gendoc_store.py`). Every finished document,
@@ -218,6 +235,10 @@ class PlantedNegative:
         template: The bank text before `{PRON}`/`{POSS}`/`{OBJ}` were filled; the
             per-run reuse cap counts templates, so "han" and "hun" fills of one
             sentence are one sentence.
+        surface: The form the document actually contains, set by the gates once the
+            text is written. It differs from `text` only in the case of the first
+            letter: a negative that opens a sentence is capitalised by the model.
+            Empty until a document has been checked.
     """
 
     type: str
@@ -225,9 +246,15 @@ class PlantedNegative:
     why_not: str
     also_labelled: Dict[str, str] = field(default_factory=dict)
     template: str = ""
+    surface: str = ""
 
     def __post_init__(self) -> None:
         self.template = self.template or self.text
+
+    @property
+    def found(self) -> str:
+        """The string to search for in the document: its realised surface, else the planted text."""
+        return self.surface or self.text
 
 
 @dataclass
@@ -1734,7 +1761,7 @@ def build_prompt(record: Record, rng: Optional[random.Random] = None) -> str:
         record, record.planned, record.planted_negatives, rng)
     manifest += item_manifest
     planned_types = {pv.type for pv in record.planned}
-    rules = _prompt_rules(record, planned_types, marked)
+    rules = _prompt_rules(record, planned_types, marked, negatives=bool(record.planted_negatives))
 
     prompt = f"{header}\n\n{subject_line}\n\nVerdier som skal stå ordrett:\n" + "\n".join(value_lines)
     if clause_lines:
@@ -1746,14 +1773,27 @@ def build_prompt(record: Record, rng: Optional[random.Random] = None) -> str:
     return prompt + "\n" + MANIFEST_SENTINEL + "\n" + "\n".join(manifest)
 
 
+# The pilot-v5 wording said every negative "begynner med liten forbokstav og skal stå midt i
+# en setning, etter en hovedsetning eller et komma", and every bank text opened with "og" or
+# "men", so the model glued negatives into run-ons and the fixed opening was a surface mark of
+# a trap. A negative is now a clause with its own subject: the model writes it as a sentence
+# of its own (capitalising the first letter) or builds it into a longer one.
 _NEGATIVE_INTRO = (
-    "\n\nNøytrale formuleringer som også skal stå ordrett inne i løpende setninger. "
+    "\n\nNøytrale formuleringer som også skal stå ordrett. "
     "De sier ikke noe om personens helse, tro, tilhørighet, opprinnelse, seksualitet "
     "eller straffbare forhold. Utdyp dem ikke, forklar dem ikke og knytt dem ikke til "
-    "noen diagnose, medlemskap eller lovbrudd. Hver formulering begynner med liten "
-    "forbokstav og skal stå midt i en setning, etter en hovedsetning eller et komma, ikke som en "
-    "egen setning med stor forbokstav. Mangler formuleringen subjekt, er hovedpersonen subjektet: "
-    "sett «han», «hun» eller «ho» rett foran, ikke et innskutt ledd:\n")
+    "noen diagnose, medlemskap eller lovbrudd. Har en formulering eget subjekt («han», «hun», «ho», "
+    "«naboen»), kan den stå som en egen setning (da skriver du første bokstav med stor bokstav, resten "
+    "ordrett) eller bygges inn i en lengre setning. «han», «hun» og «ho» i formuleringene er hovedpersonen. "
+    "Begynner en formulering med et verb, er hovedpersonen subjektet: sett «han», «hun» eller «ho» rett "
+    "foran. Hver formulering skal stå i sin egen setning:\n")
+
+_NEGATIVE_PLACEMENT_RULE = (
+    "Hver nøytral formulering står i en setning for seg. Bind aldri to nøytrale formuleringer, eller en "
+    "nøytral formulering og en opplysning fra listen, sammen i én setning med «og», «men» eller «samt», og "
+    "gjenta ingen formulering. Skriv aldri at en nøytral formulering er relevant, viktig, påfallende, "
+    "mistenkelig eller av betydning for saken, vurderingen eller personens troverdighet: den står som en "
+    "vanlig, uviktig opplysning.")
 
 
 def _subject_line(record: Record) -> str:
@@ -1832,7 +1872,7 @@ def _item_blocks(record: Record, planned: Sequence[PlannedValue],
 
 def _prompt_rules(record: Record, planned_types: Set[str], marked: bool, *,
                   first_part: bool = True, section: bool = False,
-                  items: Optional[Sequence[PlannedValue]] = None) -> List[str]:
+                  items: Optional[Sequence[PlannedValue]] = None, negatives: bool = False) -> List[str]:
     """Return the numbered rules of a generation prompt.
 
     Every rule a whole-document prompt carries is carried by a section prompt too:
@@ -1850,6 +1890,7 @@ def _prompt_rules(record: Record, planned_types: Set[str], marked: bool, *,
         section: True for a section prompt.
         items: The planned items this prompt lists; the rule about several clauses of one
             kind is given only when this prompt lists two of them. None means the whole record.
+        negatives: Whether this prompt lists planted negatives, which adds the placement rule.
 
     Returns:
         The rules in order, without numbering.
@@ -1920,6 +1961,8 @@ def _prompt_rules(record: Record, planned_types: Set[str], marked: bool, *,
         "ikke finnes i et register, at den er uklar eller ubekreftet, eller at ingen slike forhold "
         "foreligger. Hver opplysning er sann og står som et nøytralt faktum.",
     ]
+    if negatives:
+        rules.append(_NEGATIVE_PLACEMENT_RULE)
     listed = record.planned if items is None else items
     if any(count >= 2 for count in collections.Counter(
             pv.type for pv in listed if pv.value_kind == "clause").values()):
@@ -2143,7 +2186,7 @@ def build_section_prompt(record: Record, plan: "sections_mod.SectionPlan", k: in
     if negative_lines:
         parts.append(_NEGATIVE_INTRO.strip("\n") + "\n" + "\n".join(negative_lines))
     rules = _prompt_rules(record, {pv.type for pv in items}, marked, first_part=k == 0, section=True,
-                          items=items)
+                          items=items, negatives=bool(negatives))
     rules.append("Bruk bare personer, verdier og opplysninger som står i listen for denne delen eller i tidligere "
                  "deler; ikke legg til noe nytt om noen.")
     parts.append("Regler:\n" + "\n".join(f"{i}. {r}" for i, r in enumerate(rules, 1)))
@@ -2645,7 +2688,7 @@ def evaluate_candidate(
     ]
     if record.pii_free and literal_values:
         return fail("plan_inconsistent", "a PII-free record must plan no values")
-    negative_texts = [neg.text for neg in record.planted_negatives]
+    negative_texts = _realise_negatives(record.planted_negatives, clean_text)
     g2_ok, g2_missing = gates.gate_verbatim(literal_values + negative_texts, clean_text)
     missing_marks = [pv.type for pv in record.planned if pv.strategy == "marked" and pv.type not in marked_spans]
     if not g2_ok or missing_marks:
@@ -2665,6 +2708,9 @@ def evaluate_candidate(
 
     clauses = [pv.value for pv in record.planned if pv.value_kind == "clause" and pv.value]
     clauses += [span for spans in marked_spans.values() for span in spans]
+    placement_ok, placement_hits = gates.gate_negative_placement(clean_text, negative_texts, clauses)
+    if not placement_ok:
+        return fail("G15_negative_placement", placement_hits)
     slot_ok, slot_hits = gates.gate_slot_labels(clean_text, clauses + negative_texts)
     if not slot_ok:
         return fail("G9_slot", slot_hits)
@@ -2765,11 +2811,28 @@ def evaluate_candidate(
     return "accepted", None
 
 
+def _realise_negatives(negatives: Sequence[PlantedNegative], text: str) -> List[str]:
+    """Record on each planted negative the form it takes in `text`, and return those forms.
+
+    Args:
+        negatives: The negatives planted in the text's document.
+        text: The generated document or section.
+
+    Returns:
+        One string per negative, in order: the planted text, or the same text with its
+        first letter in the other case when that is what the model wrote.
+    """
+    surfaces = gates.resolve_surfaces([neg.text for neg in negatives], text)
+    for neg, surface in zip(negatives, surfaces):
+        neg.surface = surface
+    return surfaces
+
+
 def _document_literals(record: Record) -> List[str]:
     """Every literal string the record plants anywhere: values, seeded clauses, negatives."""
     literals = [pv.value for pv in record.planned
                 if pv.value is not None and (pv.value_kind == "value" or pv.strategy == "seeded")]
-    return literals + [neg.text for neg in record.planted_negatives]
+    return literals + [neg.found for neg in record.planted_negatives]
 
 
 def evaluate_section(
@@ -2845,7 +2908,7 @@ def evaluate_section(
     negatives = [record.planted_negatives[i] for i in section.negatives]
     literals = [pv.value for pv in planned
                 if pv.value is not None and (pv.value_kind == "value" or pv.strategy == "seeded")]
-    negative_texts = [neg.text for neg in negatives]
+    negative_texts = _realise_negatives(negatives, clean)
     g2_ok, g2_missing = gates.gate_verbatim(literals + negative_texts, clean)
     missing_marks = [pv.type for pv in planned if pv.strategy == "marked" and pv.type not in marked_spans]
     if not g2_ok or missing_marks:
@@ -2860,6 +2923,9 @@ def evaluate_section(
 
     clauses = [pv.value for pv in planned if pv.value_kind == "clause" and pv.value]
     clauses += [span for spans in marked_spans.values() for span in spans]
+    placement_ok, placement_hits = gates.gate_negative_placement(clean, negative_texts, clauses)
+    if not placement_ok:
+        return fail("G15_negative_placement", placement_hits)
     slot_ok, slot_hits = gates.gate_slot_labels(clean, clauses + negative_texts)
     if not slot_ok:
         return fail("G9_slot", slot_hits)
@@ -3078,6 +3144,8 @@ def run_generation(
             return sections_mod.section_at(spans, detail[0].get("start", -1))
         if stage == "G9_slot" and isinstance(detail, list) and detail:
             return containing(detail[0].get("line", "")[:60])
+        if stage == "G15_negative_placement" and isinstance(detail, list) and detail:
+            return containing(detail[0]["negatives"][0])
         if stage == "G14_roles" and isinstance(detail, list) and detail:
             return containing(str(detail[0].get("value", "")))
         if stage == "G3_name_collision" and isinstance(detail, list) and detail:
@@ -3092,12 +3160,12 @@ def run_generation(
         return [v for vals in st.result["output"].values() for v in vals]
 
     def _exempt_spans(st: DocState) -> List[str]:
-        return [neg.text for neg in st.record.planted_negatives]
+        return [neg.found for neg in st.record.planted_negatives]
 
     def _section_keep(st: DocState, k: int) -> List[str]:
         sec = st.section_plan.sections[k]
         return ([st.record.planned[i].value for i in sec.items if st.record.planned[i].value]
-                + [st.record.planted_negatives[j].text for j in sec.negatives])
+                + [st.record.planted_negatives[j].found for j in sec.negatives])
 
     for st in states:
         _begin(st)
@@ -3134,9 +3202,10 @@ def run_generation(
                 budgets.append(_token_budget(config, max(sec.chars[1], len(sec.text))))
             elif kind == "audit":
                 prompts.append(audit.build_audit_prompt(
-                    st.result["text"], _covered_spans(st) + _exempt_spans(st), st.record.doc_seed,
+                    st.result["text"], _covered_spans(st), st.record.doc_seed,
                     clauses=[(pv.type, pv.value) for pv in st.record.planned
-                             if pv.value_kind == "clause" and pv.value]))
+                             if pv.value_kind == "clause" and pv.value],
+                    negatives=[(neg.type, neg.found) for neg in st.record.planted_negatives]))
                 budgets.append(config.audit_max_new_tokens)
             else:
                 keep = [pv.value for pv in st.record.planned if pv.value] + _exempt_spans(st)
@@ -4067,7 +4136,7 @@ def negatives_report(accepted: List[dict], states: List[DocState], plans: List[D
             for span in spans:
                 if span == allowed or len(span) < 4:
                     continue
-                if re.search(r"(?<!\w)" + re.escape(span) + r"(?!\w)", neg.text) or neg.text in span:
+                if re.search(r"(?<!\w)" + re.escape(span) + r"(?!\w)", neg.found) or neg.found in span:
                     labelled_by_mistake.append({"id": doc_id, "type": etype, "span": span,
                                                 "negative": neg.text})
     template_use = collections.Counter(neg.template for _doc, neg in planted)
@@ -4082,7 +4151,9 @@ def negatives_report(accepted: List[dict], states: List[DocState], plans: List[D
         "by_form": dict(collections.Counter(r["record"].form for r in accepted
                                             for _neg in r["record"].planted_negatives)),
         "kept_verbatim": sum(1 for doc_id, neg in planted
-                             if neg.text in next(r for r in accepted if r["id"] == doc_id)["text"]),
+                             if gates.negative_occurrences(
+                                 next(r for r in accepted if r["id"] == doc_id)["text"], neg.text)),
+        "capitalised_at_sentence_start": sum(1 for _doc, neg in planted if neg.found != neg.text),
         "labelled_by_mistake": labelled_by_mistake,
         "audit_quotes_overruled_by_exemption": sum(
             e.get("exempt_negative_quotes", 0) for st in states for e in st.audit_log),
@@ -4220,7 +4291,7 @@ def accepted_lines(st: DocState, mode: dataset_mod.DatasetMode, strategy: str) -
         "planted_negatives": [
             {"type": neg.type, "text": neg.text, "template": neg.template,
              "why_not": neg.why_not, "also_labelled": neg.also_labelled,
-             "in_text": neg.text in text}
+             "surface": neg.found, "in_text": bool(gates.negative_occurrences(text, neg.text))}
             for neg in rec.planted_negatives],
         "tabular": result["tabular"],
         "type_target": st.plan.type_target, "art9_cap": st.plan.art9_cap,
@@ -4312,7 +4383,8 @@ def stored_accepted(batch_line: dict, meta: dict, plan: DocPlan) -> dict:
         parties=[None] * len(meta["parties"]),
         planned=[None] * (meta["planned_items"] - len(meta["planted_negatives"])),
         planted_negatives=[PlantedNegative(n["type"], n["text"], n["why_not"], n["also_labelled"],
-                                           template=n["template"]) for n in meta["planted_negatives"]],
+                                           template=n["template"], surface=n.get("surface", ""))
+                           for n in meta["planted_negatives"]],
         instances_planned=meta["instances_planned"], instances_realised=meta["instances_realised"],
         dropped_forced=meta["dropped_forced"])
     return {

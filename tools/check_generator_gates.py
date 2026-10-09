@@ -141,11 +141,14 @@ CASES: Dict[int, Tuple[str, Optional[str]]] = {
     49: ("health_cap_typical", None),
     50: ("health_cap_dense", None),
     51: ("username_as_issuers_own", "G14_roles"),
+    52: ("negatives_chained", "G15_negative_placement"),
+    53: ("negative_framed_relevant", None),
+    54: ("negative_chained_to_clause", "G15_negative_placement"),
 }
 
 # Cases that plan hard negatives, as the benchmark does. They need a plan with
 # `n_negatives` and a run config carrying a negative bank.
-_NEGATIVE_CASES = {30, 31, 32}
+_NEGATIVE_CASES = {30, 31, 32, 52, 53, 54}
 
 # Cases that plan several instances of a type: idx -> (instances, profile, length band, type target, art9 cap, form).
 _MULTI_CASES = {
@@ -172,6 +175,7 @@ _GENRE_FOR = {
     41: "forsvaret_clearance", 42: "gp_referral", 43: "digital_forensics_report",
     44: "police_report", 45: "police_report", 46: "police_report", 47: "vet_clinical_record",
     48: "vet_clinical_record", 49: "gp_referral", 50: "gp_referral", 51: "digital_forensics_report",
+    52: "police_report", 53: "police_report", 54: "police_report",
 }
 
 # Types a case forces into its record so the injection has a planned value to work on.
@@ -220,7 +224,7 @@ class InjectingMock(MockBackend):
             ok = True
             if not is_generation and "\nAUDIT|1" in prompt and CASES.get(idx, ("",))[0] == "negative_survives_audit":
                 negatives = self.states[idx].record.planted_negatives
-                text = "\n".join(f"FUNN|SENSITIV|{neg.text}" for neg in negatives)
+                text = "\n".join(f"FUNN|SENSITIV|{neg.found}" for neg in negatives)
             if is_generation and attempt == 1 and "REPAIR|" not in _manifest(prompt):
                 text, ok = self._inject(idx, text, prompt)
                 self.first_texts[idx] = text
@@ -313,8 +317,26 @@ class InjectingMock(MockBackend):
         if name == "contradiction_explained_away" and clauses:
             return text.replace(clauses[0], clauses[0] + ", men denne finst ikkje i oppgjeve register", 1), True
         if name == "negative_elaboration":
+            # The elaboration sits in the negative's own sentence, which is what the exemption must not excuse.
             negative = self.states[idx].record.planted_negatives[0].text
-            return text + f" Det ble notert at vedkommende {negative} {MOCK_ELABORATION_CUE}.", True
+            sentence = negative[:1].upper() + negative[1:]
+            return text.replace(sentence + ".", f"{sentence}, {MOCK_ELABORATION_CUE}.", 1), True
+        if name == "negatives_chained":
+            # Pilot v5's run-on: two planted negatives glued into one sentence with "og".
+            first, second = (n_.text for n_ in self.states[idx].record.planted_negatives[:2])
+            head, tail = first[:1].upper() + first[1:], second[:1].upper() + second[1:]
+            return text.replace(tail + ".", "", 1).replace(head + ".", f"{head}, og {second}.", 1), True
+        if name == "negative_chained_to_clause":
+            first = self.states[idx].record.planted_negatives[0].text
+            head = first[:1].upper() + first[1:]
+            seeded = f"Videre er det opplyst at vedkommende {clauses[0]}."
+            return text.replace(head + ".", "", 1).replace(
+                seeded, f"{seeded[:-1]}, og {first}.", 1), True
+        if name == "negative_framed_relevant":
+            # The pilot's "..., er relevante detaljar i saka": a neutral near-miss presented as bearing on the case.
+            first = self.states[idx].record.planted_negatives[0].text
+            head = first[:1].upper() + first[1:]
+            return text.replace(head + ".", f"{head}, noe som er relevant for saken.", 1), True
         if name == "marker":
             return text + " ⟦TYPE: setning⟧", True
         if name == "length":
@@ -466,12 +488,15 @@ def _check(state: gen.DocState) -> Tuple[bool, str]:
         texts = [n.text for n in negatives]
         spans = [sp for vals in result.get("output", {}).values() for sp in vals]
         allowed = {sub for n in negatives for sub in n.also_labelled.values()}
-        verbatim = all(t in result.get("text", "") for t in texts)
+        verbatim = all(gates.negative_occurrences(result.get("text", ""), t) for t in texts)
+        texts = [n.found for n in negatives]
         unlabelled = not any(t in sp or sp in t for t in texts for sp in spans
                              if sp not in allowed and len(sp) >= 4)
         base = accepted and bool(negatives) and verbatim and unlabelled
         if name == "negative_planted":
-            return base, f"negatives={texts} verbatim={verbatim} unlabelled={unlabelled}"
+            capitalised = any(n.found != n.text for n in negatives)
+            return base and capitalised, (f"negatives={texts} verbatim={verbatim} unlabelled={unlabelled} "
+                                          f"capitalised_at_sentence_start={capitalised}")
         kept = sum(entry["kept"] for entry in state.audit_log)
         overruled = sum(entry.get("exempt_negative_quotes", 0) for entry in state.audit_log)
         if name == "negative_survives_audit":
@@ -479,6 +504,19 @@ def _check(state: gen.DocState) -> Tuple[bool, str]:
                 f"kept={kept} overruled={overruled} audit_repairs={state.audit_repairs_total}"
         return (base and state.audit_repairs_total == 1 and MOCK_ELABORATION_CUE not in result["text"]), \
             f"audit_repairs={state.audit_repairs_total} cue_removed={MOCK_ELABORATION_CUE not in result['text']}"
+    if name in ("negatives_chained", "negative_chained_to_clause"):
+        kinds = [h["kind"] for e in state.gate_log if e["stage"] == "G15_negative_placement" for h in e["detail"]]
+        want = "chained_negatives" if name == "negatives_chained" else "chained_to_clause"
+        return (failure == "G15_negative_placement" and want in kinds and accepted and state.attempt == 2
+                and len(state.record.planted_negatives) >= (2 if name == "negatives_chained" else 1)), \
+            f"G15 kinds={kinds} attempt={state.attempt}"
+    if name == "negative_framed_relevant":
+        reasons = [f["reason"] for entry in state.audit_log for f in entry["findings"]]
+        text = result.get("text", "")
+        kept = all(gates.negative_occurrences(text, n.text) for n in state.record.planted_negatives)
+        return ("sensitive_framing" in reasons and state.audit_repairs_total == 1 and accepted and kept
+                and "relevant for saken" not in text), \
+            f"reasons={reasons} audit_repairs={state.audit_repairs_total} negatives_kept={kept}"
     if name in ("political_framing", "contradiction_denial", "contradiction_explained_away"):
         reasons = [f["reason"] for entry in state.audit_log for f in entry["findings"]]
         want = "sensitive_framing" if name == "political_framing" else "contradiction"
@@ -1278,7 +1316,7 @@ def mock_dataset_run(dataset: str, n: int, seed: int, taxonomy_index, clause_ban
                      "profile": st.plan.profile, "sectioned": st.section_plan is not None,
                      "sections": len(st.section_plan.sections) if st.section_plan else 0})
         planted.append({"id": doc_id, "planted_negatives": [
-            {"text": n_.text, "template": n_.template, "type": n_.type}
+            {"text": n_.text, "template": n_.template, "type": n_.type, "surface": n_.found}
             for n_ in st.record.planted_negatives]})
     return {"docs": docs, "meta": planted, "ledger": config.negative_ledger.report(),
             "states": states, "stats": stats, "plans": plans, "coherence_log": config.coherence_log,
@@ -1334,13 +1372,13 @@ def negative_checks(taxonomy_index, clause_bank, partition, out_dir: str, types_
         use = collections.Counter(n_["template"] for n_ in planted)
         per_doc = collections.Counter(len(m["planted_negatives"]) for m in run["meta"])
         by_id = {d["id"]: d for d in run["docs"]}
-        verbatim = all(n_["text"] in by_id[m["id"]]["text_input"] for m in run["meta"]
-                       for n_ in m["planted_negatives"])
+        verbatim = all(gates.negative_occurrences(by_id[m["id"]]["text_input"], n_["text"])
+                       for m in run["meta"] for n_ in m["planted_negatives"])
         unlabelled = True
         for m in run["meta"]:
             spans = [sp for vals in by_id[m["id"]]["output"].values() for sp in vals]
             for n_ in m["planted_negatives"]:
-                if any(n_["text"] in sp for sp in spans if len(sp) >= len(n_["text"])):
+                if any(n_["surface"] in sp for sp in spans if len(sp) >= len(n_["surface"])):
                     unlabelled = False
         allowed = {e["text"] for v in dataset_mod.select_clause_bank(clause_bank, partition, label)["negatives"].values()
                    for e in v if e.get("plantable")}
@@ -1462,6 +1500,181 @@ def negative_checks(taxonomy_index, clause_bank, partition, out_dir: str, types_
                  if e["text"] in ("har utenlandsk klingende navn", "har utanlandsk klingande namn")]
     report("v2_positive_negatives_unplanted", len(unplanted) == 2 and not any(e.get("plantable") for e in unplanted),
            f"unplanted={[e['text'] for e in unplanted]}")
+    return ok
+
+
+# ---------------------------------------------------------------------------
+# How planted negatives are worded, placed, framed and partitioned
+# ---------------------------------------------------------------------------
+
+# Bokmål forms that must not occur in a Nynorsk negative, and the Nynorsk errors pilot v5 and the
+# review of the bank found: a noun given the wrong gender, and an a-verb written with the Bokmål ending.
+_BOKMAL_IN_NYNORSK = re.compile(
+    r"\b(?:ikke|hva|hvem|hvilken|noe|noen|uten|mye|siden|bare|mannlig|etter|gjør)\b")
+_NYNORSK_ERRORS = re.compile(r"\bei (?:bydel|minoritet|bankfilial|dokumentar|artikkel)\b|\boppbevarer\b")
+
+
+def negative_wording_checks(taxonomy_index, clause_bank: dict, partition: dict) -> bool:
+    """The wording of the planted negatives, the G15 and G11 handling of their placement and framing.
+
+    Covers: no fixed "og"/"men" opening (in the bank and in the prompts), the Nynorsk and the
+    reflexive-possessive fixes, a negative that opens a sentence being matched case-insensitively in
+    its first letter, G15's three hits, the audit's framing finding for a neutral negative, and the
+    deterministic rebuild of the negatives batch.
+    """
+    import hashlib
+    import random
+    ok = True
+
+    def report(name: str, passed: bool, detail: str) -> None:
+        nonlocal ok
+        ok &= passed
+        print(f"{'PASS' if passed else 'FAIL'} negwording {name:<36} {detail}")
+
+    negatives = [(t, e) for t, v in clause_bank["negatives"].items() for e in v]
+    plantable = [e for _t, e in negatives if e.get("plantable")]
+
+    # -- no fixed opening --------------------------------------------------------------
+    opening_conj = [e["text"] for e in plantable if re.match(r"(?:og|men)\b", e["text"])]
+    firsts = collections.Counter(e["text"].split()[0] for e in plantable)
+    pairs = collections.Counter(" ".join(e["text"].split()[:2]) for e in plantable
+                                if not e["text"].startswith("{"))
+    top_word, top_n = firsts.most_common(1)[0]
+    top_pair, top_pair_n = pairs.most_common(1)[0]
+    report("bank_has_no_fixed_opening",
+           not opening_conj and top_n / len(plantable) <= 0.5 and top_pair_n / len(plantable) <= 0.06
+           and len(firsts) >= 20,
+           f"og/men openings={len(opening_conj)} commonest first word {top_word!r} {top_n / len(plantable):.2f} "
+           f"commonest pair {top_pair!r} {top_pair_n / len(plantable):.3f} distinct first words={len(firsts)}")
+
+    bank = dataset_mod.select_clause_bank(clause_bank, partition, "benchmark")
+    negative_bank = bank.pop("negatives")
+    public_figures = set(data.PUBLIC_FIGURES)
+    plan = gen.DocPlan(idx=1, genre="police_report", variant="prose_letter", form="nb",
+                       length_band=(2800, 4000), forced_types=[], profile="dense", type_target=16,
+                       art9_cap=2, n_negatives=2)
+    rec = gen.sample_record(random.Random(1), 1, plan, "seeded", taxonomy_index, bank,
+                            public_figures, negative_bank=negative_bank, dataset="benchmark")
+    sp = sections_mod.build_plan(rec, random.Random(1))
+    holder = next(k for k, sec in enumerate(sp.sections) if sec.negatives)
+    whole = model_visible(gen.build_prompt(rec))
+    section = model_visible(gen.build_section_prompt(rec, sp, holder, [s.text for s in sp.sections[:holder]]))
+    lines = [ln for ln in whole.splitlines()
+             if ln.startswith("- «") and any(n_.text in ln for n_ in rec.planted_negatives)]
+    report("prompts_state_the_placement_rule_and_no_fixed_opening",
+           bool(rec.planted_negatives) and len(lines) == len(rec.planted_negatives)
+           and not any(re.match(r"- «(?:og|men)\b", ln) for ln in lines)
+           and gen._NEGATIVE_PLACEMENT_RULE in whole and gen._NEGATIVE_PLACEMENT_RULE in section
+           and "etter en hovedsetning eller et komma" not in whole,
+           f"negative_lines={[ln[:40] for ln in lines]} rule_in_whole={gen._NEGATIVE_PLACEMENT_RULE in whole} "
+           f"rule_in_section={gen._NEGATIVE_PLACEMENT_RULE in section}")
+
+    # -- Nynorsk and Bokmål grammar of the bank ----------------------------------------
+    bad_nn = [e["text"] for _t, e in negatives if e["form"] == "nn"
+              and (_BOKMAL_IN_NYNORSK.search(e["text"]) or _NYNORSK_ERRORS.search(e["text"]))]
+    nn_texts = [e["text"] for _t, e in negatives if e["form"] == "nn"]
+    fixed_present = (any("ein bydel" in t for t in nn_texts) and any("ein minoritet" in t for t in nn_texts)
+                     and any("oppbevarar" in t for t in nn_texts))
+    # A possessive that refers back to the clause's own subject is reflexive: "om sin seksuelle legning".
+    non_reflexive = [e["text"] for _t, e in negatives
+                     if "{PRON}" in e["text"] and re.search(r"\b(?:om|på|med|av) \{POSS\}", e["text"])]
+    report("nynorsk_gender_and_reflexive_fixed", not bad_nn and fixed_present and not non_reflexive,
+           f"nynorsk problems={bad_nn[:2]} fixed_forms_present={fixed_present} non_reflexive={non_reflexive[:2]}")
+
+    # -- a negative that opens a sentence is matched with its first letter in either case ---
+    negative = "han ville ikke svare på hva han tror på"
+    capital_text = "Saken er avklart. Han ville ikke svare på hva han tror på. Mer følger."
+    inline_text = "Saken er avklart, og han ville ikke svare på hva han tror på. Mer følger."
+    wrong_case = "Saken er avklart. HAN ville ikke svare på hva han tror på."
+    surfaces = gates.resolve_surfaces([negative], capital_text) + gates.resolve_surfaces([negative], inline_text)
+    g2_cap = gates.gate_verbatim(gates.resolve_surfaces([negative], capital_text), capital_text)
+    g2_wrong = gates.gate_verbatim(gates.resolve_surfaces([negative], wrong_case), wrong_case)
+    template = "han ville ikke svare på hva {PRON} tror på"
+    seen = leakage.texts_in([{"id": "D1", "text_input": capital_text}, {"id": "D2", "text_input": wrong_case}],
+                            [template])
+    report("capitalised_sentence_initial_negative_matched",
+           surfaces == ["Han ville ikke svare på hva han tror på", negative] and g2_cap[0] and not g2_wrong[0]
+           and seen == {template: ["D1"]},
+           f"surfaces={surfaces} g2_capital={g2_cap[0]} g2_other_case_rejected={not g2_wrong[0]} leakage_seen={seen}")
+
+    # -- G15 ----------------------------------------------------------------------------
+    one, two = "han bor i nærheten av en bankfilial", "han tok ikke stilling til spørsmålet om livssynet sitt"
+    cap_one, cap_two = one.capitalize(), two.capitalize()
+    clause = "har antatt god økonomi"
+
+    def kinds(text: str, negs, clauses=()) -> List[str]:
+        return [h["kind"] for h in gates.gate_negative_placement(text, negs, clauses)[1]]
+
+    chained = f"Det fremgår at {one}, og {two}."
+    apart = f"{cap_one}. Mer følger. {cap_two}."
+    with_clause = f"Han {clause}, og {one}."
+    clause_apart = f"Han {clause}. {cap_one}."
+    twice = f"{cap_one}. Senere: {one}."
+    report("g15_rejects_chained_negatives_and_clause_chains",
+           kinds(chained, [one, two]) == ["chained_negatives"] and not kinds(apart, [cap_one, cap_two])
+           and kinds(with_clause, [one], [clause]) == ["chained_to_clause"]
+           and not kinds(clause_apart, [cap_one], [clause]) and kinds(twice, [one]) == ["repeated_negative"],
+           f"chained={kinds(chained, [one, two])} apart={kinds(apart, [cap_one, cap_two])} "
+           f"clause={kinds(with_clause, [one], [clause])} clause_apart={kinds(clause_apart, [cap_one], [clause])} "
+           f"twice={kinds(twice, [one])}")
+
+    # -- G11: a neutral negative presented as relevant ----------------------------------
+    framed = f"Det vurderes at {one}, noe som er relevant for saken."
+    denied = f"Det vurderes at {one}, noe som ikke er relevant for saken."
+    plain = f"Det vurderes at {one}."
+    backend = MockBackend()
+
+    def audit_pairs(document: str, negs) -> list:
+        prompt = audit.build_audit_prompt(document, [], 7, negatives=[("FINANCIAL", n_) for n_ in negs])
+        return audit.parse_audit_reply(backend.generate([prompt])[0])
+
+    with_manifest = audit_pairs(framed, [one])
+    without_manifest = audit_pairs(framed, [])
+    findings = audit.filter_audit_findings(framed, [], with_manifest, exempt_spans=[one])
+    inside = audit.filter_audit_findings(framed, [], [("RAMME", one)], exempt_spans=[one])
+    shown = model_visible(audit.build_audit_prompt(framed, [], 7, negatives=[("FINANCIAL", one)]))
+    report("audit_flags_a_negative_framed_as_relevant",
+           [k for k, _q in with_manifest] == ["RAMME"] and not without_manifest and len(findings) == 1
+           and findings[0]["reason"] == "sensitive_framing" and not inside
+           and not audit_pairs(denied, [one]) and not audit_pairs(plain, [one])
+           and "Plantede nøytrale formuleringer" in shown and one in shown,
+           f"with_negatives={[k for k, _q in with_manifest]} without={without_manifest} kept={len(findings)} "
+           f"quote_inside_negative_dropped={not inside} negated_cue_clean={not audit_pairs(denied, [one])}")
+
+    # -- the negatives batch is rebuilt deterministically ------------------------------
+    batch = "nearmiss_v5"
+    batch_texts = {e["text"] for _t, e in negatives if e.get("origin") == batch}
+    recorded = partition["negative_batches"][batch]
+    digest = hashlib.sha256("\n".join(sorted(batch_texts)).encode("utf-8")).hexdigest()[:16]
+    rebuilt = dataset_mod.rebuild_negatives(partition, clause_bank, batch)
+    again = dataset_mod.rebuild_negatives(rebuilt, clause_bank, batch)
+    # A partition made before the texts were corrected: the old texts are listed, none of the new.
+    stale = json.loads(json.dumps(partition))
+    for key in ("negatives", "negatives_train"):
+        for etype in list(stale[key]):
+            stale[key][etype] = [t for t in stale[key][etype] if t not in batch_texts]
+        stale[key]["HEALTH"] = stale[key].get("HEALTH", []) + ["og han hadde en gammel formulering"]
+    stale["negative_batches"][batch]["digest"] = "0" * 16
+    from_stale = dataset_mod.rebuild_negatives(stale, clause_bank, batch)
+    report("negatives_partition_rebuild_is_deterministic",
+           rebuilt == partition and again == rebuilt and from_stale == partition
+           and recorded["digest"] == digest,
+           f"matches_committed={rebuilt == partition} idempotent={again == rebuilt} "
+           f"same_from_stale_partition={from_stale == partition} digest_current={recorded['digest'] == digest}")
+    bench_side = {t for v in partition["negatives"].values() for t in v}
+    train_side = {t for v in partition["negatives_train"].values() for t in v}
+    ratio = recorded["benchmark"] / recorded["texts"]
+    report("negatives_partition_keeps_the_ratio_and_the_sides",
+           batch_texts <= bench_side | train_side and not (bench_side & train_side)
+           and (recorded["benchmark"], recorded["train"]) == (len(batch_texts & bench_side), len(batch_texts & train_side))
+           and abs(ratio - dataset_mod.NEGATIVE_BATCH_BENCHMARK_RATIO) <= 0.05,
+           f"texts={len(batch_texts)} benchmark={recorded['benchmark']} train={recorded['train']} share={ratio:.3f}")
+    try:
+        dataset_mod.extend_negatives(partition, clause_bank, batch)
+        refused = False
+    except ValueError:
+        refused = True
+    report("negatives_partition_second_extension_refused", refused, f"refused={refused}")
     return ok
 
 
@@ -1996,7 +2209,13 @@ def _document_files(out_dir: str) -> Dict[str, bytes]:
 
 
 def _normalised(files: Dict[str, bytes]) -> Dict[str, list]:
-    """Parse the files with wall-clock timing fields zeroed, the only fields a re-run changes."""
+    """Parse the files with wall-clock timing fields zeroed, the only fields a re-run changes.
+
+    The resume checks compare runs through this rather than raw bytes: the meta
+    lines carry rounded wall-clock seconds, which are 0.0 on an idle host but not
+    under load, and made the byte comparison fail spuriously on a busy machine.
+    Every other field, including all document text and labels, still has to match.
+    """
     return {n: [_strip_timing(json.loads(line)) for line in raw.decode("utf-8").splitlines()]
             for n, raw in files.items()}
 
@@ -2074,7 +2293,7 @@ def resume_checks(out_root: str) -> bool:
     mid_state = (mid["progress"]["status"], mid["progress"]["done"])
     final = run(killed, [], resume=True, use_base=False)
     killed_files = _document_files(killed)
-    same_bytes = killed_files == ref_files
+    same_bytes = _normalised(killed_files) == _normalised(ref_files)
     same_norm = _normalised(killed_files) == _normalised(ref_files)
     record("kill -9 three times (between a document's lines too), resume: killed codes are SIGKILL",
            codes == [-9, -9, -9] and final.returncode == 0, f"codes {codes}, final exit {final.returncode}")
@@ -2169,7 +2388,7 @@ def resume_checks(out_root: str) -> bool:
            rep_before.returncode == 0 and partial_again == partial_report)
     run(stopped, ["--stop-file", flag], resume=True, use_base=False)
     record("resuming a stop-file stop gives byte-identical files to the uninterrupted run",
-           _document_files(stopped) == ref_files)
+           _normalised(_document_files(stopped)) == _normalised(ref_files))
 
     # SIGTERM and SIGINT.
     term = os.path.join(root, "sigterm")
@@ -2179,14 +2398,14 @@ def resume_checks(out_root: str) -> bool:
            proc.returncode == 0 and prog["status"] == "stopped" and 0 < prog["done"] < 40
            and prog["done"] % 4 == 0 and "signal SIGTERM" in prog["stop_reason"], f"done {prog['done']}")
     run(term, [], resume=True, use_base=False)
-    record("resuming after SIGTERM is byte-identical", _document_files(term) == ref_files)
+    record("resuming after SIGTERM is byte-identical", _normalised(_document_files(term)) == _normalised(ref_files))
     sigint = os.path.join(root, "sigint")
     proc = run(sigint, [], {"GD_AFTER": "9", "GD_ACTION": "sigint2"})
     rows_ok = all(raw.endswith(b"\n") for raw in _document_files(sigint).values() if raw)
     record("second SIGINT exits immediately (130) leaving no torn line",
            proc.returncode == 130 and rows_ok, f"exit {proc.returncode}")
     run(sigint, [], resume=True, use_base=False)
-    record("resuming after the double SIGINT is byte-identical", _document_files(sigint) == ref_files)
+    record("resuming after the double SIGINT is byte-identical", _normalised(_document_files(sigint)) == _normalised(ref_files))
 
     # Torn trailing lines.
     torn = os.path.join(root, "torn")
@@ -2202,7 +2421,7 @@ def resume_checks(out_root: str) -> bool:
         handle.write(b'{"index": 39, "genre"')
     proc = run(torn, [], resume=True, use_base=False)
     record("torn trailing lines (meta, text, discarded) are detected, reported and dropped on resume",
-           proc.returncode == 0 and proc.stderr.count("dropped") >= 3 and _document_files(torn) == ref_files,
+           proc.returncode == 0 and proc.stderr.count("dropped") >= 3 and _normalised(_document_files(torn)) == _normalised(ref_files),
            "files byte-identical to the reference after the repair")
     garbage = os.path.join(root, "garbage_tail")
     run(garbage, [], {"GD_AFTER": "25", "GD_ACTION": "sigkill"})
@@ -2210,7 +2429,7 @@ def resume_checks(out_root: str) -> bool:
         handle.write(b'{"id": "SYB-000998", "genre"\n')
     proc = run(garbage, [], resume=True, use_base=False)
     record("a complete-looking final line that is not valid JSON is dropped too",
-           proc.returncode == 0 and _document_files(garbage) == ref_files)
+           proc.returncode == 0 and _normalised(_document_files(garbage)) == _normalised(ref_files))
     middle = os.path.join(root, "middle")
     run(middle, [], {"GD_AFTER": "25", "GD_ACTION": "sigkill"})
     meta0 = os.path.join(middle, "benchmark_batch_00000_meta.jsonl")
@@ -2267,7 +2486,7 @@ def resume_checks(out_root: str) -> bool:
     record("--resume with nothing to resume is refused", proc.returncode == 2)
     proc = run(ref, ["--window", "4"], resume=True, use_base=False)
     record("a plain --resume of a finished run does nothing and reports", proc.returncode == 0
-           and _document_files(ref) == ref_files)
+           and _normalised(_document_files(ref)) == _normalised(ref_files))
     record("--report-only equals the end-of-run report, byte for byte",
            subprocess.run([sys.executable, script, "--report-only", "--out", ref],
                           capture_output=True, text=True).returncode == 0
@@ -2287,7 +2506,7 @@ def resume_checks(out_root: str) -> bool:
     proc = run(quiet, ["--yield-when-gpu-busy", "1000"], env)
     record("yield: own PID and a 100 MiB neighbour are below the limit, the run completes",
            proc.returncode == 0 and manifest_of(quiet)["progress"]["status"] == "finished"
-           and _document_files(quiet) == ref_files)
+           and _normalised(_document_files(quiet)) == _normalised(ref_files))
     busy = os.path.join(root, "yield_busy")
     proc = run(busy, ["--yield-when-gpu-busy", "1000"], {**env, "GD_AFTER": "14", "GD_ACTION": "busy"})
     prog = manifest_of(busy)["progress"]
@@ -2302,7 +2521,7 @@ def resume_checks(out_root: str) -> bool:
     os.remove(busy_flag)
     run(busy, ["--yield-when-gpu-busy", "1000"], env, resume=True, use_base=False)
     record("yield: once the GPU is free the resume completes byte-identically",
-           _document_files(busy) == ref_files)
+           _normalised(_document_files(busy)) == _normalised(ref_files))
     controller = store_mod.StopController("/nonexistent/stop", 1000, lambda m: None)
     controller.gpu_query = lambda: [(900001, 15000)]
     controller.own_gpu_mb = lambda: 14800
@@ -2412,6 +2631,7 @@ def main() -> int:
     all_passed &= sections_ok
     all_passed &= no_discard_check(taxonomy_index, clause_bank, partition)
     all_passed &= negative_checks(taxonomy_index, clause_bank, partition, out_dir, types_config)
+    all_passed &= negative_wording_checks(taxonomy_index, clause_bank, partition)
     all_passed &= record_checks(taxonomy_index, clause_bank, partition, out_dir)
     all_passed &= resume_checks(out_dir)
 

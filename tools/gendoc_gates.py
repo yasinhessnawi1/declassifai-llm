@@ -17,6 +17,8 @@ guarantee automatically:
   reference number appears that nothing planned, a professional's licence number is not
   given to the patient, and a device, IP address or username is not presented as the
   issuing organisation's own.
+* G15 -- a planted negative sits alone in its sentence: not beside another negative, not
+  coordinated with a seeded clause by "og"/"men"/"samt", not repeated.
 
 G1 (schema validation via `tools/validate_labels.py`), G5 (distribution vs
 plan) and G8 (sample dump) are orchestrated directly in
@@ -133,6 +135,128 @@ def gate_verbatim(planned: Sequence[str], text: str) -> Tuple[bool, List[str]]:
     """
     missing = [value for value in planned if value not in text]
     return not missing, missing
+
+
+# -- G15: where a planted negative sits ---------------------------------------------
+#
+# A planted negative is a near-miss clause: it must stay verbatim, unlabelled and
+# neutral. Pilot v5 showed three ways the model spoils that. It glued two negatives
+# into one run-on ("..., og han bur i ei bydel ..., og han tok ikkje stilling til ..."),
+# it chained a negative to a seeded clause with "og"/"men" so the two read as one
+# claim about the person, and it wrote a negative twice in one sentence. The sentence
+# is the unit: one planted negative per sentence, never coordinated with a seeded
+# clause, never repeated. Whether a sentence presents a negative as relevant is a
+# meaning judgement and belongs to the G11 audit.
+
+_SENTENCE_BREAK_RE = re.compile(r"(?<=[.!?])\s+|\n+")
+_CONJUNCTION_BEFORE_RE = re.compile(r"(?:^|[\s,;])(?:og|men|samt)\s*$", re.IGNORECASE)
+_CONJUNCTION_AFTER_RE = re.compile(r"^\s*[,;]?\s*(?:og|men|samt)\b", re.IGNORECASE)
+
+
+def _swap_first(text: str) -> str:
+    """Return `text` with the case of its first letter flipped; unchanged if it starts with no letter."""
+    return text[:1].swapcase() + text[1:] if text[:1].isalpha() else text
+
+
+def negative_occurrences(text: str, negative: str) -> List[Tuple[int, int]]:
+    """Return the spans where a planted negative stands, matching its first letter in either case.
+
+    The model capitalises a negative that opens a sentence ("han ville ikke ..." becomes
+    "Han ville ikke ..."). That is the same clause, so the first character is compared
+    case-insensitively and the rest exactly.
+
+    Args:
+        text: The generated document.
+        negative: The planted text, after pronoun filling.
+
+    Returns:
+        Non-overlapping `(start, end)` spans in order of position; empty if absent.
+    """
+    spans: List[Tuple[int, int]] = []
+    for form in {negative, _swap_first(negative)}:
+        pos = text.find(form)
+        while pos >= 0:
+            spans.append((pos, pos + len(form)))
+            pos = text.find(form, pos + 1)
+    return sorted(spans)
+
+
+def resolve_surfaces(negatives: Sequence[str], text: str) -> List[str]:
+    """Return the form of each planted negative that the document actually contains.
+
+    Args:
+        negatives: The planted texts.
+        text: The generated document.
+
+    Returns:
+        One string per negative: the text itself when it stands exactly, the
+        first-letter-flipped form when only that does, else the text unchanged
+        (so a missing negative stays missing for G2).
+    """
+    out = []
+    for negative in negatives:
+        if negative in text:
+            out.append(negative)
+        elif _swap_first(negative) in text:
+            out.append(_swap_first(negative))
+        else:
+            out.append(negative)
+    return out
+
+
+def sentence_spans(text: str) -> List[Tuple[int, int]]:
+    """Split a document into `(start, end)` sentence spans at full stops, question marks and line breaks."""
+    spans, start = [], 0
+    for match in _SENTENCE_BREAK_RE.finditer(text):
+        spans.append((start, match.start()))
+        start = match.end()
+    spans.append((start, len(text)))
+    return spans
+
+
+def gate_negative_placement(text: str, negatives: Sequence[str], clauses: Sequence[str] = ()) -> Tuple[bool, List[dict]]:
+    """Reject a document that chains, glues or repeats its planted negatives.
+
+    Args:
+        text: The document (or section) text.
+        negatives: The planted negatives as they stand in the text (`resolve_surfaces`).
+        clauses: The seeded judgement clauses of the same text.
+
+    Returns:
+        `(passed, hits)`. A hit is `{"kind", "negatives", "sentence"}` with kind
+        `chained_negatives` (two negatives in one sentence), `chained_to_clause`
+        (a negative coordinated with a seeded clause by "og", "men" or "samt" in one
+        sentence) or `repeated_negative` (one negative standing more than once).
+    """
+    hits: List[dict] = []
+    spans = sentence_spans(text)
+    by_sentence: Dict[int, List[Tuple[str, int, int]]] = collections.defaultdict(list)
+    for negative in negatives:
+        found = negative_occurrences(text, negative)
+        if len(found) > 1:
+            hits.append({"kind": "repeated_negative", "negatives": [negative],
+                         "sentence": text[found[0][0]:found[0][1]][:160]})
+        if found:
+            start, end = found[0]
+            k = next(i for i, (a, b) in enumerate(spans) if a <= start < b or i == len(spans) - 1)
+            by_sentence[k].append((negative, start, end))
+    for k, items in sorted(by_sentence.items()):
+        a, b = spans[k]
+        sentence = text[a:b]
+        if len(items) > 1:
+            hits.append({"kind": "chained_negatives", "negatives": [i[0] for i in items],
+                         "sentence": sentence[:240]})
+        for negative, start, end in items:
+            coordinated = (_CONJUNCTION_BEFORE_RE.search(text[a:start]) or _CONJUNCTION_AFTER_RE.match(text[end:b]))
+            if not coordinated:
+                continue
+            for clause in clauses:
+                pos = sentence.find(clause) if clause else -1
+                if pos >= 0 and not (a + pos < end and start < a + pos + len(clause)):
+                    hits.append({"kind": "chained_to_clause", "negatives": [negative], "clause": clause,
+                                 "sentence": sentence[:240]})
+                    break
+    return not hits, hits
 
 
 # -- G3: real-person name collision ---------------------------------------------

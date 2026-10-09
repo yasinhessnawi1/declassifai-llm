@@ -42,6 +42,15 @@ the seeded "Ho sonet ein dom for vald mot offentleg tenestemann, men denne finst
 i oppgjeve register": every label is correct and the document contradicts itself. The
 labels cannot see that, and a detector trained on it learns that a clause may be false.
 
+The framing test also covers the benchmark's planted negatives. Pilot v5 wrote "Det
+vurderast at ..., og han bur i nærleiken av ein bankfilial, er relevante detaljar i saka":
+a neutral near-miss, presented as bearing on the case. The planted sentence is harmless
+on its own, so no category word gives the framing away and the lexical test of Task B finds
+nothing; the audit is therefore given the planted negatives as a list of their own and asked
+to flag any sentence that presents one as relevant, suspicious, striking or significant. The
+exemption below protects the negative's own words, never the framing around it: a quote that
+reaches beyond the negative is kept and the sentence is repaired or regenerated.
+
 Two rules make this safe to act on:
 
 * **Audit findings never become labels.** They are model-guessed spans, and
@@ -106,6 +115,12 @@ foreligger ingen registrerte straffedommer» når en dom står i listen, og «me
 registeret» etter en oppgitt opplysning. Sitér setningen eller setningsdelen som benekter eller \
 forklarer bort. En setning som bare nevner opplysningen uten å tvile på den er ikke et funn.
 
+Oppgave B gjelder også de nøytrale formuleringene i listen «Plantede nøytrale formuleringer» \
+nedenfor, selv om de ikke nevner noen sensitiv kategori. Det er et RAMME-funn når en setning \
+presenterer en av dem som relevant, viktig, påfallende, mistenkelig eller av betydning for saken, \
+vurderingen, risikoen eller personens troverdighet. Sitér leddet som gir formuleringen den \
+betydningen, ikke selve formuleringen. De nøytrale formuleringene er ikke funn under oppgave A og C.
+
 Dette skal IKKE regnes med, og er den vanligste feilen:
 - navn, alder, kjønn, adresse, postnummer, telefonnummer, e-post, saksnummer, datoer, \
   stillingstittel, signatur og hilsen
@@ -135,6 +150,7 @@ FUNN|SENSITIV|kjørte bil etter å ha konsumert alkohol
 FUNN|SENSITIV|har hatt kontakter med personer som er kjent for å drive med illegale aktiviteter
 FUNN|RAMME|hun har romani bakgrunn, hvilket har vært relevant for etterforskningen
 FUNN|RAMME|du er aktiv i Senterpartiet, noe som kan være relevant for helhetsvurderingen av mistanken
+FUNN|RAMME|noe som er relevant for saken, siden han bor i nærheten av en bankfilial
 FUNN|RAMME|hun bruker antidepressiva, noe som øker risikoen for at hun kan presses
 FUNN|MOTSIGELSE|Det foreligger ingen registrerte straffedommer mot henne
 FUNN|MOTSIGELSE|men denne finst ikkje i oppgjeve register
@@ -159,7 +175,8 @@ linje dersom du ikke finner noe. Ikke skriv forklaringer."""
 
 
 def build_audit_prompt(text: str, labelled_spans: Sequence[str], doc_seed: int,
-                       clauses: Sequence[Tuple[str, str]] = ()) -> str:
+                       clauses: Sequence[Tuple[str, str]] = (),
+                       negatives: Sequence[Tuple[str, str]] = ()) -> str:
     """Build the G11 audit prompt for one generated document.
 
     Args:
@@ -170,6 +187,9 @@ def build_audit_prompt(text: str, labelled_spans: Sequence[str], doc_seed: int,
         clauses: `(type, text)` of the planned judgement clauses. The model never sees
             this: it goes after the manifest sentinel so `MockBackend`, which has no
             language understanding, can tell which topic a denial is about.
+        negatives: `(type, text)` of the planted negatives as they stand in the document.
+            The model sees the texts, in a list of their own, so it can judge whether a
+            sentence frames one as relevant; the types go to the mock manifest only.
 
     Returns:
         The prompt, with a machine-readable manifest after `MANIFEST_SENTINEL`
@@ -180,7 +200,11 @@ def build_audit_prompt(text: str, labelled_spans: Sequence[str], doc_seed: int,
         f"{_AUDIT_TASK_NB}\n\n{AUDIT_OPEN}\n{text}\n{AUDIT_CLOSE}\n\n"
         f"Allerede registrerte opplysninger:\n{listed or '- (ingen)'}\n"
     )
-    manifest = [f"SEED|{doc_seed}", "AUDIT|1"] + [f"CLAUSE|{etype}|{clause}" for etype, clause in clauses]
+    if negatives:
+        body += ("\nPlantede nøytrale formuleringer:\n"
+                 + "\n".join(f"- «{t}»" for _etype, t in negatives) + "\n")
+    manifest = ([f"SEED|{doc_seed}", "AUDIT|1"] + [f"CLAUSE|{etype}|{clause}" for etype, clause in clauses]
+                + [f"NEGATIVE|{etype}|{t}" for etype, t in negatives])
     return body + "\n" + MANIFEST_SENTINEL + "\n" + "\n".join(manifest)
 
 

@@ -38,6 +38,16 @@ share to `negatives`, lists its training share in `negatives_train` so the split
 explicit and checkable, and records the batch in `negative_batches`. Running it
 twice for one batch is refused.
 
+A batch whose texts were later corrected is partitioned again by `rebuild-negatives`. The
+partition is keyed by text, so correcting a text is a new text: the old one would stay listed
+on its side of the split with nothing in the bank to match it, and the new one would fall to
+training by default. `rebuild_negatives` drops every text of the batch from both lists, forgets
+the batch and runs `extend_negatives` on the corrected bank. Strata, ratio and salt are the
+batch's own and the strata keep their sizes, so the benchmark/training counts do not move;
+which text lands on which side does, because the hash is of the text. Only the earlier
+assignments of texts that are still in the bank survive untouched. It is for batches that have
+not been generated from yet: a benchmark already published keeps the partition it was made with.
+
 New clauses are added the same way. Multi-instance documents (several offences, several
 findings, several debts in one document) need a bank deep enough to supply three or four
 compatible, distinct clauses of a type per genre and form, and the original bank was not.
@@ -49,6 +59,7 @@ listed in `clauses_train` and the batch recorded in `clause_batches`.
 Usage:
     python3 tools/gendoc_dataset.py build                         # write the partition file once
     python3 tools/gendoc_dataset.py extend-negatives nearmiss_v5  # partition a later batch of negatives
+    python3 tools/gendoc_dataset.py rebuild-negatives nearmiss_v5 # partition it again after its texts changed
     python3 tools/gendoc_dataset.py extend-clauses multi_v6       # partition a later batch of clauses
     python3 tools/gendoc_dataset.py summary                       # print its sizes
 """
@@ -95,7 +106,7 @@ PINNED_BENCHMARK_NEGATIVES = (
 
 
 # A negative's text may carry `{PRON}`, `{POSS}` and `{OBJ}` so it can hold its own
-# subject ("og {PRON} svarte at ..."): a bare predicate spliced into a sentence the
+# subject ("under samtalen ville {PRON} ikke svare ..."): a bare predicate spliced into a sentence the
 # model had already given a different shape produced "Under ei samtale med
 # saksbehandlarane ville ikkje oppgi inntekta si". The sampler fills them from the
 # document subject's gender and the document's form, and the filled string is what
@@ -388,12 +399,45 @@ def extend_negatives(partition: dict, clause_bank: dict, batch: str,
         "salt": NEGATIVE_BATCH_SALT, "ratio": ratio, "texts": len(batch_texts),
         "benchmark": sum(1 for v in assigned.values() if v),
         "train": sum(1 for v in assigned.values() if not v),
+        "digest": hashlib.sha256("\n".join(sorted(batch_texts)).encode("utf-8")).hexdigest()[:16],
     }
     out["version"] = PARTITION_VERSION
     bench_clauses = {t: set(v) for t, v in out["clauses"].items()}
     pool_strata = _pool_strata(data.full_pools())
     out["counts"] = _counts(clause_bank, bench_clauses, bench, pool_strata, out["names"])
     return out
+
+
+def rebuild_negatives(partition: dict, clause_bank: dict, batch: str,
+                      ratio: float = NEGATIVE_BATCH_BENCHMARK_RATIO) -> dict:
+    """Partition a negatives batch again after its texts were corrected.
+
+    Args:
+        partition: The loaded partition, holding the batch as it was first partitioned.
+        clause_bank: The flat bank from `gendoc_data.load_clause_bank`, with the corrected
+            texts under the same `origin`.
+        batch: Batch name, e.g. "nearmiss_v5"; it must already be recorded.
+        ratio: Benchmark share of the batch.
+
+    Returns:
+        A new partition dict. Every listed negative that is not an entry of the batch's
+        corrected texts or an earlier negative of the bank is gone, the batch is assigned
+        afresh, and every earlier negative keeps the side it had. The argument is not modified.
+
+    Raises:
+        ValueError: The batch was never partitioned, or `extend_negatives` refuses the
+            corrected texts.
+    """
+    if batch not in partition.get("negative_batches", {}):
+        raise ValueError(f"negatives batch {batch!r} is not in the partition; use extend-negatives")
+    earlier = {e["text"] for v in clause_bank.get("negatives", {}).values() for e in v
+               if e.get("origin") != batch}
+    out = json.loads(json.dumps(partition))
+    for key in ("negatives", "negatives_train"):
+        out[key] = {t: [x for x in v if x in earlier] for t, v in out.get(key, {}).items()}
+        out[key] = {t: v for t, v in out[key].items() if v}
+    del out["negative_batches"][batch]
+    return extend_negatives(out, clause_bank, batch, ratio)
 
 
 def extend_clauses(partition: dict, clause_bank: dict, batch: str,
@@ -537,7 +581,7 @@ def main() -> int:
     """CLI: build or summarise the partition file."""
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("command", choices=["build", "extend-negatives", "extend-clauses", "summary"])
+    parser.add_argument("command", choices=["build", "extend-negatives", "rebuild-negatives", "extend-clauses", "summary"])
     parser.add_argument("batch", nargs="?", help="batch name for extend-negatives / extend-clauses")
     parser.add_argument("--clause-bank", default="data/synthetic/clause_bank.json")
     parser.add_argument("--partition", default=PARTITION_PATH)
@@ -559,6 +603,15 @@ def main() -> int:
             return 2
         partition = extend_negatives(load_partition(args.partition),
                                      data.load_clause_bank(args.clause_bank), args.batch)
+        with open(args.partition, "w", encoding="utf-8") as handle:
+            json.dump(partition, handle, ensure_ascii=False, indent=1)
+            handle.write("\n")
+    elif args.command == "rebuild-negatives":
+        if not args.batch:
+            print("rebuild-negatives needs a batch name", file=sys.stderr)
+            return 2
+        partition = rebuild_negatives(load_partition(args.partition),
+                                      data.load_clause_bank(args.clause_bank), args.batch)
         with open(args.partition, "w", encoding="utf-8") as handle:
             json.dump(partition, handle, ensure_ascii=False, indent=1)
             handle.write("\n")
