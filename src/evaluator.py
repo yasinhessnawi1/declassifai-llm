@@ -298,6 +298,7 @@ def evaluate(cfg: Config):
                                        "n_pred": 0, "n_exp": 0})
     total_time = 0
     valid_json_count = 0
+    predictions = []  # saved for tools/score_predictions.py
 
     for i, entry in enumerate(test_data):
         types = entry.get("types")
@@ -321,6 +322,8 @@ def evaluate(cfg: Config):
         predicted = generate_prediction(model, tokenizer, actual_text, cfg, types=types)
         elapsed = time.time() - start
         total_time += elapsed
+        predictions.append({"id": entry.get("source", i), "output": {k: v for k, v in predicted.items() if v},
+                            "seconds": round(elapsed, 2)})
 
         # Check if output was valid JSON
         if any(predicted[k] for k in predicted):
@@ -388,6 +391,9 @@ def evaluate(cfg: Config):
     output_dir = resolve_path(cfg, cfg.evaluation.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     results_path = output_dir / "eval_results.json"
+    with open(output_dir / "predictions.jsonl", "w", encoding="utf-8") as f:
+        for p in predictions:
+            f.write(json.dumps(p, ensure_ascii=False) + "\n")
 
     with open(results_path, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2, ensure_ascii=False)
