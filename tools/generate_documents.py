@@ -544,6 +544,34 @@ def _generate_value_kind(
 _CLAUSE_PLACEHOLDER_RE = re.compile(r"\{(PERSON|PERSON_M|PERSON_F|SURNAME_FAM|SURNAME_ORG)\}")
 
 
+# Identifier literals fixed inside a clause-bank text. `dømt for bedrageri i sak
+# 12345/2018` is ANNOTATION_SPEC's own worked example; printed as written it puts the
+# same case number into every document that draws it, a string a detector can
+# memorise, and it would sit unlabelled although the spec nests CASE_NUMBER inside a
+# CRIMINAL clause. The bank text stays unchanged (it keys the benchmark partition);
+# the number is swapped at sampling time and planted as its own CASE_NUMBER value.
+_CLAUSE_ID_LITERALS = {"12345/2018": "CASE_NUMBER"}
+
+
+def localize_clause_ids(rng: random.Random, text: str) -> Tuple[str, List[Tuple[str, str]]]:
+    """Replace fixed identifier literals in a clause with fresh values.
+
+    Args:
+        rng: Seeded RNG.
+        text: The clause text after name localisation.
+
+    Returns:
+        Tuple of (text, list of (type, value) to plant as nested labels).
+    """
+    planted: List[Tuple[str, str]] = []
+    for literal, etype in _CLAUSE_ID_LITERALS.items():
+        if literal in text:
+            value = ident.case_number(rng)
+            text = text.replace(literal, value)
+            planted.append((etype, value))
+    return text, planted
+
+
 def localize_clause_names(
     rng: random.Random, text: str, public_figures: Set[str],
 ) -> Tuple[str, List[str]]:
@@ -943,6 +971,10 @@ def _add_instances(
             for name in introduced:
                 planned.append(PlannedValue("PERSON", "B", "value", name, None, label("PERSON"),
                                             hint="person nevnt i en av opplysningene"))
+            text, nested_ids = localize_clause_ids(rng, text)
+            for id_type, id_value in nested_ids:
+                planned.append(PlannedValue(id_type, tier(id_type), "value", id_value, None, label(id_type),
+                                            hint="saksnummeret i opplysningen over; skrives bare der"))
             planned.append(PlannedValue(
                 etype, tier(etype), "clause", text, "seeded", label(etype),
                 difficulty=entry.get("difficulty"), topic=entry.get("topic")))
@@ -1538,6 +1570,11 @@ def sample_record(
                 for name in introduced_names:
                     planned.append(PlannedValue("PERSON", "B", "value", name, None, label("PERSON"),
                                                 hint="person nevnt i en av opplysningene"))
+                text, nested_ids = localize_clause_ids(rng, text)
+                for id_type, id_value in nested_ids:
+                    planned.append(PlannedValue(id_type, tier(id_type), "value", id_value, None,
+                                                label(id_type),
+                                                hint="saksnummeret i opplysningen over; skrives bare der"))
             # A civil-status clause with no kinship noun ("gift med Kari Hansen") is
             # MARITAL_STATUS, not FAMILY_RELATION; the bank marks such entries.
             as_type = chosen_entry.get("as_type", etype)
@@ -2261,6 +2298,11 @@ def build_output(record: Record, clean_text: str, marked_spans: Dict[str, List[s
         for code in re.findall(r"(?<!\d)\d{4}(?!\d)", address):
             if code not in output["POSTAL_CODE"]:
                 output["POSTAL_CODE"].append(code)
+        # v2 LOCATION rule: the place name after the postal code inside an address
+        # value is LOCATION too, nested in the ADDRESS span.
+        place = re.search(r"(?<!\d)\d{4}\s+([A-ZÆØÅ][\wæøåÆØÅ.\- ]*?)\s*$", address)
+        if place and place.group(1) not in output["LOCATION"]:
+            output["LOCATION"].append(place.group(1))
     # B13: a date or bare year inside a narrative clause is also DATE_TIME.
     clause_types = {pv.type for pv in record.planned if pv.value_kind == "clause"}
     for etype in clause_types:

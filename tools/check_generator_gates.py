@@ -1692,6 +1692,9 @@ def _bank_entries(clause_bank: dict) -> List[Tuple[str, dict, "re.Pattern"]]:
         for entry in entries:
             pattern = re.escape(entry["text"])
             pattern = re.sub(r"\\\{(?:PERSON|PERSON_M|PERSON_F|SURNAME_FAM|SURNAME_ORG)\\\}", r".+?", pattern)
+            # Identifier literals are swapped for fresh values at sampling time.
+            for literal in gen._CLAUSE_ID_LITERALS:
+                pattern = pattern.replace(re.escape(literal), r"\S+")
             out.append((etype, entry, re.compile("^" + pattern + "$")))
     return out
 
@@ -2541,7 +2544,8 @@ def _strip_report(report: dict) -> dict:
     for key in ("wall_seconds", "wall_seconds_per_requested_doc", "wall_seconds_per_accepted_doc",
                 "run_stats"):
         out.pop(key, None)
-    out.get("G11_content_audit", {}).pop("audit_share_of_wall_time", None)
+    for key in ("audit_share_of_wall_time", "audit_seconds_total", "audit_seconds_per_audited_doc"):
+        out.get("G11_content_audit", {}).pop(key, None)
     for key in ("G1_validate_labels", "G1_validate_labels_full_batch"):
         out[key].pop("path", None)
     return out
