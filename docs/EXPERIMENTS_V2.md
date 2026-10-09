@@ -16,6 +16,7 @@ throughput on this machine's 2 CPU cores.
 |---|---|---|---|---|---|---|---|
 | B0 | Raw Gemini corpus labels (v2-converted) | — | — | 0.521 | 0.705 | 0.166 | — |
 | E0 | Qwen3.5-9B QLoRA (teacher) | 9B | D1 | 0.814 | 0.907 | — | no |
+| T1 | NorBERT3-small span tagger | 40.6M | D1 | 0.769 | 0.902 | 0.560 | tbd (0.53 s/doc on GPU) |
 
 E0: 1 epoch, 10.3 h on the V100; 41 s/doc to evaluate on GPU. Weak types: BEHAVIORAL_PATTERN,
 ECONOMIC_STATUS, MEDICATION, CRIMINAL/HEALTH/FAMILY_RELATION boundaries.
@@ -49,3 +50,9 @@ tier C (clauses), where span boundaries are long and judgement-heavy.
 ## Log
 
 - 2026-10-09 — E0 trained and scored. Scorer and B0 baseline added.
+- 2026-10-09 — T1: a 40M-parameter NorBERT3-small tagger (4 epochs, batch 8, lr 1e-4, slice x3,
+  ~1 h on a shared GPU) reaches 0.769 exact / 0.902 lenient, within 0.5 pt of the 9B teacher on
+  lenient. Tier A 0.984 exact (mechanical types solved), tier B 0.876, tier C 0.560 exact /
+  0.827 lenient: it finds the clauses but misplaces their boundaries (CRIMINAL 0.459,
+  BEHAVIORAL_PATTERN 0.225, ECONOMIC_STATUS 0.344 exact). ANIMAL_INFO and ORGANIZATION lose
+  precision (0.67, 0.72). The format's own ceiling is 0.962 exact.
