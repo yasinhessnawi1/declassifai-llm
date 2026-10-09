@@ -91,7 +91,7 @@ def generate_prediction(
     tokenizer,
     text: str,
     cfg: Config,
-    max_new_tokens: int = 2048,
+    max_new_tokens: int = 1024,
     types=None,
 ) -> Dict[str, List[str]]:
     """Run inference on a single text and parse the JSON output.
@@ -108,11 +108,16 @@ def generate_prediction(
     """
     messages = build_inference_messages(text, cfg, types)
 
-    formatted = tokenizer.apply_chat_template(
-        messages,
-        tokenize=False,
-        add_generation_prompt=True,
-    )
+    # Training targets were rendered by the chat template as an empty think block
+    # followed by the JSON. Qwen3-style templates open a think block at generation
+    # time unless thinking is disabled, which left the model free to "think" until
+    # max_new_tokens. Render the prompt the way training saw it.
+    try:
+        formatted = tokenizer.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True, enable_thinking=False)
+    except TypeError:
+        formatted = tokenizer.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True)
 
     inputs = tokenizer(formatted, return_tensors="pt").to(model.device)
     input_len = inputs.input_ids.shape[1]
@@ -123,12 +128,23 @@ def generate_prediction(
             do_sample=False,
             max_new_tokens=max_new_tokens,
             pad_token_id=tokenizer.pad_token_id or tokenizer.eos_token_id,
+            eos_token_id=_stop_ids(tokenizer),
         )
 
     new_tokens = output_ids[0][input_len:]
     raw_output = tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
 
     return _parse_output(raw_output, cfg, types)
+
+
+def _stop_ids(tokenizer) -> List[int]:
+    """End-of-turn ids to stop on: the chat end marker as well as the tokenizer EOS."""
+    ids = {tokenizer.eos_token_id}
+    for tok in ("<|im_end|>", "<|endoftext|>"):
+        tid = tokenizer.convert_tokens_to_ids(tok)
+        if isinstance(tid, int) and tid >= 0 and tid != tokenizer.unk_token_id:
+            ids.add(tid)
+    return sorted(i for i in ids if i is not None)
 
 
 def _parse_output(raw: str, cfg: Config, types=None) -> Dict[str, List[str]]:
@@ -141,8 +157,12 @@ def _parse_output(raw: str, cfg: Config, types=None) -> Dict[str, List[str]]:
     Returns:
         Dict mapping entity types to extracted string lists.
     """
-    # Strip markdown wrappers if present
-    cleaned = raw.strip()
+    import re
+    # Drop any think block, then take the outermost JSON object.
+    cleaned = re.sub(r"<think>.*?</think>", "", raw, flags=re.S).replace("</think>", "").strip()
+    first, last = cleaned.find("{"), cleaned.rfind("}")
+    if first >= 0 and last > first:
+        cleaned = cleaned[first:last + 1]
     if cleaned.startswith("```"):
         import re
         cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned)
