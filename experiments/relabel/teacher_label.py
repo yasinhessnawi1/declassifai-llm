@@ -6,7 +6,9 @@ the types the corpus was trusted for (SEXUAL_ORIENTATION 0.857 vs 0.538 exact, A
 0.972 vs 0.903). So the enhanced corpus takes the teacher's labels for all 59 types.
 
 Batched greedy generation with left padding; prompts rendered exactly as in training
-(no think block); generation stops on <|im_end|>. Any predicted string that is not a
+(no think block); generation stops on <|im_end|>. Documents run shortest first so each
+batch pads little, and a batch that runs out of GPU memory is split in half and retried
+(plain Qwen3.5-9B peaks at ~29.5 GB on a 7k-token prompt). Any predicted string that is not a
 verbatim substring of the document is dropped and counted. Resumable: documents already
 in the output file are skipped, so the job can be stopped and restarted (the GPU is shared).
 
@@ -43,6 +45,29 @@ def corpus_docs(path_clean: str, held: set):
             yield d, r["text_input"]
 
 
+def generate(model, tok, cfg, chunk, stops, args):
+    """Decode one batch; on CUDA OOM split it in half and retry each half."""
+    prompts = [tok.apply_chat_template(build_inference_messages(t, cfg), tokenize=False,
+                                       add_generation_prompt=True, enable_thinking=False)
+               for _, t in chunk]
+    enc = None
+    try:
+        enc = tok(prompts, return_tensors="pt", padding=True).to(model.device)
+        with torch.no_grad():
+            gen = model.generate(**enc, do_sample=False, max_new_tokens=args.max_new_tokens,
+                                 pad_token_id=tok.pad_token_id, eos_token_id=stops)
+        return [tok.decode(seq, skip_special_tokens=True) for seq in gen[:, enc.input_ids.shape[1]:]]
+    except torch.cuda.OutOfMemoryError:
+        if len(chunk) == 1:
+            raise
+        enc = None
+        torch.cuda.empty_cache()
+        half = len(chunk) // 2
+        print(f"OOM at batch {len(chunk)}; retrying as {half}+{len(chunk) - half}", flush=True)
+        return (generate(model, tok, cfg, chunk[:half], stops, args)
+                + generate(model, tok, cfg, chunk[half:], stops, args))
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", default=os.path.join(ROOT, "configs/config_v2.yaml"))
@@ -70,6 +95,7 @@ def main():
     todo = [(d, t) for d, t in corpus_docs(args.clean, held) if d not in done]
     if args.limit:
         todo = todo[: args.limit]
+    todo.sort(key=lambda x: len(x[1]))
     print(f"{len(done)} already labelled, {len(todo)} to go", flush=True)
 
     cfg = load_config(args.config)
@@ -87,15 +113,7 @@ def main():
                 print("STOP file found; exiting cleanly", flush=True)
                 break
             chunk = todo[i:i + args.batch]
-            prompts = [tok.apply_chat_template(build_inference_messages(t, cfg), tokenize=False,
-                                               add_generation_prompt=True, enable_thinking=False)
-                       for _, t in chunk]
-            enc = tok(prompts, return_tensors="pt", padding=True).to(model.device)
-            with torch.no_grad():
-                gen = model.generate(**enc, do_sample=False, max_new_tokens=args.max_new_tokens,
-                                     pad_token_id=tok.pad_token_id, eos_token_id=stops)
-            for (digest, text), seq in zip(chunk, gen[:, enc.input_ids.shape[1]:]):
-                raw = tok.decode(seq, skip_special_tokens=True)
+            for (digest, text), raw in zip(chunk, generate(model, tok, cfg, chunk, stops, args)):
                 parsed = _parse_output(raw, cfg)
                 output = {}
                 for t, spans in parsed.items():
@@ -108,6 +126,7 @@ def main():
             out.flush()
             n = i + len(chunk)
             rate = (time.time() - t0) / n
+            # shortest documents run first, so this ETA is optimistic early on
             print(f"{n}/{len(todo)}  {rate:.1f}s/doc  eta {rate * (len(todo) - n) / 3600:.1f}h  "
                   f"kept {kept} dropped-non-verbatim {dropped}", flush=True)
 
