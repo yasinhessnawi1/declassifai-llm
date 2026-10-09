@@ -39,6 +39,14 @@ are reported, repaired and, when they survive to the end of sampling, rejected b
 prompt is built), the new clause-bank entries and their partition, and the replay of
 `data/synthetic/pilot_v4_train` through the audit prompt and the mock auditor.
 
+The role-word and near-miss-only cases (55-63) cover the two changes of the EMPLOYMENT ruling and the
+near-miss profile: a professional's role word is planted beside their name and labelled EMPLOYMENT with
+the name PERSON; a generic use of the planted string, and one inside a longer word, is rejected by G14;
+Nynorsk documents plant Nynorsk role forms; a role word beside an unplanned person is labelled by the
+G7 sweep when every occurrence of the string is that person's and rejects the document when one is
+not; a near-miss-only document has an empty target and keeps its negatives verbatim, and an invented
+date in one is rejected.
+
 It also carries the checks that need no generation: the benchmark/training
 partition is disjoint, the leakage checker fires on an injected leak, and G13's
 thresholds reject the table dumps they were calibrated on while passing the gold
@@ -144,11 +152,28 @@ CASES: Dict[int, Tuple[str, Optional[str]]] = {
     52: ("negatives_chained", "G15_negative_placement"),
     53: ("negative_framed_relevant", None),
     54: ("negative_chained_to_clause", "G15_negative_placement"),
+    55: ("role_word_employment", None),
+    56: ("role_word_generic_use", "G14_roles"),
+    57: ("role_word_inside_compound", "G14_roles"),
+    58: ("role_word_nynorsk", None),
+    59: ("near_miss_only_clean", None),
+    60: ("near_miss_only_invented_date", "G7_unplanned_pii"),
+    61: ("role_word_unplanned_person_labelled", None),
+    62: ("role_word_unplanned_person_generic", "G7_unplanned_pii"),
 }
 
 # Cases that plan hard negatives, as the benchmark does. They need a plan with
 # `n_negatives` and a run config carrying a negative bank.
 _NEGATIVE_CASES = {30, 31, 32, 52, 53, 54}
+
+# The near-miss-only cases: a plan with the profile of that name, a genre of `NEAR_MISS_GENRES` and
+# three planted near-misses.
+_NEAR_MISS_CASES = {59, 60}
+
+# The role-word cases, which need a document with a professional in its cast: a dense document of a
+# genre whose cast holds one. idx -> (genre, form).
+_ROLE_CASES = {55: ("gp_referral", "nb"), 56: ("gp_referral", "nb"), 57: ("gp_referral", "nb"),
+               58: ("gp_referral", "nn"), 61: ("gp_referral", "nb"), 62: ("gp_referral", "nb")}
 
 # Cases that plan several instances of a type: idx -> (instances, profile, length band, type target, art9 cap, form).
 _MULTI_CASES = {
@@ -176,6 +201,9 @@ _GENRE_FOR = {
     44: "police_report", 45: "police_report", 46: "police_report", 47: "vet_clinical_record",
     48: "vet_clinical_record", 49: "gp_referral", 50: "gp_referral", 51: "digital_forensics_report",
     52: "police_report", 53: "police_report", 54: "police_report",
+    55: "gp_referral", 56: "gp_referral", 57: "gp_referral", 58: "gp_referral",
+    59: "guidance_note", 60: "anonymised_case_summary",
+    61: "gp_referral", 62: "gp_referral",
 }
 
 # Types a case forces into its record so the injection has a planned value to work on.
@@ -190,9 +218,17 @@ def _manifest(prompt: str) -> str:
     return prompt.split(MANIFEST_SENTINEL, 1)[1]
 
 
+def _roles(prompt: str) -> List[Tuple[str, str]]:
+    """The `(role word, person)` pairs a prompt plants."""
+    return [tuple(line.split("|", 2)[1:]) for line in _manifest(prompt).splitlines()
+            if line.startswith("ROLE|")]
+
+
 def _values(prompt: str, kind: str = "VALUE") -> List[str]:
-    return [line.split("|", 2)[2] for line in _manifest(prompt).splitlines()
-            if line.startswith(kind + "|")]
+    """The values of a manifest kind; a role word is not one (it stands beside a name, see `_roles`)."""
+    role_words = {word for word, _name in _roles(prompt)}
+    return [v for v in (line.split("|", 2)[2] for line in _manifest(prompt).splitlines()
+                        if line.startswith(kind + "|")) if v not in role_words]
 
 
 def _drop(text: str, prompt: str, k: int) -> str:
@@ -245,7 +281,7 @@ class InjectingMock(MockBackend):
         if name == "fullname":
             return text + " Til stede var også Ingrid Solberg.", True
         if name == "role_surname":
-            return text + " Saken ble drøftet med Saksbehandler Larsen.", True
+            return text + " Saken ble drøftet med Politimester Larsen.", True
         if name == "table":
             return text + "\n| Opplysning | " + clauses[0] + " |\n", True
         if name == "label":
@@ -337,6 +373,17 @@ class InjectingMock(MockBackend):
             first = self.states[idx].record.planted_negatives[0].text
             head = first[:1].upper() + first[1:]
             return text.replace(head + ".", f"{head}, noe som er relevant for saken.", 1), True
+        if name == "role_word_generic_use":
+            word = _roles(prompt)[0][0]
+            return text + f" Har du spørsmål, ta kontakt med {word} i tjenesten.", True
+        if name == "role_word_inside_compound":
+            word = _roles(prompt)[0][0]
+            return text + f" Henvendelser rettes til {word}kontoret.", True
+        if name == "role_word_unplanned_person_labelled":
+            return text + " Saken ble drøftet med fysioterapeuten Kari Hansen i går kveld.", True
+        if name == "role_word_unplanned_person_generic":
+            return text + (" Saken ble drøftet med psykiater Kari Hansen. "
+                           "Pasienter bør ellers kontakte psykiater ved behov."), True
         if name == "marker":
             return text + " ⟦TYPE: setning⟧", True
         if name == "length":
@@ -373,7 +420,8 @@ class InjectingMock(MockBackend):
             # does not count a document's seeded clauses and a short base would share too
             # little of its prose to reach the threshold.
             self.neardup_base = max(accepted, key=len)
-            return (self.neardup_base + "\n" + " og ".join(_values(prompt) + clauses) + "."), True
+            roles = " ".join(f"{word} {name}." for word, name in _roles(prompt))
+            return (self.neardup_base + "\n" + " og ".join(_values(prompt) + clauses) + ". " + roles), True
         if name == "audit_elaboration":
             return text + f" Pasienten {MOCK_ELABORATION_CUE}.", True
         if name == "audit_framing":
@@ -384,6 +432,8 @@ class InjectingMock(MockBackend):
             return text.replace(target + ".", target + " 2025."), True
         if name == "pii_free_invented_date":
             return text + " Rundskrivet gjelder fra 3. mai 2024.", True
+        if name == "near_miss_only_invented_date":
+            return text + " Eksempelet gjelder en sak fra 3. mai 2024.", True
         return text, True
 
 
@@ -393,16 +443,24 @@ def build_plans() -> List[gen.DocPlan]:
     for idx, (name, _expected) in sorted(CASES.items()):
         genre = _GENRE_FOR.get(idx, _DEFAULT_GENRES[idx % len(_DEFAULT_GENRES)])
         pii_free = name.startswith("pii_free")
+        near_miss = idx in _NEAR_MISS_CASES
+        no_subject = pii_free or near_miss
         forced = ["HEALTH"] if idx in (5, 6, 18, 21, 25) else list(_FORCED_FOR.get(idx, []))
         multi = _MULTI_CASES.get(idx)
+        role_case = _ROLE_CASES.get(idx)
+        profile = (multi[1] if multi else "pii_free" if pii_free else "near_miss_only" if near_miss
+                   else "dense" if role_case else "typical")
         plans.append(gen.DocPlan(
-            n_negatives=2 if idx in _NEGATIVE_CASES else 0,
-            idx=idx, genre=genre, variant="prose_letter", form=multi[5] if multi else "nb",
-            length_band=multi[2] if multi else ((800, 1600) if pii_free else (1600, 2800)),
-            forced_types=forced, profile=multi[1] if multi else ("pii_free" if pii_free else "typical"),
-            type_target=multi[3] if multi else (0 if pii_free else (14 if idx in (26, 28) else 8)),
-            art9_cap=multi[4] if multi else 1, pii_free=pii_free,
-            instances=dict(multi[0]) if multi else {},
+            n_negatives=3 if near_miss else (2 if idx in _NEGATIVE_CASES else 0),
+            idx=idx, genre=genre, variant="prose_letter",
+            form=multi[5] if multi else (role_case[1] if role_case else "nb"),
+            length_band=multi[2] if multi else ((800, 1600) if no_subject else (
+                (2800, 4000) if role_case else (1600, 2800))),
+            forced_types=forced, profile=profile,
+            type_target=multi[3] if multi else (0 if no_subject else (
+                12 if role_case else (14 if idx in (26, 28) else 8))),
+            art9_cap=multi[4] if multi else (2 if role_case else 1), pii_free=pii_free,
+            near_miss_only=near_miss, instances=dict(multi[0]) if multi else {},
         ))
     return plans
 
@@ -416,6 +474,16 @@ def _animal_health_texts() -> set:
         bank = data.load_clause_bank("data/synthetic/clause_bank.json")
         _ANIMAL_HEALTH.update(e["text"] for e in bank["HEALTH"] if e.get("subject") == "animal")
     return _ANIMAL_HEALTH
+
+
+def _nb_only_role_words() -> set:
+    """Role words that exist only in Bokmål: the nb column of the table and of the genres' signatory roles, minus the nn column."""
+    pairs = [(nb, nn) for forms in genres_mod.CAST_ROLE_WORDS.values() for nb, nn, _w in forms]
+    pairs += [(genres_mod.signatory_role_word(nb), genres_mod.signatory_role_word(nn))
+              for spec in genres_mod.GENRES.values() for nb, nn in spec.get("signatory_roles", [])]
+    nb_words = {nb for nb, _nn in pairs if nb}
+    nn_words = {nn for _nb, nn in pairs if nn}
+    return nb_words - nn_words
 
 
 def _first_failure(state: gen.DocState) -> Optional[str]:
@@ -573,6 +641,51 @@ def _check(state: gen.DocState) -> Tuple[bool, str]:
     if name == "pii_free_clean":
         return (accepted and result.get("output") == {} and failure is None), \
             f"output={result.get('output')}"
+    if name in ("role_word_employment", "role_word_nynorsk"):
+        roles = [pv for pv in state.record.planned if pv.anchor]
+        output, text = result.get("output", {}), result.get("text", "")
+        beside, labelled, named = [], [], []
+        for pv in roles:
+            forms = gates.role_variants(pv.value)
+            beside.append(any(re.search(re.escape(f) + r"\s+" + re.escape(pv.anchor), text)
+                              or re.search(re.escape(pv.anchor) + r",\s*" + re.escape(f), text) for f in forms))
+            labelled.append(any(f in output.get("EMPLOYMENT", []) for f in forms))
+            named.append(pv.anchor in output.get("PERSON", []))
+        base = accepted and failure is None and bool(roles) and all(beside) and all(labelled) and all(named)
+        if name == "role_word_employment":
+            return base, f"roles={[(pv.value, pv.anchor) for pv in roles]} beside={beside} labelled={labelled}"
+        nb_only = _nb_only_role_words()
+        return base and not any(pv.value in nb_only for pv in roles), \
+            f"roles={[pv.value for pv in roles]} bokmål_only_forms={[pv.value for pv in roles if pv.value in nb_only]}"
+    if name in ("role_word_generic_use", "role_word_inside_compound"):
+        hits = [(h["kind"], h["reason"]) for e in state.gate_log if e["stage"] == "G14_roles" for h in e["detail"]]
+        want = ("generic_role_word", "not_beside_the_name" if name == "role_word_generic_use"
+                else "embedded_in_word")
+        return (failure == "G14_roles" and want in hits and accepted and state.attempt >= 2
+                and any(pv.anchor for pv in state.record.planned)), f"G14={hits} attempt={state.attempt}"
+    if name == "role_word_unplanned_person_labelled":
+        labelled = [(l["type"], l["text"], l["pattern"]) for l in result.get("g7_labelled", [])]
+        output = result.get("output", {})
+        return (accepted and failure is None
+                and ("EMPLOYMENT", "fysioterapeuten", "person_role_word") in labelled
+                and "fysioterapeuten" in output.get("EMPLOYMENT", []) and "Kari Hansen" in output.get("PERSON", [])), \
+            f"g7_labelled={labelled}"
+    if name == "role_word_unplanned_person_generic":
+        patterns = [f["pattern"] for e in state.gate_log if e["stage"] == "G7_unplanned_pii" for f in e["detail"]]
+        return (failure == "G7_unplanned_pii" and "role_word_also_used_generically" in patterns
+                and accepted and state.attempt >= 2), f"G7={patterns} attempt={state.attempt}"
+    if name == "near_miss_only_clean":
+        negatives = state.record.planted_negatives
+        verbatim = all(gates.negative_occurrences(result.get("text", ""), n_.text) for n_ in negatives)
+        return (accepted and result.get("output") == {} and failure is None and state.record.near_miss_only
+                and len(negatives) >= 2 and verbatim and not state.record.planned), \
+            f"output={result.get('output')} negatives={len(negatives)} verbatim={verbatim}"
+    if name == "near_miss_only_invented_date":
+        negatives = state.record.planted_negatives
+        verbatim = all(gates.negative_occurrences(result.get("text", ""), n_.text) for n_ in negatives)
+        return (failure == "G7_unplanned_pii" and accepted and state.attempt >= 2
+                and result.get("output") == {} and verbatim), \
+            f"attempt={state.attempt} output={result.get('output')} verbatim={verbatim}"
     return (failure == expected and accepted and state.attempt == 2), f"attempt={state.attempt}"
 
 
@@ -1209,8 +1322,10 @@ def section_unit_checks(taxonomy_index, clause_bank, partition) -> bool:
     prompt = gen.build_section_prompt(rec, sp, k, [s.text for s in sp.sections[:k]])
     visible_part = model_visible(prompt)
     mine = [rec.planned[i].value for i in sp.sections[k].items if rec.planned[i].value]
+    # A role word of another section's person appears in the prompt's rules, as a word not to use
+    # (`AVOID|`), never as an item to place; the items the check is about are the other values.
     others = [rec.planned[i].value for s in sp.sections if s.index != k for i in s.items
-              if rec.planned[i].value and len(rec.planned[i].value) > 6]
+              if rec.planned[i].value and len(rec.planned[i].value) > 6 and not rec.planned[i].anchor]
     foreign = [v for v in others if v in visible_part and v not in mine]
     # A foreign value may appear legitimately only inside the cast list or the previous text.
     leaked = [v for v in foreign if f"«{v}»" in visible_part]
@@ -1370,7 +1485,11 @@ def negative_checks(taxonomy_index, clause_bank, partition, out_dir: str, types_
     for label, run in (("benchmark", bench), ("train", train)):
         planted = [n_ for m in run["meta"] for n_ in m["planted_negatives"]]
         use = collections.Counter(n_["template"] for n_ in planted)
-        per_doc = collections.Counter(len(m["planted_negatives"]) for m in run["meta"])
+        profile_of = {d["id"]: d["profile"] for d in run["docs"]}
+        per_doc = collections.Counter(len(m["planted_negatives"]) for m in run["meta"]
+                                      if profile_of[m["id"]] != "near_miss_only")
+        near_miss_counts = [len(m["planted_negatives"]) for m in run["meta"]
+                            if profile_of[m["id"]] == "near_miss_only"]
         by_id = {d["id"]: d for d in run["docs"]}
         verbatim = all(gates.negative_occurrences(by_id[m["id"]]["text_input"], n_["text"])
                        for m in run["meta"] for n_ in m["planted_negatives"])
@@ -1388,11 +1507,16 @@ def negative_checks(taxonomy_index, clause_bank, partition, out_dir: str, types_
         count_ok = max(per_doc, default=0) <= limit and (label == "train" or min(
             (len(m["planted_negatives"]) for m, d in zip(run["meta"], run["docs"])
              if d["profile"] not in ("pii_free",) ), default=1) >= 0)
+        # A near-miss-only document is all negatives: two to four each, and an empty label set.
+        near_ok = (bool(near_miss_counts) and all(2 <= n_ <= 4 for n_ in near_miss_counts)
+                   and all(by_id[m["id"]]["output"] == {} for m in run["meta"]
+                           if profile_of[m["id"]] == "near_miss_only"))
         report(f"{label}_run_cap_and_partition",
-               cap_ok and own_partition and verbatim and unlabelled and count_ok and sum(use.values()) > 0
-               and run["ledger"]["max_reuse"] <= dataset_mod.NEGATIVE_CAP_PER_RUN,
+               cap_ok and own_partition and verbatim and unlabelled and count_ok and near_ok
+               and sum(use.values()) > 0 and run["ledger"]["max_reuse"] <= dataset_mod.NEGATIVE_CAP_PER_RUN,
                f"accepted={len(run['docs'])} plantings={sum(use.values())} distinct={len(use)} "
                f"max_reuse={max(use.values(), default=0)} per_doc={dict(sorted(per_doc.items()))} "
+               f"near_miss_only_docs={len(near_miss_counts)} negatives_each={sorted(near_miss_counts)} "
                f"verbatim={verbatim} unlabelled={unlabelled}")
     bench_planted = {n_["template"] for m in bench["meta"] for n_ in m["planted_negatives"]}
     train_planted = {n_["template"] for m in train["meta"] for n_ in m["planted_negatives"]}
@@ -2223,6 +2347,287 @@ def _normalised(files: Dict[str, bytes]) -> Dict[str, list]:
             for n, raw in files.items()}
 
 
+def _plan_for(idx: int, genre: str, profile: str, form: str, band, *, near_miss: bool = False,
+              n_negatives: int = 0, type_target: int = 8) -> "gen.DocPlan":
+    return gen.DocPlan(idx=idx, genre=genre, variant="prose_letter", form=form, length_band=band,
+                       forced_types=[], profile=profile, type_target=type_target, art9_cap=1,
+                       near_miss_only=near_miss, n_negatives=n_negatives)
+
+
+def role_word_checks(taxonomy_index, clause_bank: dict, partition: dict) -> bool:
+    """The EMPLOYMENT role words and the near-miss-only profile, at the level of the sampler and the gates."""
+    import collections
+    import random
+    ok = True
+
+    def report(name: str, passed: bool, detail: str) -> None:
+        nonlocal ok
+        ok &= passed
+        print(f"{'PASS' if passed else 'FAIL'} roles  {name:<38} {detail}")
+
+    public_figures = set(data.PUBLIC_FIGURES)
+
+    # -- the gate itself -------------------------------------------------------------------------
+    indefinite = [{"word": "psykologspesialist", "name": "Lars Ottesen", "definite": False}]
+    definite = [{"word": "legen", "name": "Oda Rørvik", "definite": True}]
+    good = [
+        ("psykologspesialist Lars Ottesen undersøkte ham.", indefinite),
+        ("Lars Ottesen, psykologspesialist, undersøkte ham.", indefinite),
+        ("Psykologspesialist Lars Ottesen undersøkte ham.", indefinite),
+        ("Det var psykologspesialist ved klinikken Lars Ottesen som undersøkte.", indefinite),
+        ("Hun møtte legen Oda Rørvik. Senere sa legen at det var ugrunnet.", definite),
+    ]
+    bad = [
+        ("Han bør kontakte psykologspesialist ved behov.", indefinite, "not_beside_the_name"),
+        ("Lars Ottesen undersøkte ham mens ingen var til stede, ifølge psykologspesialist her.", indefinite,
+         "not_beside_the_name"),
+        ("Den nye psykologspesialistutdanningen er vedtatt.", indefinite, "embedded_in_word"),
+        ("Psykologspesialisten Lars Ottesen undersøkte ham.", indefinite, "embedded_in_word"),
+        ("Hun ble henvist til legen ved sykehuset. Legen Oda Rørvik svarte.", definite, "not_beside_the_name"),
+        ("Hun fikk legemidler av legen Oda Rørvik.", [{"word": "lege", "name": "Oda Rørvik", "definite": False}],
+         "embedded_in_word"),
+        ("Overlege Oda Rørvik ringte.", [{"word": "lege", "name": "Oda Rørvik", "definite": False}],
+         "embedded_in_word"),
+    ]
+    good_hits = [(t, gates.role_word_violations(t, r)) for t, r in good]
+    bad_hits = [(t, [v["reason"] for v in gates.role_word_violations(t, r)], want) for t, r, want in bad]
+    report("gate_passes_role_words_beside_the_name", all(not h for _t, h in good_hits),
+           f"cases={len(good)} violations={[t for t, h in good_hits if h]}")
+    report("gate_rejects_generic_and_embedded_use", all(want in got for _t, got, want in bad_hits),
+           f"cases={len(bad)} missed={[(t, got) for t, got, want in bad_hits if want not in got]}")
+    prior = gates.role_word_violations("Legen svarte raskt.", definite, earlier="Oda Rørvik møtte henne.")
+    prior_missing = gates.role_word_violations("legen svarte raskt.", definite, earlier="")
+    report("definite_form_refers_back_only_to_a_named_person", not prior and bool(prior_missing),
+           f"after_name_in_earlier_section={len(prior)} without_name={len(prior_missing)}")
+    present = (gates.role_present("lege", "Legen Oda") is False and gates.role_present("lege", "Lege Oda Rørvik")
+               and gates.role_present("lege", "overlege Oda") is False and gates.role_present("lege", "lege Oda"))
+    report("role_present_is_whole_word_either_case", bool(present), "lege/Lege/overlege/legen")
+
+    # -- the unplanned role words (G7) -----------------------------------------------------------
+    lex = genres_mod.professional_lexicon()
+    cases = [
+        ("Saken ble drøftet med lege Kari Hansen.", "label", "lege"),
+        ("Saken ble drøftet med legen Kari Hansen. Legen svarte raskt.", "label", "legen"),
+        ("Saken ble drøftet med lege Kari Hansen. Ellers bør man kontakte lege.", "reject", "lege"),
+        ("Kari Hansen, fysioterapeut, møtte henne. Hun brukte legemidler.", "label", "fysioterapeut"),
+        ("Hun bruker legemidler. Kari Hansen er lege.", "reject", "lege"),
+        ("Kari Hansen er lege ved sykehuset.", "label", "lege"),
+        ("Hun bør ta kontakt med lege ved behov.", None, None),
+        ("Kari Hansen leste en bok om psykologi.", None, None),
+    ]
+    got = []
+    for text, action, match in cases:
+        found = gates.sweep_unplanned_roles(text, ["Kari Hansen"], lex, [])
+        got.append(((found[0]["action"], found[0]["match"]) if found else (None, None)) == (action, match)
+                   if action else not found)
+    report("sweep_labels_only_what_can_be_labelled", all(got), f"cases={len(cases)} wrong={[c[0] for c, g in zip(cases, got) if not g]}")
+    inside = gates.sweep_unplanned_roles(
+        "Kari Hansen er ansatt som sykepleier.", ["Kari Hansen"], lex, [], ["ansatt som sykepleier"])
+    report("sweep_leaves_the_subjects_own_clause_alone", not inside, f"findings={inside}")
+
+    # -- the profile table -----------------------------------------------------------------------
+    shares = {n: p["share"] for n, p in genres_mod.PROFILES.items()}
+    old_train = {"minimal": 0.06, "light": 0.24, "typical": 0.30, "dense": 0.20, "case_file": 0.15}
+    old_bench = {"minimal": 0.04, "light": 0.14, "typical": 0.24, "dense": 0.27, "case_file": 0.26}
+    bench_shares = dataset_mod.MODES["benchmark"].profile_shares
+
+    def proportional(new: dict, old: dict) -> bool:
+        return all(abs(new[k] - old[k] * 0.90 / 0.95) < 0.002 for k in old)
+
+    report("profile_shares_pii_free_and_near_miss_5pc",
+           abs(sum(shares.values()) - 1) < 1e-9 and abs(sum(bench_shares.values()) - 1) < 1e-9
+           and shares["pii_free"] == shares["near_miss_only"] == 0.05
+           and bench_shares["pii_free"] == bench_shares["near_miss_only"] == 0.05
+           and proportional(shares, old_train) and proportional(bench_shares, old_bench),
+           f"train={shares} benchmark={bench_shares}")
+    for dataset in ("train", "benchmark"):
+        mode = dataset_mod.MODES[dataset]
+        plans, report_ = gen.plan_batch(random.Random(5), 200, genres_mod.genre_names(), [], 0.5, mode=mode)
+        counts = collections.Counter(p.profile for p in plans)
+        near = [p for p in plans if p.near_miss_only]
+        ordinary_in_near_genres = [p for p in plans if p.genre in genres_mod.NO_SUBJECT_GENRES
+                                   and not (p.pii_free or p.near_miss_only)]
+        report(f"{dataset}_plan_has_5pc_each", counts["pii_free"] == 10 and counts["near_miss_only"] == 10
+               and len(near) == 10 and all(p.genre in genres_mod.NEAR_MISS_GENRES and not p.pii_free for p in near)
+               and all(2 <= p.n_negatives <= 4 for p in near) and not any(p.forced_types for p in near)
+               and not ordinary_in_near_genres and report_["planned_near_miss_only"] == 10,
+               f"profiles={dict(sorted(counts.items()))} near_miss_genres={dict(collections.Counter(p.genre for p in near))} "
+               f"negatives={sorted(p.n_negatives for p in near)}")
+
+    # -- near-miss negatives ---------------------------------------------------------------------
+    pools = {}
+    for dataset in ("train", "benchmark"):
+        bank = dataset_mod.select_clause_bank(clause_bank, partition, dataset)
+        pools[dataset] = {form: [e for v in bank["negatives"].values() for e in v
+                                 if e["form"] == form and dataset_mod.unnamed_safe(e)] for form in ("nb", "nn")}
+    leaks = [(e["text"], ) for d in pools.values() for f in d.values() for e in f
+             if re.search(r"\d|[A-ZÆØÅ]|\b(han|hun|ho|ham|henne|hans|hennes|hennar)\b", e["text"].replace("{PRON}", ""))
+             or e.get("also_labelled")]
+    report("unnamed_safe_negatives_hold_nothing_labellable", not leaks and all(
+        len(d[f]) >= 15 for d in pools.values() for f in ("nb", "nn")),
+        f"pool={ {k: {f: len(v) for f, v in d.items()} for k, d in pools.items()} } leaks={leaks[:2]}")
+    filled = [dataset_mod.fill_unnamed(e["text"], f) for d in pools.values() for f, es in d.items() for e in es]
+    report("unnamed_referent_fills_read_naturally",
+           all("{" not in t for t in filled)
+           and all(t.count("søkeren") + t.count("søkjaren") <= 1 for t in filled)
+           and any("vedkommende" in t or "vedkommande" in t for t in filled)
+           and not any(re.search(r"\b(han|hun|ho)\b", t) for t in filled),
+           f"example={next(t for t in filled if 'vedkommen' in t)!r}")
+
+    template = next(e["text"] for e in pools["benchmark"]["nb"] if "{PRON}" in e["text"])
+    said = dataset_mod.fill_unnamed(template, "nb")
+    said = said[:1].upper() + said[1:]
+    leaky = leakage.check([{"id": "T1", "text_input": f"Et skriv. {said}. Slutt.", "output": {}}],
+                          [{"id": "B1", "text_input": f"Et annet skriv. {said}. Slutt.", "output": {}}],
+                          clause_bank, partition)
+    report("leakage_check_finds_a_near_miss_planted_without_a_subject",
+           not leaky["ok"] and template in leaky["shared_negative_texts"], f"shared={list(leaky['shared_negative_texts'])[:1]}")
+
+    records = []
+    for i in range(60):
+        dataset, form = ("benchmark", "nb") if i % 2 == 0 else ("train", "nn")
+        mode = dataset_mod.MODES[dataset]
+        bank = dataset_mod.select_clause_bank(clause_bank, partition, dataset)
+        negatives = bank.pop("negatives")
+        bank.pop("negatives", None)
+        genre = genres_mod.NEAR_MISS_GENRES[i % len(genres_mod.NEAR_MISS_GENRES)]
+        plan = _plan_for(i, genre, "near_miss_only", form, (400, 800), near_miss=True, n_negatives=3)
+        rec = gen.sample_record(random.Random(i), 900 + i, plan, "seeded", taxonomy_index, bank, public_figures,
+                                negative_bank=negatives, dataset=dataset)
+        records.append(rec)
+    all_neg = [n_ for r in records for n_ in r.planted_negatives]
+    report("near_miss_records_have_no_subject_and_safe_negatives",
+           all(r.person is None and not r.planned and not r.parties and r.near_miss_only and not r.pii_free
+               for r in records)
+           and all(len(r.planted_negatives) == 3 for r in records)
+           and all(not n_.also_labelled and not re.search(r"\d", n_.text) for n_ in all_neg)
+           and all(len({n_.type for n_ in r.planted_negatives}) == len(r.planted_negatives) for r in records),
+           f"records={len(records)} negatives={len(all_neg)} types={len({n_.type for n_ in all_neg})}")
+    prompts = [gen.build_prompt(r) for r in records[:6]]
+    report("near_miss_prompt_states_the_unnamed_referent",
+           all("søkeren" in model_visible(p) and "uspesifisert" in model_visible(p)
+               and "Hver nøytral formulering står i en setning for seg" in model_visible(p)
+               and p.count("NEGATIVE|") == 3 and "PII_FREE|1" in p for p in prompts),
+           f"prompts={len(prompts)}")
+
+    # -- role words in sampled records -----------------------------------------------------------
+    nb_only = _nb_only_role_words()
+    sampled, flaws, nesting, over_budget, nn_forms, by_profile = [], [], [], [], [], collections.Counter()
+    genres = [g for g in genres_mod.genre_names() if g not in genres_mod.NO_SUBJECT_GENRES]
+    n_records = 0
+    for i in range(240):
+        dataset = "benchmark" if i % 2 else "train"
+        bank = dataset_mod.select_clause_bank(clause_bank, partition, dataset)
+        negatives = bank.pop("negatives")
+        bank.pop("negatives", None)
+        profile = ["light", "typical", "dense", "case_file"][i % 4]
+        band = genres_mod.PROFILES[profile]["bands"][i % 2]
+        plan = _plan_for(i, genres[i % len(genres)], profile, "nn" if i % 3 == 0 else "nb", band,
+                         n_negatives=1, type_target=genres_mod.PROFILES[profile]["types"][0])
+        plan.instances = genres_mod.draw_instance_counts(random.Random(i), plan.genre, profile)
+        data.use_pools(dataset_mod.select_pools(partition, dataset))
+        try:
+            rec = gen.sample_record(random.Random(i * 31 + 7), 4000 + i, plan, "seeded", taxonomy_index, bank,
+                                    public_figures, negative_bank=negatives, dataset=dataset)
+        finally:
+            data.use_pools(data.full_pools())
+        n_records += 1
+        roles = [pv for pv in rec.planned if pv.anchor]
+        persons = {pv.value for pv in rec.planned if pv.type == "PERSON"}
+        words = [pv.value for pv in roles]
+        for pv in roles:
+            others = [o.value for o in rec.planned if o is not pv and o.value] + [n_.text for n_ in rec.planted_negatives]
+            clash = [o for o in others if pv.value.lower() in o.lower() or o.lower() in pv.value.lower()]
+            if clash or pv.anchor not in persons or pv.type != "EMPLOYMENT":
+                flaws.append((rec.genre, pv.value, clash[:1]))
+            if rec.form == "nn":
+                nn_forms.append(pv.value)
+        if len(set(words)) != len(words):
+            flaws.append((rec.genre, "duplicate role word", words))
+        employment = [o.value for o in rec.planned if o.type == "EMPLOYMENT"]
+        nesting += [(a, b) for a in employment for b in employment if a != b and a in b]
+        if len(rec.planned) + len(rec.planted_negatives) > genres_mod.item_budget(profile, band[1]) + len(roles) + 2:
+            over_budget.append((rec.genre, len(rec.planned)))
+        by_profile[profile] += bool(roles)
+        sampled.append(rec)
+    with_roles = [r for r in sampled if any(pv.anchor for pv in r.planned)]
+    report("role_words_never_collide_with_planted_strings", not flaws and not nesting and len(with_roles) > 150,
+           f"records={n_records} with_role_words={len(with_roles)} flaws={flaws[:3]} nested_employment={nesting[:2]} "
+           f"by_profile={dict(by_profile)}")
+    report("role_words_fit_the_item_budget", not over_budget, f"over={over_budget[:3]}")
+    report("nynorsk_documents_plant_nynorsk_forms",
+           bool(nn_forms) and not [w for w in nn_forms if w in nb_only]
+           and any(w in {"sakshandsamar", "rådgjevar", "seniorrådgjevar", "etterforskar", "lærar", "kontaktlærar",
+                         "avdelingsleiar", "HR-rådgjevar", "kredittansvarleg", "inkassomedarbeidar",
+                         "sakshandsamaren", "læraren", "klareringssakshandsamar", "dagleg leiar"}
+                   for w in nn_forms),
+           f"nn_role_words={len(nn_forms)} distinct={sorted(set(nn_forms))[:12]}")
+    role_kinds = collections.Counter(pv.party for r in with_roles for pv in r.planned if pv.anchor)
+    report("every_professional_cast_role_gets_a_word", {"author", "physician", "caseworker", "lawyer"} <= set(role_kinds),
+           f"by_role={dict(role_kinds)}")
+
+    # The role words come from their own RNG stream: the rest of the record is what it was without them.
+    real_plan = gen._plan_role_words
+    differing = 0
+    for rec in sampled[:40]:
+        plan = _plan_for(0, rec.genre, rec.profile, rec.form, rec.length_band)
+        plan.type_target = 8
+        dataset = rec.dataset
+        bank = dataset_mod.select_clause_bank(clause_bank, partition, dataset)
+        negatives = bank.pop("negatives")
+        bank.pop("negatives", None)
+        data.use_pools(dataset_mod.select_pools(partition, dataset))
+        try:
+            a = gen.sample_record(random.Random(11), 5000, plan, "seeded", taxonomy_index, bank, public_figures,
+                                  negative_bank=negatives, dataset=dataset)
+            gen._plan_role_words = lambda *args, **kwargs: []
+            b = gen.sample_record(random.Random(11), 5000, plan, "seeded", taxonomy_index, bank, public_figures,
+                                  negative_bank=negatives, dataset=dataset)
+        finally:
+            gen._plan_role_words = real_plan
+            data.use_pools(data.full_pools())
+        if [pv.value for pv in a.planned if not pv.anchor] != [pv.value for pv in b.planned]:
+            differing += 1
+    report("role_words_do_not_shift_the_main_sampler", differing == 0, f"records_that_differ={differing}/40")
+
+    # The prompt asks for the word beside the name, and says it is not for any other use.
+    sample = next(r for r in with_roles if r.form == "nb")
+    prompt = gen.build_prompt(sample)
+    word = next(pv for pv in sample.planned if pv.anchor)
+    visible = model_visible(prompt)
+    report("prompt_asks_for_the_word_beside_the_name",
+           f"rolleordet til {word.anchor}" in visible and "aldri samme ord" in visible
+           and f"ROLE|{word.value}|{word.anchor}" in prompt and f"«{word.value}»" in visible,
+           f"word={word.value!r} person={word.anchor!r}")
+    labelled = gen.build_output(sample, " ".join(f"{pv.value} {pv.anchor}." for pv in sample.planned if pv.anchor)
+                                + " " + " ".join(pv.value for pv in sample.planned if pv.type == "PERSON"), {})
+    report("output_labels_the_word_employment_and_the_name_person",
+           word.value in labelled.get("EMPLOYMENT", []) and word.anchor in labelled.get("PERSON", [])
+           and word.anchor not in labelled.get("EMPLOYMENT", []),
+           f"EMPLOYMENT={labelled.get('EMPLOYMENT')} PERSON={labelled.get('PERSON')}")
+
+    # A visible heading is text too: "Saksbehandlerens vurdering" would be the planted `saksbehandler`
+    # away from its person's name.
+    clashes = 0
+    for seed in range(60):
+        for form, word in (("nb", "saksbehandler"), ("nn", "sakshandsamar")):
+            heads = sections_mod._pick_headings(random.Random(seed), "case_file", ["intro", "parties", "observations",
+                                                "assessment", "decision"], form, [word])
+            clashes += sum(1 for h in heads if word in h.lower())
+    report("section_headings_avoid_planted_role_words", clashes == 0, f"clashes={clashes} of 600 headings")
+
+    # The subject's own EMPLOYMENT clause, and a role word the cast would have shared with it.
+    conflicts = [(a, b) for a in ("rådgiver", "lærer", "kontaktlærer", "lege", "veterinær")
+                 for b in ("ansatt som rådgiver", "lærer", "fast ansatt som lærer", "bruker legemidler",
+                           "veterinærassistent") if gen._role_conflicts(a, [b.lower()])]
+    report("role_word_conflict_test_is_substring_both_ways",
+           ("rådgiver", "ansatt som rådgiver") in conflicts and ("kontaktlærer", "lærer") in conflicts
+           and ("lege", "bruker legemidler") in conflicts and ("veterinær", "veterinærassistent") in conflicts
+           and not gen._role_conflicts("psykolog", ["ansatt som sykepleier"]),
+           f"conflicts={len(conflicts)}")
+    return ok
+
+
 def resume_checks(out_root: str) -> bool:
     """Prove a mock run can be killed, stopped and resumed without changing what it produces.
 
@@ -2637,6 +3042,7 @@ def main() -> int:
     all_passed &= negative_checks(taxonomy_index, clause_bank, partition, out_dir, types_config)
     all_passed &= negative_wording_checks(taxonomy_index, clause_bank, partition)
     all_passed &= record_checks(taxonomy_index, clause_bank, partition, out_dir)
+    all_passed &= role_word_checks(taxonomy_index, clause_bank, partition)
     all_passed &= resume_checks(out_dir)
 
     clause_literals = ([pv.value for pv in states[16].record.planned if pv.value_kind == "clause" and pv.value]

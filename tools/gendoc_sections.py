@@ -169,6 +169,7 @@ GENRE_FAMILY: Dict[str, str] = {
     "tenancy_dispute": "letter", "school_incident": "incident",
     "mattilsynet_inspection": "inspection", "debt_counselling": "debt", "inkasso_notice": "debt",
     "bank_aml": "debt", "udi_correspondence": "request", "admin_circular": "request",
+    "anonymised_case_summary": "request", "guidance_note": "request", "statistics_note": "request",
 }
 DEFAULT_FAMILY = "letter"
 
@@ -343,8 +344,19 @@ def _fit_sequence(sequence: List[str], n: int) -> List[str]:
     return seq
 
 
-def _pick_headings(rng: random.Random, family: str, kinds: List[str], form: str) -> List[str]:
-    """Choose a heading per section, never the same heading twice in one document."""
+def _pick_headings(rng: random.Random, family: str, kinds: List[str], form: str,
+                   avoid: Sequence[str] = ()) -> List[str]:
+    """Choose a heading per section, never the same heading twice in one document.
+
+    Args:
+        rng: Plan RNG.
+        family: Section family.
+        kinds: The section kinds, in order.
+        form: "nb" or "nn".
+        avoid: Planted role words. A heading that holds one ("Saksbehandlerens vurdering" with a
+            planted `saksbehandler`) would be an occurrence of the string away from the person's
+            name, which G14 rejects; another heading of the kind is used instead.
+    """
     used: Set[str] = set()
     chosen = []
     col = 0 if form == "nb" else 1
@@ -353,6 +365,7 @@ def _pick_headings(rng: random.Random, family: str, kinds: List[str], form: str)
         options = list(override[col]) if override else []
         options += [h for h in KINDS[kind][form] if h not in options]
         fresh = [h for h in options if h not in used] or options
+        fresh = [h for h in fresh if not any(w in h.lower() for w in avoid)] or fresh
         # The first option is the one a real document of the genre uses; later ones
         # are for repeats and for variety, drawn with a bias toward the first.
         heading = fresh[0] if rng.random() < 0.6 else rng.choice(fresh)
@@ -460,7 +473,8 @@ def build_plan(record, rng: random.Random) -> SectionPlan:
     n = min(n, MAX_SECTIONS)
     kinds = _fit_sequence(FAMILIES[family], n)
     n = len(kinds)
-    headings = _pick_headings(rng, family, kinds, record.form)
+    headings = _pick_headings(rng, family, kinds, record.form,
+                              [pv.value.lower() for pv in record.planned if getattr(pv, "anchor", None)])
     visible = rng.random() >= HEADERLESS_SHARE
     desc_key = "desc_nb" if record.form == "nb" else "desc_nn"
     sections = [Section(i, kind, headings[i] if visible else None, headings[i], KINDS[kind][desc_key])

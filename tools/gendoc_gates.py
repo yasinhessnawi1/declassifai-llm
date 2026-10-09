@@ -17,6 +17,12 @@ guarantee automatically:
   reference number appears that nothing planned, a professional's licence number is not
   given to the patient, and a device, IP address or username is not presented as the
   issuing organisation's own.
+* G14 also owns the role words (docs/ANNOTATION_SPEC.md, EMPLOYMENT: the role word of a specific
+  individual is EMPLOYMENT, the name stays PERSON). The output format is one string per type, so a
+  planted role word labels every occurrence of its string; `role_word_violations` rejects a
+  document where the string occurs anywhere that is not that person's role: embedded in a longer
+  word, or beyond four tokens from the person's name. `sweep_unplanned_roles` is the G7 side: a role
+  word attached to a person nothing planned a role for.
 * G15 -- a planted negative sits alone in its sentence: not beside another negative, not
   coordinated with a seeded clause by "og"/"men"/"samt", not repeated.
 
@@ -1192,15 +1198,16 @@ def _reference_like(token: str) -> bool:
 
 def gate_identifier_roles(
     text: str, typed_values: Iterable[Tuple[str, str]], covered_spans: Iterable[str],
-    owners: Optional[dict] = None,
+    owners: Optional[dict] = None, role_words: Optional[Sequence[dict]] = None, earlier: str = "",
 ) -> Tuple[bool, List[dict]]:
     """Reject an identifier presented as a different kind of number, or as someone else's.
 
-    Four things are caught: an identifier whose preceding words name another kind of
+    Five things are caught: an identifier whose preceding words name another kind of
     number; a reference number nothing planned; a clinician's HPR number written next to the
-    subject instead of next to a clinician; and a device identifier, IP address or username
+    subject instead of next to a clinician; a device identifier, IP address or username
     presented as the issuing organisation's own ("vår enhetsidentifikator ...", "referanse
-    ...").
+    ..."); and a planted role word used somewhere that is not that person's role
+    (`role_word_violations`).
 
     Args:
         text: The generated document.
@@ -1212,13 +1219,16 @@ def gate_identifier_roles(
             (the subject's name parts and pronouns) and `clinician_refs` (the names of the
             document's clinicians). None skips the HPR check; the issuer check needs no
             context and always runs.
+        role_words: The planted role words as `{"word", "name", "definite"}` dicts; None checks none.
+        earlier: The text of the sections before this one, for the role words' references back to a name.
 
     Returns:
         Tuple of (passed, violations as `{"kind", ...}`): `wrong_role` when the
         words just before a planned identifier name another type, `unplanned_reference`
         for a "Sak <number>" nothing planned, `wrong_owner` for an HPR number placed with
-        the subject and `issuer_identifier` for a customer's device, IP address or username
-        written as the organisation's own.
+        the subject, `issuer_identifier` for a customer's device, IP address or username
+        written as the organisation's own and `generic_role_word` for a planted role word
+        used away from its person.
     """
     violations = []
     owners = owners or {}
@@ -1275,7 +1285,210 @@ def gate_identifier_roles(
         if _reference_like(token) and not _overlaps(match.start(1), match.end(1), covered):
             violations.append({"kind": "unplanned_reference", "value": token,
                                "context": text[max(0, match.start() - 10):match.end()].strip()})
+    if role_words:
+        violations += role_word_violations(text, role_words, earlier)
     return not violations, violations
+
+
+# -- Role words: the EMPLOYMENT of a specific individual ------------------------------
+#
+# The annotation owner ruled that a role word attached to, or clearly referring to, a specific
+# individual is EMPLOYMENT (`Veterinæren` in "Veterinæren Ola Nilsen", `legen` in "legen Oda
+# Rørvik"), that the name stays PERSON, and that a generic or institutional use ("ble tatt med
+# til veterinær", "bør kontakte lege", "Mattilsynets inspektører") or a hypothetical ("en
+# veterinær kan ...") is not EMPLOYMENT. The label format cannot say which occurrence of a string
+# is which: `{"EMPLOYMENT": ["lege"]}` labels every `lege` in the document, `lege` inside
+# `legemiddel` included. So the generator may only plant a role word, or label one it did not
+# plant, when every occurrence of the string is a role word of a person.
+
+ROLE_ADJACENT_TOKENS = 4
+# What may follow a planted role word and still be that word: nothing, or the genitive -s. An
+# inflected form ("psykologspesialisten") is another string; the label would cover part of a word.
+_ROLE_TAILS = {"", "s"}
+# What may follow a lexicon word in the sweep for unplanned role words: the definite article
+# ("legen", "legens"), which is then part of the labelled string.
+_LEXICON_TAILS = {"": "", "s": "", "n": "n", "en": "en", "ns": "n", "ens": "en"}
+_SENTENCE_BREAK_CHARS = ".!?;\n"
+_LETTERS = "A-Za-zÆØÅæøåÉéÈèÓóÖöÄäÜüß"
+
+
+def role_variants(word: str) -> List[str]:
+    """Return the forms a role word can take in running text: as planted, and with a capital first letter.
+
+    A model capitalises a word that opens a sentence ("Psykologspesialist Lars Ottesen
+    undersøkte ..."), and both forms are labels of the same planted word.
+    """
+    variants = [word]
+    if word[:1].islower():
+        variants.append(word[:1].upper() + word[1:])
+    return variants
+
+
+def _role_occurrences(text: str, word: str) -> List[dict]:
+    """Every occurrence of a role word's string, with what makes it a whole word or part of one.
+
+    The label is a substring match, so an occurrence inside a longer word counts: `lege` inside
+    `legemiddel` or `overlege` is an occurrence of the planted string like any other.
+    """
+    found = []
+    for variant in role_variants(word):
+        for m in re.finditer(re.escape(variant), text):
+            tail = re.match(r"[" + _LETTERS + r"]*", text[m.end():]).group(0)
+            found.append({"start": m.start(), "end": m.end(), "variant": variant, "tail": tail,
+                          "embedded_before": bool(m.start() and text[m.start() - 1].isalpha())})
+    return sorted(found, key=lambda o: o["start"])
+
+
+def role_present(word: str, text: str) -> bool:
+    """Whether the role word occurs in `text` as a whole word, in either capitalisation.
+
+    "Whole" means no letter before it and nothing but a genitive -s after it, so a draft that wrote
+    `psykologspesialisten` for the planted `psykologspesialist` counts as missing the word (and is
+    repaired) rather than as having it.
+    """
+    return any(not o["embedded_before"] and o["tail"] in _ROLE_TAILS for o in _role_occurrences(text, word))
+
+
+def _name_refs(name: str) -> List[str]:
+    """The ways a person is referred to by name: the full string, the first name and the surname."""
+    parts = [p for p in name.split() if not p.endswith(".")]
+    return [name] + [p for p in (parts[0], parts[-1]) if len(p) >= 3 and p != name] if parts else [name]
+
+
+def _mention_spans(text: str, refs: Sequence[str]) -> List[Tuple[int, int]]:
+    spans = []
+    for ref in refs:
+        for m in re.finditer(r"(?<![" + _LETTERS + r"])" + re.escape(ref) + r"(?![" + _LETTERS + r"])", text):
+            spans.append((m.start(), m.end()))
+    return spans
+
+
+def _adjacent(text: str, start: int, end: int, mentions: Sequence[Tuple[int, int]]) -> bool:
+    """Whether a name mention lies within `ROLE_ADJACENT_TOKENS` words of [start, end), in one sentence."""
+    for ms, me in mentions:
+        if ms >= end:
+            between = text[end:ms]
+        elif me <= start:
+            between = text[me:start]
+        else:
+            continue
+        if (not any(c in between for c in _SENTENCE_BREAK_CHARS)
+                and len(re.findall(r"\w+", between)) <= ROLE_ADJACENT_TOKENS):
+            return True
+    return False
+
+
+def role_word_violations(text: str, roles: Sequence[dict], earlier: str = "") -> List[dict]:
+    """Return every occurrence of a planted role word that is not that person's role.
+
+    An occurrence is the person's role when it stands directly beside their name (within
+    `ROLE_ADJACENT_TOKENS` words, in one sentence, before or after it), or, when the planted
+    form is the definite one, when the person has been named earlier in the document:
+    "veterinæren som undersøkte hunden". An indefinite word away from the name is the generic
+    use the ruling excludes ("ta kontakt med lege"), and so is any occurrence inside a longer
+    word or in an inflected form, since the label is a substring match and would cover part of it.
+
+    Args:
+        text: The document, or a section of it.
+        roles: One dict per planted role word: `word`, `name` (the person's full name) and
+            `definite` (whether the planted form is the definite one).
+        earlier: The text of the sections before this one, in which a name may already have been given.
+
+    Returns:
+        Violations as `{"kind": "generic_role_word", "reason", "value", "name", "start", "context"}`;
+        `reason` is `embedded_in_word` or `not_beside_the_name`.
+    """
+    violations = []
+    for role in roles:
+        word, name = role["word"], role["name"]
+        refs = _name_refs(name)
+        mentions = _mention_spans(text, refs)
+        named_before = bool(_mention_spans(earlier, refs)) if earlier else False
+        for occ in _role_occurrences(text, word):
+            reason = None
+            if occ["embedded_before"] or occ["tail"] not in _ROLE_TAILS:
+                reason = "embedded_in_word"
+            elif not _adjacent(text, occ["start"], occ["end"], mentions):
+                introduced = named_before or any(ms < occ["start"] for ms, _me in mentions)
+                if not (role["definite"] and introduced):
+                    reason = "not_beside_the_name"
+            if reason:
+                violations.append({
+                    "kind": "generic_role_word", "reason": reason, "value": word, "name": name,
+                    "start": occ["start"],
+                    "context": text[max(0, occ["start"] - 40):occ["end"] + len(occ["tail"]) + 40].strip()})
+    return violations
+
+
+def sweep_unplanned_roles(
+    text: str, person_names: Sequence[str], lexicon: Sequence[str], planned_words: Sequence[str],
+    employment_spans: Sequence[str] = (),
+) -> List[dict]:
+    """Find role words attached to a person that has no planned role, and decide each string.
+
+    The G7 sweep labels a full name the model wrote on its own as PERSON; the same person's role
+    word is then an incompleteness of the same kind, and under the ruling it is EMPLOYMENT. The
+    labelled string is the role word with its definite article if it has one (`legen`, not `lege`).
+    A string is labelled when it can be labelled correctly and the document is rejected when it
+    cannot:
+
+    * **label** (`action: "label"`, `label_type: "EMPLOYMENT"`): every occurrence of the string
+      in the document is a role word of a labelled person (beside a name, or the definite form
+      after the person was named), so the one-string-per-type output labels nothing wrongly;
+    * **reject**: some other occurrence of the string is generic, inside a longer word
+      (`lege` in `legemiddel`) or a different inflection of it. The string cannot be labelled
+      without over-labelling, and leaving it unlabelled is the incompleteness being avoided,
+      so the document is regenerated.
+
+    Args:
+        text: The document.
+        person_names: Every labelled PERSON string (planned and G7-labelled).
+        lexicon: The professional role words recognised (`gendoc_genres.professional_lexicon`).
+        planned_words: Role words already planned for a person; they are the role gate's business.
+        employment_spans: EMPLOYMENT strings already labelled (the subject's `ansatt som sykepleier`):
+            an occurrence inside one is already an EMPLOYMENT label and is neither counted nor
+            reconsidered.
+
+    Returns:
+        Findings in the shape of `gate_unplanned_pii`'s: `pattern`, `match`, `start`, `end`,
+        `action` and, for a label, `label_type`.
+    """
+    mentions = _mention_spans(text, sorted({r for name in person_names for r in _name_refs(name)}))
+    if not mentions:
+        return []
+    labelled = _covered_intervals(text, employment_spans)
+    planned = set(planned_words)
+    candidates: Dict[str, List[dict]] = collections.defaultdict(list)
+    for word in lexicon:
+        if word in planned:
+            continue
+        for occ in _role_occurrences(text, word):
+            if (occ["embedded_before"] or occ["tail"] not in _LEXICON_TAILS
+                    or _is_covered(occ["start"], occ["end"], labelled)):
+                continue
+            unit_end = occ["end"] + len(_LEXICON_TAILS[occ["tail"]])
+            beside = _adjacent(text, occ["start"], unit_end, mentions)
+            after_named = bool(occ["tail"]) and any(ms < occ["start"] for ms, _me in mentions)
+            candidates[text[occ["start"]:unit_end]].append(
+                {"start": occ["start"], "end": unit_end, "beside": beside, "attached": beside or after_named})
+    findings: List[dict] = []
+    for unit, occs in sorted(candidates.items()):
+        # A longer lexicon word that holds this one (`overlege` holds `lege`) is a different word,
+        # not an occurrence of this one; it is not in `occs` because `embedded_before` excluded it
+        # for the shorter word, and the substring search below finds it.
+        attached_starts = {o["start"] for o in occs if o["attached"]}
+        stray = [m.start() for m in re.finditer(re.escape(unit), text)
+                 if m.start() not in attached_starts and not _is_covered(m.start(), m.end(), labelled)]
+        beside = [o for o in occs if o["beside"]]
+        if not beside:
+            continue
+        clean = not stray
+        findings.append({
+            "pattern": "person_role_word" if clean else "role_word_also_used_generically",
+            "match": unit, "start": beside[0]["start"], "end": beside[0]["end"],
+            "action": "label" if clean else "reject",
+            **({"label_type": "EMPLOYMENT"} if clean else {})})
+    return findings
 
 
 # -- Length band -------------------------------------------------------------------

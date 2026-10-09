@@ -113,6 +113,31 @@ relevant or suspicious, and a finding is repaired like any other framing finding
 
 Benchmark ids are `SYB-`, training ids `SYN-`.
 
+**A professional's role word is EMPLOYMENT, and the name beside it stays PERSON.** The annotation
+owner's ruling (docs/ANNOTATION_SPEC.md, EMPLOYMENT) is that a role word attached to, or clearly
+referring to, a specific individual is EMPLOYMENT: `Veterinæren` in "Veterinæren Ola Nilsen",
+`psykologspesialist` in "psykologspesialist Lars Ottesen"; a generic or institutional use ("ble tatt
+med til veterinær", "Mattilsynets inspektører") or a hypothetical ("en veterinær kan ...") is not. On
+pilot v5 the v2 detector tagged such words for the cast and the signatory and our labels had none.
+The sampler (`_plan_role_words`) now plants one concrete role word for the signatory and for each
+professional in the cast whose name is planned (`gendoc_genres.CAST_ROLE_WORDS`, nb and nn), as an
+EMPLOYMENT value tied to the person (`PlannedValue.anchor`); the prompt asks for it directly before
+or after that person's name in exactly that form, and for no other use of the word. The output is
+`{TYPE: [unique strings]}`, so a planted word labels every occurrence of its string, and that is
+what the gates guard: G14 (`gendoc_gates.role_word_violations`) rejects a document where the string
+occurs away from its person's name, inside a longer word or in another inflection, and G7
+(`gendoc_gates.sweep_unplanned_roles`) labels the role word of an unplanned person EMPLOYMENT when
+every occurrence of its string is a role word of a labelled person, and rejects the document when one
+is not. The words are chosen not to be a substring of, or to contain, any other planted string, the
+subject's own EMPLOYMENT clause included, so no nested same-type span arises.
+
+**Some documents are only near-misses.** The `near_miss_only` profile (5% of a run, taken
+proportionally from the others, in both datasets) has no personal data, an empty label set and two to
+four planted negatives that hold no name, identifier, date or number and no person but the pronoun
+(`gendoc_dataset.unnamed_safe`), spoken of as "søkeren" and "vedkommende" in a genre where an
+unnamed person is natural (`gendoc_genres.NEAR_MISS_GENRES`). It is gated like a PII-free document:
+every G7 finding rejects.
+
 **A run survives being stopped.** The GPU is shared and a full run is days of it, so the run
 yields to other jobs and picks up later (`tools/gendoc_store.py`). Every finished document,
 accepted or discarded, is appended to disk and fsynced the moment it finishes, into shards of
@@ -218,6 +243,7 @@ class PlannedValue:
     hint: Optional[str] = None  # whose value this is / where it belongs, for the prompt
     party: Optional[str] = None  # "author" or a cast role for a person other than the subject; None = subject
     topic: Optional[str] = None  # clause bank `topic` of a clause, for the compatibility and instance reports
+    anchor: Optional[str] = None  # a role word's person: the full name it must stand beside (EMPLOYMENT)
 
 
 @dataclass
@@ -262,7 +288,7 @@ class Record:
     """A fully sampled, typed record for one document.
 
     `person` is the single data subject the document is about and is None only
-    for a PII-free plan. `parties` is everyone the document names, the subject
+    for a PII-free or near-miss-only plan. `parties` is everyone the document names, the subject
     included: a case file's spouse, children, caseworker and doctor each carry
     their own coherent identifiers, which is where a dense document's many
     distinct spans come from.
@@ -284,6 +310,7 @@ class Record:
     employer: Optional[str] = None
     profile: str = "typical"
     pii_free: bool = False
+    near_miss_only: bool = False
     dataset: str = "train"
     planted_negatives: List[PlantedNegative] = field(default_factory=list)
     dropped_forced: List[str] = field(default_factory=list)
@@ -936,6 +963,7 @@ def _add_instances(
         label: Type -> field label lookup.
     """
     room = (genres_mod.item_budget(plan.profile, plan.length_band[1]) - len(planned) - plan.n_negatives)
+    role_words = [pv.value.lower() for pv in planned if pv.anchor]
     order = {t: i for i, t in enumerate(_SAMPLING_ORDER)}
     for etype in sorted(plan.instances, key=lambda t: (order.get(t, len(order)), t)):
         extra = plan.instances[etype] - 1
@@ -963,7 +991,8 @@ def _add_instances(
             candidates = [
                 e for e in clause_bank.get(etype, [])
                 if _clause_fits(e, subject, etype) and clauses_compatible(chosen, e)
-                and 1 + len(re.findall(r"\{PERSON(?:_[MF])?\}", e["text"])) <= room]
+                and 1 + len(re.findall(r"\{PERSON(?:_[MF])?\}", e["text"])) <= room
+                and not any(w in e["text"].lower() for w in role_words)]
             if not candidates:
                 break
             entry = _weighted_entry(rng, candidates, difficulty_weights)
@@ -1140,10 +1169,11 @@ class NegativeLedger:
         }
 
 
-def _plant_negatives(rng: random.Random, plan: "DocPlan", spec: dict, person: Person, form: str,
+def _plant_negatives(rng: random.Random, plan: "DocPlan", spec: dict, person: Optional[Person], form: str,
                      clause_types: Set[str], negative_bank: dict,
                      literals: Sequence[str] = (),
-                     ledger: Optional[NegativeLedger] = None) -> List[PlantedNegative]:
+                     ledger: Optional[NegativeLedger] = None,
+                     avoid: Sequence[str] = (), unnamed: bool = False) -> List[PlantedNegative]:
     """Choose the hard negatives to plant in one document.
 
     A negative is only planted where it reads as an ordinary sentence of the
@@ -1165,7 +1195,7 @@ def _plant_negatives(rng: random.Random, plan: "DocPlan", spec: dict, person: Pe
         rng: Seeded RNG.
         plan: The document plan; `n_negatives` is how many to plant.
         spec: Genre spec.
-        person: The data subject.
+        person: The data subject; None for a near-miss-only document.
         form: "nb" or "nn".
         clause_types: Clause types this document already discloses.
         negative_bank: `{TYPE: [negative entries]}` for the active dataset.
@@ -1174,6 +1204,12 @@ def _plant_negatives(rng: random.Random, plan: "DocPlan", spec: dict, person: Pe
             the near-miss would stop being unlabelled.
         ledger: The run's reuse ledger; None applies no cap. Chosen texts are
             claimed on it.
+        avoid: Strings (the planted role words) that must not occur anywhere in a chosen
+            text, as a substring in either capitalisation: a role word is labelled wherever
+            its string occurs, so a negative that held one would be partly labelled.
+        unnamed: True for a near-miss-only document. Only negatives `gendoc_dataset.unnamed_safe`
+            accepts are eligible, the subject's gender and age restrictions do not apply,
+            and `{PRON}` is filled with "søkeren" / "vedkommende" instead of a pronoun.
 
     Returns:
         The planted negatives, possibly fewer than requested.
@@ -1193,16 +1229,23 @@ def _plant_negatives(rng: random.Random, plan: "DocPlan", spec: dict, person: Pe
                 continue
             if not genres & set(entry.get("genres", [])):
                 continue
-            if entry.get("gender") and entry["gender"] != person.gender:
-                continue
-            lo, hi = entry.get("age_range", [18, 120])
-            if not lo <= person.age() <= hi:
-                continue
+            if unnamed:
+                if not dataset_mod.unnamed_safe(entry):
+                    continue
+            else:
+                if entry.get("gender") and entry["gender"] != person.gender:
+                    continue
+                lo, hi = entry.get("age_range", [18, 120])
+                if not lo <= person.age() <= hi:
+                    continue
             if ledger is not None and not ledger.available(entry["text"]):
                 continue
-            filled = dataset_mod.fill_pronouns(entry["text"], person.gender, form)
+            filled = (dataset_mod.fill_unnamed(entry["text"], form) if unnamed
+                      else dataset_mod.fill_pronouns(entry["text"], person.gender, form))
             if any(re.search(r"(?<!\w)" + re.escape(v) + r"(?!\w)", filled)
                    for v in literals if len(v) >= 3):
+                continue
+            if any(w.lower() in filled.lower() for w in avoid):
                 continue
             options.append((etype, entry, filled))
     chosen: List[PlantedNegative] = []
@@ -1226,6 +1269,78 @@ def _plant_negatives(rng: random.Random, plan: "DocPlan", spec: dict, person: Pe
         if ledger is not None:
             ledger.claim(entry["text"])
     return chosen
+
+
+def _role_conflicts(word: str, taken: Sequence[str]) -> bool:
+    """Whether a role word is a substring of, or contains, any string already planned.
+
+    A role word labels every occurrence of its string, so `lege` beside "bruker legemidler",
+    or `lærer` against the subject's "ansatt som lærer", would put an EMPLOYMENT label where it
+    does not belong (or nest it in another EMPLOYMENT span). Both directions are refused, in
+    either capitalisation.
+    """
+    low = word.lower()
+    return any(low in t or t in low for t in taken)
+
+
+def _plan_role_words(
+    rng: random.Random, parties: Sequence["Party"], planned: Sequence[PlannedValue], plan: "DocPlan",
+    signatory_role: Optional[str], form: str, tier: Callable[[str], str],
+) -> List[PlannedValue]:
+    """Plan an EMPLOYMENT role word for each professional in the cast whose name is planned.
+
+    The annotation owner's ruling: a role word attached to a specific individual is EMPLOYMENT,
+    the name stays PERSON. Each cast member with a professional role gets a concrete word for
+    that role (`gendoc_genres.CAST_ROLE_WORDS`), and the signatory gets the role the prompt
+    already names. The word is chosen so that its string cannot also be something else in the
+    document: it is not a substring of, and does not contain, any other planned string
+    (`_role_conflicts`), including the other role words and the subject's own EMPLOYMENT clause
+    (which would otherwise nest or be nested by it). A person whose every candidate collides
+    gets no role word; so does a person whose name is not planned, since there would be no name
+    for the word to stand beside, and a person for whom the item budget has no room.
+
+    The draws come from their own RNG stream, so planning role words does not shift anything
+    the main stream samples.
+
+    Args:
+        rng: The role-word RNG stream.
+        parties: The record's parties.
+        planned: The values planned so far; the PERSON values say which names exist.
+        plan: The document plan, for the item budget.
+        signatory_role: The signatory's role as drawn from the genre.
+        form: "nb" or "nn".
+        tier: Type -> tier lookup.
+
+    Returns:
+        The role-word values to append to `planned`, author first.
+    """
+    names = {pv.value for pv in planned if pv.type == "PERSON"}
+    taken = [pv.value.lower() for pv in planned if pv.value and len(pv.value) >= 3]
+    signatory_word = genres_mod.signatory_role_word(signatory_role)
+    room = genres_mod.item_budget(plan.profile, plan.length_band[1]) - len(planned) - plan.n_negatives
+    out: List[PlannedValue] = []
+    for party in parties:
+        if party.is_subject or party.role is None or party.person.full_name not in names or room < 1:
+            continue
+        if party.role == "author":
+            options = [(signatory_word, 1.0)] if signatory_word else []
+        else:
+            options = [(nb if form == "nb" else nn, weight)
+                       for nb, nn, weight in genres_mod.CAST_ROLE_WORDS.get(party.role, [])]
+        # The signatory's role is named in the prompt whether or not it was planted, so the cast
+        # may not draw the same string.
+        pool = taken + ([signatory_word.lower()] if signatory_word and party.role != "author" else [])
+        options = [(w, weight) for w, weight in options if not _role_conflicts(w, pool)]
+        if not options:
+            continue
+        word = rng.choices([w for w, _ in options], weights=[weight for _, weight in options])[0]
+        out.append(PlannedValue(
+            "EMPLOYMENT", tier("EMPLOYMENT"), "value", word, None, "Stilling",
+            hint=f"rolleordet til {party.person.full_name} ({party.label})", party=party.role,
+            anchor=party.person.full_name))
+        taken.append(word.lower())
+        room -= 1
+    return out
 
 
 def sample_record(
@@ -1276,9 +1391,14 @@ def sample_record(
     spec = genres_mod.GENRES[genre]
     label = lambda t: genres_mod.field_label(t, form)  # noqa: E731
 
-    if plan.pii_free:
+    if plan.pii_free or plan.near_miss_only:
+        negatives = []
+        if plan.near_miss_only and plan.n_negatives and negative_bank:
+            negatives = _plant_negatives(rng, plan, spec, None, form, set(), negative_bank,
+                                         ledger=negative_ledger, unnamed=True)
         return Record(doc_seed, genre, plan.variant, form, length_band, None, [], [],
-                      profile=plan.profile, pii_free=True, dataset=dataset)
+                      profile=plan.profile, pii_free=plan.pii_free, near_miss_only=plan.near_miss_only,
+                      dataset=dataset, planted_negatives=negatives)
 
     is_clause_type = lambda t: taxonomy_index.get(t, {}).get("value_kind") == "clause"  # noqa: E731
     foreign = rng.random() < spec.get("foreign_subject_p", 0.0)
@@ -1685,6 +1805,12 @@ def sample_record(
                 checksum_valid, hint=f"tilhører {party.label} {party.person.full_name}",
                 party=party.role))
 
+    # The role words of the professionals named above: EMPLOYMENT values tied to a person. They
+    # are planned before the further instances so that the item budget counts them and no extra
+    # clause is drawn that holds one of the strings.
+    planned += _plan_role_words(random.Random(doc_seed ^ 0xA01E), parties, planned, plan,
+                                signatory_role, form, tier)
+
     # Further instances of the repeatable types, from their own RNG stream so that a document
     # planned at one of everything is sampled exactly as it was before instances existed.
     if strategy == "seeded" and plan.instances:
@@ -1695,7 +1821,8 @@ def sample_record(
     if plan.n_negatives and negative_bank:
         literals = [pv.value for pv in planned if pv.value]
         negatives = _plant_negatives(rng, plan, spec, person, form, set(clause_texts), negative_bank,
-                                     literals, negative_ledger)
+                                     literals, negative_ledger,
+                                     avoid=[pv.value for pv in planned if pv.anchor])
     realised = {pv.type for pv in planned}
     dropped = [t for t in plan.forced_types if t not in realised]
     per_type = collections.Counter(pv.type for pv in planned if pv.type in genres_mod.MULTI_INSTANCE_TYPES)
@@ -1789,7 +1916,7 @@ def build_prompt(record: Record, rng: Optional[random.Random] = None) -> str:
     hi_words = max(lo_words + 20, round(record.length_band[1] * 0.85 / 6.5 / 10) * 10)
     header += (f" Det betyr omtrent {lo_words}–{hi_words} ord; skriv aldri mer enn {hi_words} ord."
                if nb else f" Det tyder om lag {lo_words}–{hi_words} ord; skriv aldri meir enn {hi_words} ord.")
-    if record.pii_free:
+    if record.pii_free or record.near_miss_only:
         return _build_pii_free_prompt(record, header)
 
     subject_line = _subject_line(record)
@@ -1833,6 +1960,27 @@ _NEGATIVE_PLACEMENT_RULE = (
     "vanlig, uviktig opplysning.")
 
 
+# A near-miss-only document has no subject: the planted sentences are about "søkeren" or
+# "vedkommende", an unspecified person in an example, a summary or a guidance note, and the
+# prompt says so, so that the sentence is not read as being about someone the document names.
+_NEAR_MISS_INTRO = (
+    "\n\nNøytrale formuleringer som skal stå ordrett i teksten, som eksempler eller beskrivelser i skrivet. "
+    "De sier ikke noe om noen persons helse, tro, tilhørighet, opprinnelse, seksualitet eller straffbare "
+    "forhold, og de gjelder ingen bestemt person: «søkeren» og «vedkommende» er en uspesifisert person, "
+    "aldri en person som navngis eller kan gjenkjennes. Utdyp dem ikke, forklar dem ikke og knytt dem ikke "
+    "til noen diagnose, medlemskap eller lovbrudd. Har en formulering eget subjekt («søkeren», "
+    "«vedkommende»), kan den stå som en egen setning (da skriver du første bokstav med stor bokstav, resten "
+    "ordrett) eller bygges inn i en lengre setning. Begynner en formulering med et verb, setter du «søkeren» "
+    "eller «vedkommende» rett foran. Hver formulering skal stå i sin egen setning:\n")
+
+_NEAR_MISS_PLACEMENT_RULE = (
+    "Hver nøytral formulering står i en setning for seg. Bind aldri to nøytrale formuleringer sammen i én "
+    "setning med «og», «men» eller «samt», og gjenta ingen formulering. Skriv aldri at en nøytral formulering "
+    "er relevant, viktig, påfallende, mistenkelig eller av betydning: den står som en vanlig, uviktig "
+    "opplysning. Skriv ellers ingen opplysning om hva «søkeren» eller «vedkommende» har sagt, gjort eller "
+    "er, utover formuleringene.")
+
+
 def _subject_line(record: Record) -> str:
     """Describe the data subject, the signatory, the employer and the cast for a prompt.
 
@@ -1856,9 +2004,12 @@ def _subject_line(record: Record) -> str:
         subject_line += f" Hovedpersonens arbeidsgiver er {record.employer}; ingen annen virksomhet er involvert."
     cast = [p for p in record.parties if not p.is_subject and p.role != "author"]
     if cast:
+        # A person with a planted role word is introduced by that word, so the prompt's own
+        # label ("behandlende lege") does not hand the model a second, different title to use.
+        role_word = {pv.party: pv.value for pv in record.planned if pv.anchor}
         listed = "; ".join(
-            f"{p.person.full_name} ({p.label}, {'kvinne' if p.person.gender == 'F' else 'mann'}, "
-            f"{p.person.age()} år)" for p in cast
+            f"{p.person.full_name} ({role_word.get(p.role, p.label)}, "
+            f"{'kvinne' if p.person.gender == 'F' else 'mann'}, {p.person.age()} år)" for p in cast
         )
         subject_line += (f" Andre personer som er nevnt i saken: {listed}. "
                          "Bruk bare disse navnene, og bare om disse personene.")
@@ -1882,6 +2033,18 @@ def _item_blocks(record: Record, planned: Sequence[PlannedValue],
     value_lines, clause_lines, negative_lines, manifest = [], [], [], []
     marked = False
     for pv in planned:
+        if pv.anchor:
+            # A role word stands beside one person's name and is used nowhere else; the line says
+            # so, with the exact form the labeller will look for.
+            beside = (f"rett foran navnet, slik: «{pv.value} {pv.anchor}»"
+                      if pv.value in genres_mod.DEFINITE_ROLE_WORDS else
+                      f"rett foran eller rett etter navnet, slik: «{pv.value} {pv.anchor}» eller "
+                      f"«{pv.anchor}, {pv.value}»")
+            value_lines.append(f"- «{pv.value}» – rolleordet til {pv.anchor}: skriv det {beside}; "
+                               "ordet skal stå nøyaktig slik og bare ved denne personen")
+            manifest.append(f"VALUE|{pv.type}|{pv.value}")
+            manifest.append(f"ROLE|{pv.value}|{pv.anchor}")
+            continue
         if pv.value_kind == "value":
             # The value leads and its kind trails, so the list does not read as a
             # `Label: value` table the model would copy: pilot v3 mirrored the
@@ -1933,6 +2096,12 @@ def _prompt_rules(record: Record, planned_types: Set[str], marked: bool, *,
         The rules in order, without numbering.
     """
     named = ", ".join(p.person.full_name for p in record.parties) or "ingen"
+    role_words = [pv.value for pv in record.planned if pv.anchor]
+    # «legen» as an example of how to refer to an unnamed person is a generic use of the planted
+    # word «lege», which the role-word rule below forbids; the examples are the ones that do not clash.
+    examples = [e for e in ("saksbehandleren", "naboen", "legen", "vitnet")
+                if not any(w.lower() in e or e in w.lower() for w in role_words)][:3]
+    examples_text = ", ".join(f"«{e}»" for e in examples)
     # The labels the identification block names, in the document's own form: a Nynorsk
     # document that is told «Navn:» writes «Navn:» (pilot v4's Nynorsk headers did).
     labels = ", ".join(f"«{genres_mod.field_label(t, record.form)}:»"
@@ -1948,8 +2117,7 @@ def _prompt_rules(record: Record, planned_types: Set[str], marked: bool, *,
         f"Navngi ingen andre enn disse: {named}. Skriv ikke om denne regelen i dokumentet. "
         "Ikke finn på andre personnavn, "
         "fødselsnumre, telefonnumre, e-postadresser, adresser, postnumre, kontonumre eller "
-        "virksomheter enn de som er oppgitt. Andre personer omtales bare med rolle "
-        "(«saksbehandleren», «naboen», «legen») og uten navn.",
+        f"virksomheter enn de som er oppgitt. Andre personer omtales bare med rolle ({examples_text}) og uten navn.",
         "Ikke bruk andre datoer enn de oppgitte. Trenger du å vise til tid uten at en dato er "
         "oppgitt, skriv «samme dag» eller «tre uker senere» inne i en setning – aldri som verdien "
         "i et datofelt og aldri etter en overskrift som «Dato».",
@@ -2000,6 +2168,15 @@ def _prompt_rules(record: Record, planned_types: Set[str], marked: bool, *,
     ]
     if negatives:
         rules.append(_NEGATIVE_PLACEMENT_RULE)
+    if role_words:
+        rules.append(
+            "Et rolleord i listen (" + ", ".join(f"«{w}»" for w in role_words) + ") hører til én bestemt person "
+            "og står bare rett ved navnet til den personen, nøyaktig slik det er oppgitt (en stor forbokstav er "
+            "greit når ordet åpner en setning). Bruk aldri samme ord, eller et sammensatt ord som inneholder det, "
+            "om noen annen person, om en uspesifisert person eller generelt: ikke skriv «ta kontakt med lege», "
+            "«henvist til veterinær», «Mattilsynets inspektører» eller «en rådgiver kan». Bruk «helsepersonell», "
+            "«tjenesten», «virksomheten» eller en omskriving i stedet. Omtal personen senere med navn eller "
+            "pronomen, ikke med rolleordet alene.")
     listed = record.planned if items is None else items
     if any(count >= 2 for count in collections.Counter(
             pv.type for pv in listed if pv.value_kind == "clause").values()):
@@ -2053,6 +2230,9 @@ def _prompt_rules(record: Record, planned_types: Set[str], marked: bool, *,
 def _build_pii_free_prompt(record: Record, header: str) -> str:
     """Build the prompt for a document that must contain no personal data at all.
 
+    A near-miss-only document is built here too: the same rules, plus its planted negatives, which
+    are spoken of as "søkeren" or "vedkommende" and placed one to a sentence.
+
     A detector that has only ever seen documents full of PII learns that
     everything contains PII, so roughly one document in twenty is a circular, a
     procedural notice or a statute extract with no data subject. Its label set
@@ -2069,6 +2249,11 @@ def _build_pii_free_prompt(record: Record, header: str) -> str:
     Returns:
         The full prompt, with a mock manifest after `MANIFEST_SENTINEL`.
     """
+    negative_lines: List[str] = []
+    item_manifest: List[str] = []
+    if record.planted_negatives:
+        _values, _clauses, negative_lines, item_manifest, _marked = _item_blocks(
+            record, [], record.planted_negatives, random.Random(record.doc_seed ^ 0x5EED))
     rules = [
         "Dokumentet skal IKKE handle om noen bestemt person og skal ikke inneholde noen "
         "personopplysning i det hele tatt.",
@@ -2087,9 +2272,13 @@ def _build_pii_free_prompt(record: Record, header: str) -> str:
         "Ikke bruk plassholdere som [NAVN] eller [DATO], og ikke skriv noe på engelsk.",
         "Svar bare med selve dokumentet, uten kommentarer før eller etter.",
     ]
-    prompt = (header + "\n\nDette er et generelt skriv uten noen sak og uten noen part.\n\nRegler:\n"
-              + "\n".join(f"{i}. {r}" for i, r in enumerate(rules, 1)))
-    manifest = [f"SEED|{record.doc_seed}", f"META|form={record.form}", "PII_FREE|1"]
+    if negative_lines:
+        rules.insert(-2, _NEAR_MISS_PLACEMENT_RULE)
+    prompt = header + "\n\nDette er et generelt skriv uten noen sak og uten noen part."
+    if negative_lines:
+        prompt += _NEAR_MISS_INTRO + "\n".join(negative_lines)
+    prompt += "\n\nRegler:\n" + "\n".join(f"{i}. {r}" for i, r in enumerate(rules, 1))
+    manifest = [f"SEED|{record.doc_seed}", f"META|form={record.form}", "PII_FREE|1"] + item_manifest
     return prompt + "\n" + MANIFEST_SENTINEL + "\n" + "\n".join(manifest)
 
 
@@ -2121,6 +2310,9 @@ def build_repair_prompt(record: Record, draft: str, missing: List[str]) -> str:
         pv = by_value.get(m)
         if m in negative_texts:
             lines.append(f"- en nøytral formulering som skal stå ordrett i en setning i brødteksten: «{m}»")
+        elif pv is not None and pv.anchor:
+            lines.append(f"- rolleordet til {pv.anchor}, rett foran eller rett etter navnet "
+                         f"(for eksempel «{m} {pv.anchor}»): «{m}»")
         elif pv is not None and pv.value_kind == "value":
             what = pv.field_label + (f" ({pv.hint})" if pv.hint else "")
             lines.append(f"- {what}: «{m}»")
@@ -2136,6 +2328,8 @@ def build_repair_prompt(record: Record, draft: str, missing: List[str]) -> str:
         "Ikke endre noe annet – ikke navn, datoer, tall eller formuleringer. Svar bare med hele dokumentet."
     )
     manifest = [f"SEED|{record.doc_seed}", "REPAIR|1"] + [f"MISSING|{m}" for m in missing]
+    manifest += [f"ROLE|{pv.value}|{pv.anchor}" for m in missing
+                 for pv in [by_value.get(m)] if pv is not None and pv.anchor]
     return prompt + "\n" + MANIFEST_SENTINEL + "\n" + "\n".join(manifest)
 
 
@@ -2234,6 +2428,9 @@ def build_section_prompt(record: Record, plan: "sections_mod.SectionPlan", k: in
     if last:
         manifest.append("LAST|1")
     manifest += item_manifest
+    # The role words of the other sections' people: this section may not use them either.
+    manifest += [f"AVOID|{pv.value}" for i, pv in enumerate(record.planned)
+                 if pv.anchor and i not in section.items]
     return "\n\n".join(parts) + "\n" + MANIFEST_SENTINEL + "\n" + "\n".join(manifest)
 
 
@@ -2285,6 +2482,13 @@ def build_output(record: Record, clean_text: str, marked_spans: Dict[str, List[s
     """
     output: Dict[str, List[str]] = collections.defaultdict(list)
     for pv in record.planned:
+        if pv.anchor:
+            # A role word opening a sentence is capitalised by the model; both forms are the same
+            # word, and the role gate has already refused every occurrence that is not the person's.
+            for variant in gates.role_variants(pv.value):
+                if variant in clean_text and variant not in output[pv.type]:
+                    output[pv.type].append(variant)
+            continue
         literal = pv.value if pv.value_kind == "value" or pv.strategy == "seeded" else None
         if literal and literal in clean_text and literal not in output[pv.type]:
             output[pv.type].append(literal)
@@ -2465,6 +2669,7 @@ class DocPlan:
     type_target: int = 7
     art9_cap: int = 1
     pii_free: bool = False
+    near_miss_only: bool = False  # no personal data, only planted near-misses; the label set is `{}`
     n_negatives: int = 0
     instances: Dict[str, int] = field(default_factory=dict)  # repeatable type -> instances planned (2..4)
     id_block: List[str] = field(default_factory=list)  # types the document's identification block must carry
@@ -2660,6 +2865,25 @@ def _ownership_context(record: Record) -> Optional[dict]:
             "clinician_refs": clinicians}
 
 
+def _role_specs(record: Record) -> List[dict]:
+    """The planted role words as the dicts `gates.role_word_violations` takes."""
+    return [{"word": pv.value, "name": pv.anchor, "definite": pv.value in genres_mod.DEFINITE_ROLE_WORDS}
+            for pv in record.planned if pv.anchor]
+
+
+def _verbatim_with_roles(planned_values: Sequence[str], role_values: Sequence[str],
+                         negative_texts: Sequence[str], text: str) -> Tuple[bool, List[str]]:
+    """G2 over the literals, the negatives and the role words.
+
+    A role word is present in either capitalisation (it opens a sentence as often as not), as a
+    whole word; every other literal is exact. Returns `(all present, the missing strings)`.
+    """
+    roles = set(role_values)
+    ok, missing = gates.gate_verbatim([v for v in planned_values if v not in roles] + list(negative_texts), text)
+    role_missing = [w for w in role_values if not gates.role_present(w, text)]
+    return ok and not role_missing, missing + role_missing
+
+
 def evaluate_candidate(
     state: DocState, raw_text: str, finished: bool, *, taxonomy_index: Dict[str, dict],
     public_figures: Set[str], place_names: Set[str], agency_names: Set[str],
@@ -2728,10 +2952,12 @@ def evaluate_candidate(
         pv.value for pv in record.planned
         if pv.value is not None and (pv.value_kind == "value" or pv.strategy == "seeded")
     ]
-    if record.pii_free and literal_values:
+    no_subject = record.pii_free or record.near_miss_only
+    if no_subject and literal_values:
         return fail("plan_inconsistent", "a PII-free record must plan no values")
     negative_texts = _realise_negatives(record.planted_negatives, clean_text)
-    g2_ok, g2_missing = gates.gate_verbatim(literal_values + negative_texts, clean_text)
+    role_values = [pv.value for pv in record.planned if pv.anchor]
+    g2_ok, g2_missing = _verbatim_with_roles(literal_values, role_values, negative_texts, clean_text)
     missing_marks = [pv.type for pv in record.planned if pv.strategy == "marked" and pv.type not in marked_spans]
     if not g2_ok or missing_marks:
         state.gate_log.append({**stage_tag, "stage": "G2_verbatim", "ok": False,
@@ -2761,7 +2987,8 @@ def evaluate_candidate(
         return fail("G13_tabular", tabular_hits)
     roles_ok, role_hits = gates.gate_identifier_roles(
         clean_text, [(pv.type, pv.value) for pv in record.planned if pv.value_kind == "value"],
-        literal_values + negative_texts, owners=_ownership_context(record))
+        literal_values + negative_texts, owners=_ownership_context(record),
+        role_words=_role_specs(record))
     if not roles_ok:
         return fail("G14_roles", role_hits)
 
@@ -2805,10 +3032,10 @@ def evaluate_candidate(
                 output.setdefault(etype, []).append(sub)
     covered = [v for vals in output.values() for v in vals] + negative_texts
     g7_ok, g7_findings = gates.gate_unplanned_pii(clean_text, covered, place_names, agency_names)
-    # A PII-free document planned nothing, so nothing is covered and there is no
-    # owner the sweep could attribute a hit to. Every finding rejects, including
-    # the ones a normal document would be allowed to label.
-    if record.pii_free:
+    # A PII-free or near-miss-only document planned nothing (a near-miss is covered, but it is not
+    # a value), so there is no owner the sweep could attribute a hit to. Every finding rejects,
+    # including the ones a normal document would be allowed to label.
+    if no_subject:
         if g7_findings:
             return fail("G7_unplanned_pii", g7_findings)
     else:
@@ -2838,6 +3065,22 @@ def evaluate_candidate(
         if f["match"] not in output.get(etype, []):
             output.setdefault(etype, []).append(f["match"])
             labelled.append({"type": etype, "text": f["match"], "pattern": f["pattern"]})
+    # A role word beside a person nothing planned a role for is an incompleteness of the same kind
+    # as the unplanned name (docs/ANNOTATION_SPEC.md: the role word of a specific individual is
+    # EMPLOYMENT). `sweep_unplanned_roles` labels the string when every occurrence of it is a role
+    # word of a labelled person and rejects the document when one is not.
+    if not no_subject:
+        role_findings = gates.sweep_unplanned_roles(
+            clean_text, output.get("PERSON", []), genres_mod.professional_lexicon(), role_values,
+            output.get("EMPLOYMENT", []))
+        g7_findings = g7_findings + role_findings
+        rejecting_roles = [f for f in role_findings if f["action"] == "reject"]
+        if rejecting_roles and config.g7_policy == "reject":
+            return fail("G7_unplanned_pii", rejecting_roles)
+        for f in role_findings:
+            if f["action"] == "label" and f["match"] not in output.get("EMPLOYMENT", []):
+                output.setdefault("EMPLOYMENT", []).append(f["match"])
+                labelled.append({"type": "EMPLOYMENT", "text": f["match"], "pattern": f["pattern"]})
     output = _drop_absorbed_spans(clean_text, output, agency_names)
     output = _prune_redundant_nested(clean_text, output)
 
@@ -2951,7 +3194,8 @@ def evaluate_section(
     literals = [pv.value for pv in planned
                 if pv.value is not None and (pv.value_kind == "value" or pv.strategy == "seeded")]
     negative_texts = _realise_negatives(negatives, clean)
-    g2_ok, g2_missing = gates.gate_verbatim(literals + negative_texts, clean)
+    g2_ok, g2_missing = _verbatim_with_roles(
+        literals, [pv.value for pv in planned if pv.anchor], negative_texts, clean)
     missing_marks = [pv.type for pv in planned if pv.strategy == "marked" and pv.type not in marked_spans]
     if not g2_ok or missing_marks:
         entry = {**tag, "stage": "G2_verbatim", "ok": False,
@@ -2975,9 +3219,12 @@ def evaluate_section(
     if not tabular_ok:
         return fail("G13_tabular", tabular_hits)
     everything = _document_literals(record)
+    # Every planted role word of the document is checked in every section: a section that uses
+    # another section's word for someone else is as wrong as one that misuses its own.
+    earlier = "\n\n".join(sec.text for sec in plan.sections[:k])
     roles_ok, role_hits = gates.gate_identifier_roles(
         clean, [(pv.type, pv.value) for pv in planned if pv.value_kind == "value"], everything,
-        owners=_ownership_context(record))
+        owners=_ownership_context(record), role_words=_role_specs(record), earlier=earlier)
     if not roles_ok:
         return fail("G14_roles", role_hits)
     covered = everything + [sub for neg in record.planted_negatives for sub in neg.also_labelled.values()]
@@ -3088,7 +3335,8 @@ def run_generation(
         new_attempt_record(st, base_seed, taxonomy_index, clause_bank, public_figures, config)
         rec = st.record
         n_items = len(rec.planned) + len(rec.planted_negatives)
-        if sections_mod.needs_sections(st.plan.profile, n_items, rec.pii_free, config.sectioning):
+        if sections_mod.needs_sections(st.plan.profile, n_items, rec.pii_free or rec.near_miss_only,
+                                       config.sectioning):
             st.section_plan = sections_mod.build_plan(rec, random.Random(rec.doc_seed ^ 0x5EC7))
             stats["sectioned_attempts"] += 1
             _advance(st)
@@ -3189,6 +3437,8 @@ def run_generation(
         if stage == "G15_negative_placement" and isinstance(detail, list) and detail:
             return containing(detail[0]["negatives"][0])
         if stage == "G14_roles" and isinstance(detail, list) and detail:
+            if detail[0].get("kind") == "generic_role_word":
+                return sections_mod.section_at(spans, detail[0].get("start", -1))
             return containing(str(detail[0].get("value", "")))
         if stage == "G3_name_collision" and isinstance(detail, list) and detail:
             return containing(str(detail[0]))
@@ -3431,7 +3681,7 @@ def write_sample_dump(path: str, records: List[dict], n: int, rng: random.Random
     for r in sample:
         rec = r["record"]
         lines.append(f"## {r['id']} -- {rec.genre} / {rec.variant} / {rec.form} / "
-                     f"{rec.profile}{' / PII-free' if rec.pii_free else ''} / "
+                     f"{rec.profile}{' / PII-free' if rec.pii_free else ''}{' / near-miss only' if rec.near_miss_only else ''} / "
                      f"{len(r['text'])} tegn\n")
         lines.append("**Text:**\n")
         lines.append("```\n" + r["text"] + "\n```\n")
@@ -3523,7 +3773,7 @@ ID_BLOCK_P = 0.85
 # density profile. A 600-character note cannot absorb a forced type without
 # becoming the checklist pilot v1 produced; a case file absorbs several.
 MAX_FORCED_BY_PROFILE = {
-    "pii_free": 0, "minimal": 0, "light": 1, "typical": 2, "dense": 5, "case_file": 8,
+    "pii_free": 0, "near_miss_only": 0, "minimal": 0, "light": 1, "typical": 2, "dense": 5, "case_file": 8,
 }
 
 
@@ -3576,6 +3826,10 @@ def plan_batch(
     length -- so a dense document is long *and* type-rich and a short one stays
     writable.
 
+    A `near_miss_only` plan draws one of `gendoc_genres.NEAR_MISS_GENRES` and plans nothing but its
+    two to four negatives; neither it nor a PII-free plan is ever given a coverage-scheduled type, an
+    instance count or an identification block, and no ordinary plan is given a genre of either kind.
+
     Coverage is a batch property too. With `coverage_target = K`, every
     schedulable type is scheduled into at least K documents, always in a genre
     `gendoc_genres.genres_hosting` says the type is plausible in, and never more
@@ -3614,19 +3868,25 @@ def plan_batch(
     """
     profiles = _draw_profiles(rng, n, mode.profile_shares if mode else None)
     pii_free_genres = [g for g in genre_list if g in genres_mod.PII_FREE_GENRES]
+    near_miss_genres = [g for g in genre_list if g in genres_mod.NEAR_MISS_GENRES]
     plans: List[DocPlan] = []
     for i, profile in enumerate(profiles):
         pii_free = profile == "pii_free" and bool(pii_free_genres)
-        if profile == "pii_free" and not pii_free_genres:
+        near_miss = profile == "near_miss_only" and bool(near_miss_genres)
+        if (profile == "pii_free" and not pii_free_genres) or (profile == "near_miss_only" and not near_miss_genres):
             profile = "minimal"
         if pii_free:
             genre = rng.choice(pii_free_genres)
+        elif near_miss:
+            genre = rng.choice(near_miss_genres)
         else:
             # A circular has no data subject by definition, so it is only ever
             # drawn for a PII-free plan: the smoke run produced a "Rundskriv"
             # addressed to one named person whose whole content was her postal
-            # code, which is not a document anybody writes.
-            ordinary = [g for g in genre_list if g not in genres_mod.PII_FREE_GENRES] or genre_list
+            # code, which is not a document anybody writes. The genres of a
+            # near-miss-only document (anonymised summaries, guidance and statistics
+            # notes) are likewise never given a subject.
+            ordinary = [g for g in genre_list if g not in genres_mod.NO_SUBJECT_GENRES] or genre_list
             genre = ordinary[i % len(ordinary)]
         band = rng.choice(genres_mod.PROFILES[profile]["bands"])
         plans.append(DocPlan(
@@ -3634,7 +3894,7 @@ def plan_batch(
             form="nn" if rng.random() < NN_PLAN_SHARE else "nb",
             length_band=band, forced_types=list(forced_types), profile=profile,
             type_target=rng.randint(*genres_mod.PROFILES[profile]["types"]),
-            art9_cap=genres_mod.art9_cap(rng, profile), pii_free=pii_free,
+            art9_cap=genres_mod.art9_cap(rng, profile), pii_free=pii_free, near_miss_only=near_miss,
         ))
 
     if coverage_target > 0:
@@ -3648,7 +3908,7 @@ def plan_batch(
     # coverage scheduling has settled each plan's genre.
     irng = random.Random(rng.getrandbits(32))
     for plan in plans:
-        if plan.pii_free:
+        if plan.pii_free or plan.near_miss_only:
             continue
         spec = genres_mod.GENRES[plan.genre]
         ceiling = genres_mod.type_ceiling(plan.length_band[1], spec.get("density_factor", 1.0))
@@ -3672,6 +3932,7 @@ def plan_batch(
     report["planned_negatives"] = sum(p.n_negatives for p in plans)
     report["planned_profiles"] = dict(collections.Counter(p.profile for p in plans))
     report["planned_pii_free"] = sum(1 for p in plans if p.pii_free)
+    report["planned_near_miss_only"] = sum(1 for p in plans if p.near_miss_only)
     report["planned_instances"] = {
         "documents_with_a_repeated_type": sum(1 for p in plans if p.instances),
         "by_type": dict(collections.Counter(t for p in plans for t in p.instances)),
@@ -3691,7 +3952,7 @@ def _schedule_rare_types(rng: random.Random, plans: List[DocPlan], rare_force_sh
     """Schedule `gendoc_genres.RARE_TYPES` across the batch, one per chosen document."""
     scheduled: collections.Counter = collections.Counter()
     for plan in plans:
-        if plan.pii_free or MAX_FORCED_BY_PROFILE[plan.profile] == 0:
+        if plan.pii_free or plan.near_miss_only or MAX_FORCED_BY_PROFILE[plan.profile] == 0:
             continue
         spec = genres_mod.GENRES[plan.genre]
         plausible = [t for t in genres_mod.RARE_TYPES
@@ -3712,7 +3973,7 @@ def _schedule_rare_types(rng: random.Random, plans: List[DocPlan], rare_force_sh
 # and case-file documents therefore reached its target only when none of them
 # was lost, which is why CREDIT_CARD and CRYPTO, scheduled three times each into
 # the same three large documents, were absent from the output.
-_PROFILE_RISK = {"pii_free": 0, "minimal": 0, "light": 0, "typical": 0, "dense": 1, "case_file": 2}
+_PROFILE_RISK = {"pii_free": 0, "near_miss_only": 0, "minimal": 0, "light": 0, "typical": 0, "dense": 1, "case_file": 2}
 
 # Share of documents of each profile that survive every gate: pilot v3 lost 4 of
 # its 10 dense documents and 3 of its 7 case files, and none of the other 33.
@@ -3741,7 +4002,7 @@ def _natural_expectation(plans: List[DocPlan], probe: Callable[[DocPlan, int], S
     """
     expected: collections.Counter = collections.Counter()
     for plan in plans:
-        if plan.pii_free:
+        if plan.pii_free or plan.near_miss_only:
             continue
         survival = _PROFILE_SURVIVAL.get(plan.profile, _DEFAULT_SURVIVAL)
         for k in range(NATURAL_PROBES):
@@ -3801,7 +4062,8 @@ def _schedule_coverage(
     else:
         deficit = {t: math.ceil(max(0.0, want - natural.get(t, 0.0)) / _FORCED_SLOT_SURVIVAL)
                    for t in schedulable if hosts[t]}
-    assignable = [p for p in plans if not p.pii_free and MAX_FORCED_BY_PROFILE[p.profile] > 0]
+    assignable = [p for p in plans
+                  if not (p.pii_free or p.near_miss_only) and MAX_FORCED_BY_PROFILE[p.profile] > 0]
     order = sorted(assignable, key=lambda p: (_PROFILE_RISK[p.profile], -MAX_FORCED_BY_PROFILE[p.profile], p.idx))
     scheduled: collections.Counter = collections.Counter()
 
@@ -3821,7 +4083,7 @@ def _schedule_coverage(
         # genres, which would trade the Section 4 genre spread for coverage.
         best_genre, best_types, best_score = None, [], 0.0
         for genre in genre_list:
-            if genre in genres_mod.PII_FREE_GENRES and not plan.pii_free:
+            if genre in genres_mod.NO_SUBJECT_GENRES:
                 continue
             hostable = _hostable_for(genre, wanted, hosts, plan.art9_cap,
                                      genres_mod.health_family_cap(plan.profile))[:room]
@@ -4038,6 +4300,8 @@ def density_report(accepted: List[dict], plans: List[DocPlan]) -> dict:
         "profiles_accepted": dict(collections.Counter(r["record"].profile for r in accepted)),
         "pii_free_planned": sum(1 for p in plans if p.pii_free),
         "pii_free_accepted": sum(1 for r in accepted if r["record"].pii_free),
+        "near_miss_only_planned": sum(1 for p in plans if p.near_miss_only),
+        "near_miss_only_accepted": sum(1 for r in accepted if r["record"].near_miss_only),
         "types_per_doc_hist": dict(sorted(collections.Counter(
             _bucket(t, [0, 1, 3, 6, 10, 15, 20, 26]) for t in types_per_doc).items())),
         "distinct_spans_per_doc_hist": dict(sorted(collections.Counter(
@@ -4149,7 +4413,8 @@ def identification_report(accepted: List[dict]) -> dict:
                    for t in ("ADDRESS", "POSTAL_CODE", "EMAIL", "CASE_NUMBER")}}
 
     letters = [r for r in accepted if r["record"].genre in genres_mod.ID_BLOCK_GENRES
-               and not r["record"].pii_free and r["record"].profile != "minimal"]
+               and not r["record"].pii_free and not r["record"].near_miss_only
+               and r["record"].profile != "minimal"]
     return {"all_documents": rates(accepted), "letter_and_decision_documents": rates(letters)}
 
 
@@ -4303,6 +4568,7 @@ def discard_record(st: DocState, dataset: str) -> dict:
     return {
         "index": st.plan.idx, "genre": st.plan.genre, "variant": st.plan.variant,
         "form": st.plan.form, "profile": st.plan.profile, "pii_free": st.plan.pii_free,
+        "near_miss_only": st.plan.near_miss_only,
         "dataset": dataset, "reason": st.result.get("reason"), "gate_log": st.gate_log,
         "sectioned": st.section_plan is not None,
         "section_plan": (sections_mod.summary(st.section_plan, st.record)
@@ -4322,7 +4588,9 @@ def accepted_lines(st: DocState, mode: dataset_mod.DatasetMode, strategy: str) -
     meta = {
         "id": doc_id, "dataset": rec.dataset, "genre": rec.genre, "variant": rec.variant,
         "form": rec.form,
-        "profile": rec.profile, "pii_free": rec.pii_free,
+        "profile": rec.profile, "pii_free": rec.pii_free, "near_miss_only": rec.near_miss_only,
+        "role_words": [{"word": pv.value, "person": pv.anchor, "role": pv.party}
+                       for pv in rec.planned if pv.anchor],
         "strategy": strategy, "seed": rec.doc_seed, "length": len(text),
         "length_band": list(rec.length_band),
         "planned_types": sorted({pv.type for pv in rec.planned}),
@@ -4420,7 +4688,8 @@ def stored_accepted(batch_line: dict, meta: dict, plan: DocPlan) -> dict:
     subject = meta["subject"]
     record = SimpleNamespace(
         genre=meta["genre"], variant=meta["variant"], form=meta["form"], profile=meta["profile"],
-        pii_free=meta["pii_free"], dataset=meta["dataset"], length_band=tuple(meta["length_band"]),
+        pii_free=meta["pii_free"], near_miss_only=meta.get("near_miss_only", False),
+        dataset=meta["dataset"], length_band=tuple(meta["length_band"]),
         person=SimpleNamespace(age=lambda age=subject["age"]: age) if subject else None,
         parties=[None] * len(meta["parties"]),
         planned=[None] * (meta["planned_items"] - len(meta["planted_negatives"])),
@@ -4687,7 +4956,7 @@ def data_file_hashes(args: argparse.Namespace) -> Dict[str, Optional[str]]:
 
 def plan_summary(plan_rows: List[dict], plan_report: dict, window: int) -> dict:
     """The planned schedule in brief, for the manifest; the full plan is in `plan.json`."""
-    keys = ("planned_profiles", "planned_pii_free", "planned_negatives", "planned_nn_share",
+    keys = ("planned_profiles", "planned_pii_free", "planned_near_miss_only", "planned_negatives", "planned_nn_share",
             "planned_type_target", "planned_id_block_address", "dataset")
     return {"documents": len(plan_rows), "window": window,
             "windows": -(-len(plan_rows) // window), "plan_sha256": plan_digest(plan_rows),

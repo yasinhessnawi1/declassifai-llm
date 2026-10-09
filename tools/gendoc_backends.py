@@ -55,7 +55,7 @@ from __future__ import annotations
 import abc
 import random
 import re
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import gendoc_genres as genres_mod
 
@@ -104,7 +104,7 @@ class GenerationBackend(abc.ABC):
 
 _MANIFEST_LINE_RE = re.compile(
     r"^(VALUE|CLAUSE_SEEDED|CLAUSE_MARKED|NEGATIVE|SEED|META|REPAIR|MISSING|AUDIT|AUDIT_REPAIR|REMOVE|KEEP"
-    r"|SECTION|HEADING|LAST|CLAUSE)\|(.*)$"
+    r"|SECTION|HEADING|LAST|CLAUSE|ROLE|AVOID)\|(.*)$"
 )
 
 # Sentinels the audit prompt wraps the document in; duplicated from
@@ -176,6 +176,24 @@ _MOCK_NEGATIVE_FRAMING_RE = re.compile(
     r"vektlegg\w*|bekymr\w*|særleg|spesielt)\b", re.IGNORECASE)
 
 MOCK_HEADER_FIELDS = 4
+
+
+def _mock_role_sentence(word: str, name: str, form: str, rng: random.Random) -> str:
+    """Return a sentence with a planted role word directly beside its person's name.
+
+    The four shapes are the ones a model writes: the word before the name in the middle of a
+    sentence, after the name between commas, before the name at the start of a sentence (so
+    the capitalised form is exercised), and after the name at the end.
+    """
+    nb = form == "nb"
+    shape = rng.randrange(4)
+    if shape == 0:
+        return f"{'Saken' if nb else 'Saka'} er {'fulgt' if nb else 'følgd'} opp av {word} {name}."
+    if shape == 1:
+        return f"{name}, {word}, har uttalt seg i {'saken' if nb else 'saka'}."
+    if shape == 2:
+        return f"{word[:1].upper() + word[1:]} {name} deltok i møtet."
+    return f"Dokumentet er gjennomgått av {name}, {word}."
 
 
 def _mock_negative_sentence(text: str) -> str:
@@ -378,15 +396,29 @@ class MockBackend(GenerationBackend):
         return re.sub(r"\n{3,}", "\n\n", document).strip()
 
     def _repair(self, prompt: str) -> str:
-        """Mock a minimal-edit repair: append each missing value in a sentence."""
+        """Mock a minimal-edit repair: append each missing value in a sentence.
+
+        A missing role word is appended directly beside its person's name (`ROLE|word|name`),
+        which is what the repair prompt asks a model for.
+        """
         draft = prompt.split(DRAFT_OPEN + "\n", 1)[1].split("\n" + DRAFT_CLOSE, 1)[0]
         manifest = prompt.split(MANIFEST_SENTINEL, 1)[1]
         missing = [line.split("|", 1)[1] for line in manifest.splitlines() if line.startswith("MISSING|")]
-        return draft + "".join(f" Det er også registrert at dette gjelder {m}." for m in missing)
+        roles = {line.split("|")[1]: line.split("|")[2] for line in manifest.splitlines()
+                 if line.startswith("ROLE|")}
+        return draft + "".join(
+            f" Dette gjelder også {m} {roles[m]}." if m in roles
+            else f" Det er også registrert at dette gjelder {m}." for m in missing)
 
     def _parse_manifest(self, prompt: str):
+        """Read the manifest: `(values, seeded clauses, marked types, negatives, seed, form, roles)`.
+
+        `roles` is `[(role word, person)]`; a role word is taken out of `values`, since it is not
+        a value to put in a header field or a sentence of its own but a word to put beside a name.
+        """
         values, seeded_clauses, marked_types, seed, form = [], [], [], 0, "nb"
         negatives: List[str] = []
+        roles: List[Tuple[str, str]] = []
         manifest = prompt.split(MANIFEST_SENTINEL, 1)[1] if MANIFEST_SENTINEL in prompt else prompt
         for line in manifest.splitlines():
             m = _MANIFEST_LINE_RE.match(line.strip())
@@ -403,12 +435,17 @@ class MockBackend(GenerationBackend):
                 marked_types.append(rest)
             elif kind == "NEGATIVE":
                 negatives.append(rest.split("|", 1)[1])
+            elif kind == "ROLE":
+                word, name = rest.split("|", 1)
+                roles.append((word, name))
             elif kind == "SEED":
                 seed = int(rest)
             elif kind == "META":
                 if rest.startswith("form="):
                     form = rest.split("=", 1)[1]
-        return values, seeded_clauses, marked_types, negatives, seed, form
+        role_words = {word for word, _name in roles}
+        values = [(etype, value) for etype, value in values if not (etype == "EMPLOYMENT" and value in role_words)]
+        return values, seeded_clauses, marked_types, negatives, seed, form, roles
 
     def _fill_section(self, prompt: str) -> str:
         """Mock one section: its heading, its own items and two neutral sentences.
@@ -418,7 +455,7 @@ class MockBackend(GenerationBackend):
         value the section was asked for and did not get.
         """
         manifest = prompt.split(MANIFEST_SENTINEL, 1)[1]
-        values, seeded_clauses, marked_types, negatives, seed, form = self._parse_manifest(prompt)
+        values, seeded_clauses, marked_types, negatives, seed, form, roles = self._parse_manifest(prompt)
         k, n, heading = 0, 1, None
         for line in manifest.splitlines():
             if line.startswith("SECTION|"):
@@ -427,6 +464,9 @@ class MockBackend(GenerationBackend):
                 heading = line.split("|", 1)[1]
         rng = random.Random(seed)
         pool = _SECTION_FILLER_NB if form == "nb" else _SECTION_FILLER_NN
+        avoid = [w for w, _n in roles] + [line.split("|", 1)[1] for line in manifest.splitlines()
+                                           if line.startswith("AVOID|")]
+        pool = [f for f in pool if not any(w.lower() in f.lower() for w in avoid)]
         order = random.Random(seed ^ 0xF111).sample(range(len(pool)), len(pool))
         filler = [pool[order[(2 * k) % len(pool)]], pool[order[(2 * k + 1) % len(pool)]]]
 
@@ -440,6 +480,8 @@ class MockBackend(GenerationBackend):
         sentences += [_mock_negative_sentence(text) for text in negatives]
         sentences += [f"⟦{etype}: vedkommende har forhold av denne typen som er nærmere beskrevet i saken⟧."
                       for etype in marked_types]
+        role_rng = random.Random(seed ^ 0x401E ^ k)
+        sentences += [_mock_role_sentence(word, name, form, role_rng) for word, name in roles]
         rng.shuffle(sentences)
         sentences.insert(rng.randint(0, len(sentences)), filler[0])
         sentences.append(filler[1])
@@ -452,9 +494,10 @@ class MockBackend(GenerationBackend):
         return "\n\n".join(parts)
 
     def _fill(self, prompt: str) -> str:
-        values, seeded_clauses, marked_types, negatives, seed, form = self._parse_manifest(prompt)
+        values, seeded_clauses, marked_types, negatives, seed, form, roles = self._parse_manifest(prompt)
         rng = random.Random(seed)
         boilerplate = _BOILERPLATE_NB if form == "nb" else _BOILERPLATE_NN
+        boilerplate = [f for f in boilerplate if not any(w.lower() in f.lower() for w, _n in roles)]
 
         header_items, prose_items = [], []
         for etype, value in values:
@@ -474,6 +517,8 @@ class MockBackend(GenerationBackend):
             body_sentences.append(_mock_negative_sentence(text))
         for etype in marked_types:
             body_sentences.append(f"⟦{etype}: vedkommende har forhold av denne typen som er nærmere beskrevet i saken⟧.")
+        role_rng = random.Random(seed ^ 0x401E)
+        body_sentences += [_mock_role_sentence(word, name, form, role_rng) for word, name in roles]
 
         rng.shuffle(body_sentences)
         filler = list(boilerplate)

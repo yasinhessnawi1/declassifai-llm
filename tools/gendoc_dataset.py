@@ -31,6 +31,13 @@ negative per document from its own partition of the negatives, so the training
 set also teaches "do not label this" without the benchmark's texts ever appearing
 in it.
 
+Both datasets also draw `near_miss_only` documents (5%, taken
+proportionally from the other profiles) that plant two to four negatives and nothing else. Only the
+negatives `unnamed_safe` accepts can be planted there, because the document has no named person and its
+target is empty: no digit, no capitalised word, no calendar word and no person but the pronoun, which
+`fill_unnamed` turns into "søkeren" and "vedkommende". They come from the dataset's own partition like
+any other negative, and the per-run cap applies, so a long run with a small train pool plants fewer.
+
 The negatives were first partitioned together with the clauses (`build`). A later
 batch of near-misses (`origin: nearmiss_v5`) is partitioned by `extend-negatives`,
 which leaves every earlier assignment untouched: it adds the batch's benchmark
@@ -71,6 +78,7 @@ import dataclasses
 import hashlib
 import json
 import os
+import re
 import sys
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Set, Tuple
@@ -123,6 +131,72 @@ PRONOUN_FORMS: Dict[Tuple[str, str], Dict[str, str]] = {
 # trap becomes a pattern. Pilot v4 planted one text seven times.
 NEGATIVE_CAP_PER_RUN = 2
 
+# A near-miss-only document plants this many negatives (min, max), in both datasets: the whole
+# point of the document is that the near-misses are all there is in it.
+NEAR_MISS_ONLY_NEGATIVES = (2, 4)
+
+# The referent of a near-miss that needs a subject when the document has none: the first
+# mention is "søkeren" and later ones "vedkommende", the way a case summary or a guidance note
+# speaks of an unnamed person.
+UNNAMED_REFERENT = {"nb": ("søkeren", "vedkommende"), "nn": ("søkjaren", "vedkommande")}
+
+_PERSON_WORD_RE = re.compile(
+    r"\b(?:han|hun|ho|ham|henne|hans|hennes|hennar|nabo\w*|kollega\w*|arbeidsgiv\w*|arbeidsgjev\w*|"
+    r"venn\w*|søster\w*|bror\w*|mor|mora|moren|far|faren|sjef\w*|leder\w*|leiar\w*|lege\w*|"
+    r"psykolog\w*|advokat\w*|saksbehandler\w*|sakshandsamar\w*|prest\w*|imam\w*|dommer\w*|"
+    r"dommar\w*|pasient\w*|klient\w*|ektefelle\w*|samboer\w*|sambuar\w*|barn\w*|familie\w*|"
+    r"folk|nordmenn|nordmenn)\b", re.IGNORECASE)
+_CALENDAR_WORD_RE = re.compile(
+    r"\b(?:januar|februar|mars|april|mai|juni|juli|august|september|oktober|november|desember|"
+    r"mandag|tirsdag|onsdag|torsdag|fredag|lørdag|søndag|\w*fredag\w*|jul|julen|julaften|julaftan|"
+    r"påske|påsken|nyttår\w*|pinse\w*|helg\w*|ferie\w*)\b", re.IGNORECASE)
+_NUMBER_WORD_RE = re.compile(
+    r"\b(?:to|tre|fire|fem|seks|sju|syv|åtte|ni|ti|elleve|tolv|første|tredje|fjerde|hundre|tusen)\b",
+    re.IGNORECASE)
+
+
+def unnamed_safe(entry: dict) -> bool:
+    """Whether a bank negative can be planted in a document that has no named person.
+
+    A near-miss-only document is shown to the detector with an empty target, so the planted
+    sentence may hold nothing a detector would be right to label: no digit and no number
+    word, no capitalised word (a name, an organisation, an acronym such as `LO`), no
+    calendar word, nothing declared `also_labelled`, and no reference to a person beyond the
+    pronoun placeholder (a neighbour, a colleague, a doctor, the family, a hard-coded `han`).
+    The possessive and object placeholders are refused too: `{POSS}` has no neutral form in
+    Nynorsk. An entry restricted to one gender has a subject, and is refused.
+
+    Args:
+        entry: A bank negative.
+
+    Returns:
+        True when the entry's text may be planted with `fill_unnamed`.
+    """
+    text = entry["text"]
+    if entry.get("also_labelled") or entry.get("gender") or not entry.get("plantable"):
+        return False
+    if re.search(r"\d|\{(?:POSS|OBJ)\}", text) or re.search(r"[A-ZÆØÅ]", re.sub(r"\{PRON\}", "", text)):
+        return False
+    bare = text.replace("{PRON}", " ")
+    return not (_PERSON_WORD_RE.search(bare) or _CALENDAR_WORD_RE.search(bare)
+                or _NUMBER_WORD_RE.search(bare))
+
+
+def fill_unnamed(text: str, form: str) -> str:
+    """Fill a negative's `{PRON}` placeholders for a document with no named person.
+
+    Args:
+        text: A negative's text, possibly holding `{PRON}`.
+        form: "nb" or "nn".
+
+    Returns:
+        The text with the first `{PRON}` replaced by "søkeren" (Nynorsk "søkjaren") and each
+        later one by "vedkommende" ("vedkommande"); unchanged when it has none.
+    """
+    first, later = UNNAMED_REFERENT[form]
+    parts = text.split("{PRON}")
+    return parts[0] + "".join((first if i == 0 else later) + part for i, part in enumerate(parts[1:]))
+
 
 def fill_pronouns(text: str, gender: str, form: str) -> str:
     """Fill a negative's pronoun placeholders for one subject.
@@ -146,8 +220,15 @@ def fill_pronouns(text: str, gender: str, form: str) -> str:
 
 
 def pronoun_alternatives(slot: str) -> List[str]:
-    """Return every surface form of one placeholder across genders and forms."""
-    return sorted({forms[slot] for forms in PRONOUN_FORMS.values()})
+    """Return every surface form of one placeholder across genders and forms.
+
+    `{PRON}` also takes the unnamed referents of a near-miss-only document (`UNNAMED_REFERENT`),
+    so the leakage check finds a negative planted there as well.
+    """
+    forms = {forms[slot] for forms in PRONOUN_FORMS.values()}
+    if slot == "PRON":
+        forms |= {word for pair in UNNAMED_REFERENT.values() for word in pair}
+    return sorted(forms)
 
 
 @dataclass(frozen=True)
@@ -189,7 +270,7 @@ MODES: Dict[str, DatasetMode] = {
     "train": DatasetMode(
         "train", "SYN", "synthetic",
         negatives_by_profile={"minimal": (0, 1), "light": (0, 1), "typical": (0, 1),
-                              "dense": (0, 1), "case_file": (0, 1)}),
+                              "dense": (0, 1), "case_file": (0, 1), "near_miss_only": NEAR_MISS_ONLY_NEGATIVES}),
     "benchmark": DatasetMode(
         "benchmark", "SYB", "benchmark",
         difficulty_weights={"easy": 1.0, "medium": 2.0, "hard": 5.0},
@@ -197,11 +278,12 @@ MODES: Dict[str, DatasetMode] = {
         # and the most room for a judgement clause to hide in running prose, so
         # the benchmark leans on them; PII-free documents stay at five percent
         # because a benchmark that never shows a clean document cannot measure
-        # false positives either.
-        profile_shares={"pii_free": 0.05, "minimal": 0.04, "light": 0.14,
-                        "typical": 0.24, "dense": 0.27, "case_file": 0.26},
+        # false positives either; near-miss-only documents take another five percent for the
+        # same reason (the other four profiles gave up 0.90 / 0.95 of their share to both).
+        profile_shares={"pii_free": 0.05, "near_miss_only": 0.05, "minimal": 0.038, "light": 0.133,
+                        "typical": 0.227, "dense": 0.256, "case_file": 0.246},
         negatives_by_profile={"minimal": (1, 1), "light": (1, 1), "typical": (1, 2),
-                              "dense": (2, 3), "case_file": (2, 3)},
+                              "dense": (2, 3), "case_file": (2, 3), "near_miss_only": NEAR_MISS_ONLY_NEGATIVES},
         seed_offset=7_000_001,
     ),
 }

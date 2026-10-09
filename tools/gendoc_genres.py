@@ -35,6 +35,20 @@ in a debt-counselling note, observations in a child-welfare or school document),
 most documents at one, and `item_budget` bounds the total so the extra instances still fit
 the section planner's seven-items-per-section limit.
 
+**Some documents contain only near-misses.** A detector also has to learn that a sentence
+which reads like a disclosure ("nektet å oppgi sin religiøse tilhørighet") is not one, and
+the only documents that teach it with nothing else to lean on are those with no personal
+data at all and a few planted near-misses. The `near_miss_only` profile draws one of
+`NEAR_MISS_GENRES` (anonymised summaries, guidance and statistics notes, and the circular),
+plans no value, and has `generate_documents` plant two to four near-miss negatives whose
+text holds no name, identifier, date or number (`gendoc_dataset.unnamed_safe`).
+
+**A cast member's role word is EMPLOYMENT.** The annotation owner's ruling is that a role
+word attached to, or clearly referring to, a specific individual is EMPLOYMENT, and that
+the name stays PERSON. `CAST_ROLE_WORDS` gives, per professional role, the concrete words
+a document of that kind uses; the sampler plants one for each such person, the prompt asks
+for it directly beside the name, and the generic use of the same string is what G14 rejects.
+
 Genres are grouped by the domains of the Section 4 table. Clause-bank entries
 carry the five original genre ids in their `genres` list, so each genre here
 declares `clause_genres`: the clause-bank genre ids whose clauses are plausible
@@ -44,6 +58,7 @@ re-annotating every entry.
 
 from __future__ import annotations
 
+import functools
 import random
 from typing import Dict, List, Optional, Sequence, Tuple
 
@@ -58,13 +73,18 @@ VARIANTS = ["field_header", "prose_letter", "numbered_findings", "table_summary"
 PROFILES: Dict[str, dict] = {
     "pii_free": {"share": 0.05, "types": (0, 0), "bands": [(400, 800), (800, 1600)],
                  "cast": (0, 0), "art9": 0, "dates": (0, 0)},
-    "minimal": {"share": 0.06, "types": (1, 2), "bands": [(400, 800), (800, 1600)],
+    # No personal data and 2-4 planted near-misses, so the label set is `{}` and the only
+    # thing in the text that looks like a disclosure is a sentence that is not one. Its 5%
+    # is taken proportionally from the five profiles below (their former shares times 0.90 / 0.95).
+    "near_miss_only": {"share": 0.05, "types": (0, 0), "bands": [(400, 800), (800, 1600)],
+                       "cast": (0, 0), "art9": 0, "dates": (0, 0)},
+    "minimal": {"share": 0.057, "types": (1, 2), "bands": [(400, 800), (800, 1600)],
                 "cast": (0, 0), "art9": 1, "dates": (0, 1)},
-    "light": {"share": 0.24, "types": (3, 5), "bands": [(400, 800), (800, 1600)],
+    "light": {"share": 0.227, "types": (3, 5), "bands": [(400, 800), (800, 1600)],
               "cast": (0, 1), "art9": 1, "dates": (1, 1)},
-    "typical": {"share": 0.30, "types": (6, 9), "bands": [(800, 1600), (1600, 2800)],
+    "typical": {"share": 0.284, "types": (6, 9), "bands": [(800, 1600), (1600, 2800)],
                 "cast": (0, 2), "art9": 1, "dates": (1, 2)},
-    "dense": {"share": 0.20, "types": (10, 18), "bands": [(2400, 3400), (2800, 4000)],
+    "dense": {"share": 0.190, "types": (10, 18), "bands": [(2400, 3400), (2800, 4000)],
               "cast": (1, 3), "art9": 2, "dates": (2, 4)},
     # The case-file band asks for less than the profile's name suggests on
     # purpose. Measured on Qwen3.5-9B: a 4,000-5,500 band produced an accepted
@@ -73,11 +93,11 @@ PROFILES: Dict[str, dict] = {
     # an effective long-form ceiling around 8,000-9,500 characters and stops
     # obeying a character target above roughly 4,000, so the band is set where
     # the usual 40-70% overshoot lands inside the hard cap.
-    "case_file": {"share": 0.15, "types": (18, 28), "bands": [(3600, 4600), (4200, 5200)],
+    "case_file": {"share": 0.142, "types": (18, 28), "bands": [(3600, 4600), (4200, 5200)],
                   "cast": (3, 6), "art9": 3, "dates": (3, 7)},
 }
 
-PROFILE_ORDER = ["pii_free", "minimal", "light", "typical", "dense", "case_file"]
+PROFILE_ORDER = ["pii_free", "near_miss_only", "minimal", "light", "typical", "dense", "case_file"]
 
 
 def type_ceiling(length_max: int, density_factor: float) -> int:
@@ -194,6 +214,82 @@ CAST_ROLES: Dict[str, dict] = {
     "creditor_contact": {"nb": "kontaktperson hos kreditor", "nn": "kontaktperson hos kreditor",
                          "values": ["PHONE", "EMAIL", "ORGANIZATION", "ORG_NUMBER", "BANK_ACCOUNT"]},
 }
+
+# Concrete role words for the professionals in a cast, as (Bokmål, Nynorsk, weight). The annotation
+# owner's ruling makes the role word of a specific individual EMPLOYMENT, and the output format is
+# one string per type, so a planted word labels every occurrence of its string. The words are
+# therefore chosen to be distinctive (`psykologspesialist`, `tilsynsveterinær`, `kontaktlærer`
+# rather than `lærer`), and the sampler refuses a word that is a substring of another planted
+# string or contains one. The weights come from pilot v5's texts: a bare `lege` or `saksbehandler`
+# was also used generically (or inside `overlege`, `saksbehandleren`) in all 10 and all 8 of the
+# documents that held it, so both are drawn rarely; the definite `saksbehandleren` was in 8 and
+# generic in none, so the definite forms are drawn more. A word in `DEFINITE_ROLE_WORDS` may stand
+# later in the document as a reference to the person once the name has been given; an indefinite
+# one is only ever valid directly beside the name.
+CAST_ROLE_WORDS: Dict[str, List[Tuple[str, str, float]]] = {
+    "physician": [("fastlege", "fastlege", 3.0), ("overlege", "overlege", 2.0), ("lege", "lege", 0.6),
+                  ("legen", "legen", 1.2)],
+    "psychologist": [("psykologspesialist", "psykologspesialist", 3.0), ("psykolog", "psykolog", 1.5),
+                     ("psykologen", "psykologen", 1.0)],
+    "veterinarian": [("tilsynsveterinær", "tilsynsveterinær", 2.5), ("veterinær", "veterinær", 2.5),
+                     ("veterinæren", "veterinæren", 1.2)],
+    "caseworker": [("saksbehandler", "sakshandsamar", 1.0), ("rådgiver", "rådgjevar", 3.0),
+                   ("seniorrådgiver", "seniorrådgjevar", 2.5), ("saksbehandleren", "sakshandsamaren", 1.5)],
+    "lawyer": [("advokat", "advokat", 2.5), ("advokaten", "advokaten", 1.2)],
+    "officer": [("politibetjent", "politibetjent", 3.0), ("etterforsker", "etterforskar", 2.0),
+                ("politioverbetjent", "politioverbetjent", 1.5)],
+    "teacher": [("kontaktlærer", "kontaktlærar", 3.0), ("lærer", "lærar", 1.5), ("læreren", "læraren", 1.0)],
+    "employer_contact": [("daglig leder", "dagleg leiar", 2.0), ("personalsjef", "personalsjef", 2.0),
+                         ("HR-rådgiver", "HR-rådgjevar", 2.0), ("avdelingsleder", "avdelingsleiar", 2.0)],
+    "creditor_contact": [("inkassomedarbeider", "inkassomedarbeidar", 3.0),
+                         ("kredittansvarlig", "kredittansvarleg", 1.5), ("kundebehandler", "kundebehandlar", 1.0)],
+}
+
+DEFINITE_ROLE_WORDS = frozenset({
+    "legen", "psykologen", "veterinæren", "saksbehandleren", "sakshandsamaren", "advokaten",
+    "læreren", "læraren"})
+
+# Signatory roles that are not a role word: planted as nothing, since a bare "spesialist" is
+# an adjective of a title and not the title.
+SIGNATORY_NOT_A_ROLE_WORD = frozenset({"spesialist"})
+
+
+def signatory_role_word(signatory_role: Optional[str]) -> Optional[str]:
+    """Return the role word to plant for a document's signatory, or None.
+
+    The signatory's role is the one the prompt already names beside the author
+    ("signert av Kari Hansen (rådgiver)"). A role that names a unit ("saksbehandler i
+    Husleietvistutvalget") is cut before the unit, so the planted string holds no
+    organisation name.
+
+    Args:
+        signatory_role: The role string drawn from the genre's `signatory_roles`.
+
+    Returns:
+        The role word, or None when the signatory has no role or only a bare adjective of one.
+    """
+    if not signatory_role:
+        return None
+    word = signatory_role.split(" i ")[0].strip()
+    return None if not word or word in SIGNATORY_NOT_A_ROLE_WORD else word
+
+
+@functools.lru_cache(maxsize=None)
+def professional_lexicon() -> Tuple[str, ...]:
+    """Return every professional role word the sweep for unplanned role words recognises."""
+    words = {nb for forms in CAST_ROLE_WORDS.values() for nb, _nn, _w in forms}
+    words |= {nn for forms in CAST_ROLE_WORDS.values() for _nb, nn, _w in forms}
+    for spec in GENRES.values():
+        for nb, nn in spec.get("signatory_roles", []):
+            words |= {signatory_role_word(nb), signatory_role_word(nn)} - {None}
+    words |= {
+        "sykepleier", "sjukepleiar", "helsesøster", "jordmor", "tannlege", "fysioterapeut", "sosionom",
+        "barnevernspedagog", "barnevernkonsulent", "rektor", "dommer", "dommar", "politiadvokat",
+        "statsadvokat", "politimester", "lensmann", "forsvarer", "forsvarar", "aktor", "bedriftslege",
+        "kommuneoverlege", "arbeidsmedisiner", "arbeidsmedisinar", "seniorinspektør", "inspektør",
+        "fagleder", "fagleiar", "konsulent", "politiførstebetjent", "psykiater", "dyrlege"}
+    return tuple(sorted(w for w in words if w))
+
 
 _HEALTH_SIGN = [("fastlege", "fastlege"), ("lege", "lege"), ("overlege", "overlege"),
                 ("spesialist", "spesialist")]
@@ -872,8 +968,41 @@ GENRES: Dict[str, dict] = {
         "cast_roles": ["caseworker"],
         "age_profile": "working", "density_factor": 0.7,
         "foreign_subject_p": 0.0,
-        "pii_free_ok": True,
+        "pii_free_ok": True, "near_miss_ok": True,
         "signatory_roles": [("avdelingsdirektør", "avdelingsdirektør"), ("seksjonsleder", "seksjonsleiar")],
+    },
+    "anonymised_case_summary": {
+        "domain": "administration",
+        "title_nb": "Anonymisert saksoppsummering til opplæring",
+        "title_nn": "Anonymisert saksoppsummering til opplæring",
+        "variants": ["prose_letter", "numbered_findings", "minutes"],
+        "clause_genres": ["nav_decision", "dismissal_letter", "gp_referral"],
+        "core": [], "values": {}, "judgement": {}, "cast_roles": [],
+        "age_profile": "working", "density_factor": 0.7,
+        "foreign_subject_p": 0.0, "near_miss_ok": True,
+        "signatory_roles": [("seksjonsleder", "seksjonsleiar"), ("avdelingsdirektør", "avdelingsdirektør")],
+    },
+    "guidance_note": {
+        "domain": "administration",
+        "title_nb": "Veiledningsnotat om saksbehandling",
+        "title_nn": "Rettleiingsnotat om sakshandsaming",
+        "variants": ["prose_letter", "numbered_findings"],
+        "clause_genres": ["nav_decision", "dismissal_letter"],
+        "core": [], "values": {}, "judgement": {}, "cast_roles": [],
+        "age_profile": "working", "density_factor": 0.7,
+        "foreign_subject_p": 0.0, "near_miss_ok": True,
+        "signatory_roles": [("seksjonsleder", "seksjonsleiar"), ("avdelingsdirektør", "avdelingsdirektør")],
+    },
+    "statistics_note": {
+        "domain": "administration",
+        "title_nb": "Notat om statistikk og praksis i behandlede saker",
+        "title_nn": "Notat om statistikk og praksis i handsama saker",
+        "variants": ["prose_letter", "numbered_findings", "minutes"],
+        "clause_genres": ["nav_decision", "gp_referral"],
+        "core": [], "values": {}, "judgement": {}, "cast_roles": [],
+        "age_profile": "working", "density_factor": 0.7,
+        "foreign_subject_p": 0.0, "near_miss_ok": True,
+        "signatory_roles": [("seksjonsleder", "seksjonsleiar"), ("avdelingsdirektør", "avdelingsdirektør")],
     },
 }
 
@@ -881,6 +1010,13 @@ GENRES: Dict[str, dict] = {
 # procedural notice, an extract from a statute or a guidance note. Everything
 # else names somebody by construction.
 PII_FREE_GENRES = [g for g, spec in GENRES.items() if spec.get("pii_free_ok")]
+
+# Genres in which an unnamed person is natural: an anonymised summary of a case used for
+# training, a guidance note whose examples speak of "søkeren", a statistics note, the circular.
+# A near-miss-only document is drawn from these and from no other genre, and an ordinary
+# document is never drawn from them.
+NEAR_MISS_GENRES = [g for g, spec in GENRES.items() if spec.get("near_miss_ok")]
+NO_SUBJECT_GENRES = sorted(set(PII_FREE_GENRES) | set(NEAR_MISS_GENRES))
 
 # GDPR Art. 9 categories. Pilot v1's dismissal letter carried union membership,
 # religion and sexual orientation at once and read as a checklist: a real
@@ -949,7 +1085,7 @@ MULTI_PROPENSITY: Dict[str, Dict[str, float]] = {
 # Most documents stay at one so that "always several" is not learned either; a short
 # document has no room for a list, a case file does.
 MULTI_BASE_P: Dict[str, float] = {
-    "pii_free": 0.0, "minimal": 0.0, "light": 0.20, "typical": 0.45, "dense": 0.65, "case_file": 0.75,
+    "pii_free": 0.0, "near_miss_only": 0.0, "minimal": 0.0, "light": 0.20, "typical": 0.45, "dense": 0.65, "case_file": 0.75,
 }
 # Given that a type is repeated: the weight of 2, 3 and 4 instances, and the most a profile takes.
 MULTI_COUNT_WEIGHTS: Dict[int, float] = {2: 0.55, 3: 0.30, 4: 0.15}
@@ -960,9 +1096,11 @@ MULTI_MAX_BY_PROFILE: Dict[str, int] = {"light": 2, "typical": 3, "dense": 4, "c
 # document's items had median 8 (light), 13-14 (typical), 23-25 (dense) and 36-37 (case
 # file), so each ceiling leaves room for about three to a dozen further clauses; a case file
 # stays under the section planner's eight sections of seven (`gendoc_sections.MAX_SECTIONS
-# * MAX_ITEMS` = 56) with room for a repair.
+# * MAX_ITEMS` = 56) with room for a repair. Each budget was then raised by the role words a
+# profile's cast brings (one for the signatory and one per professional in the cast: 1, 2, 3, 4
+# and 4 for minimal to case file), so the room for further clause instances is what it was.
 PROFILE_ITEM_BUDGET: Dict[str, int] = {
-    "pii_free": 0, "minimal": 6, "light": 12, "typical": 17, "dense": 34, "case_file": 50,
+    "pii_free": 0, "near_miss_only": 0, "minimal": 7, "light": 14, "typical": 20, "dense": 38, "case_file": 54,
 }
 
 
