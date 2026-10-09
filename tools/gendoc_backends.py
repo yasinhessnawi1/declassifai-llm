@@ -515,9 +515,15 @@ class HFBackend(GenerationBackend):
         sampling = {"do_sample": True, "temperature": temperature, "top_p": 0.9}
         if temperature <= 0:
             sampling = {"do_sample": False}
+        # Qwen3.5 ships no generation_config.json, so the model's own eos is
+        # <|endoftext|> while a chat turn ends on the tokenizer's <|im_end|>;
+        # stop on both rather than rely on the model emitting the second.
+        gen_eos = self.model.generation_config.eos_token_id
+        gen_eos = gen_eos if isinstance(gen_eos, list) else [gen_eos]
+        stop_on = [i for i in dict.fromkeys([*gen_eos, self.tokenizer.eos_token_id]) if i is not None]
         with torch.no_grad():
             output_ids = self.model.generate(
-                **encoded, max_new_tokens=max_new_tokens,
+                **encoded, max_new_tokens=max_new_tokens, eos_token_id=stop_on,
                 pad_token_id=self.tokenizer.pad_token_id, **sampling,
             )
         generated = output_ids[:, encoded["input_ids"].shape[1]:]
