@@ -84,3 +84,11 @@ tier C (clauses), where span boundaries are long and judgement-heavy.
   strict 0.795 / relaxed 0.922 against gold (old human-protocol IAA was 0.85 / 0.94); the strict gap is
   Tier C boundaries (HEALTH 0.58, CRIMINAL 0.56), mostly leading evidential verbs on which gold itself
   is split (→ spec B36). Spec B33-B36 added from the annotators' questions.
+- 2026-10-10 — Agent annotation scaled up (user chose option A). gold2 now 200 docs: g2a 40 (1,448 spans) +
+  g2b 160 (5,294 spans; IAA strict 0.933 / relaxed 0.977 before adjudication). slice2 now 500 docs
+  (14,435 spans); per-type rates match slice_v2 within ~10% on every major type in both templates
+  (interview CRIMINAL 0.60x, expected after B34). Post-passes: ORG quotes re-added (B35 corrected),
+  `innrømmet/erkjente` restored at CRIMINAL starts (B1). Spec also fixed: B35 quote rule reversed
+  (gold 174:84), identifier-table CASE_NUMBER example aligned with B23. gold2 is test-only
+  (build_training_set holds it out); slice2 joins training.
+
