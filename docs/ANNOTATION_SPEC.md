@@ -338,6 +338,13 @@ import`, `forfalsket`, `bedrageri`, `uregistrert våpen` stated as illegal).
 - Quotation marks and guillemets around an organisation name stay outside ORGANIZATION.
 - An 11-digit number after `f.` is NATIONAL_ID by shape (Identifier types), not DATE_OF_BIRTH.
 
+**B36 — Evidential verbs are dropped like hedges** (decided 2026-10-10). A leading verb that
+only reports how the fact came to light — `viste`, `viser`, `avdekket`, `tyder på`, `oppviser`
+— is cut, as B1 cuts `virker`: `viste tegn på sykdom` → `tegn på sykdom`, `avdekket ulovlig
+import av planter` → `ulovlig import av planter`. Gold had split on this (`avdekket` cut 33 times,
+kept 8; `viste` cut 23, kept 24); this follows the majority and B1's "start at the fact". A main
+verb that is itself the fact stays: `holdes i overfylte bur`, `mangler tilgang til vann`.
+
 **B31 — A same-sex relationship is SEXUAL_ORIENTATION with or without an orientation
 word.** GDPR Art. 9 covers "sex life *or* sexual orientation", so the fact is disclosed by
 the pairing itself: a male subject's `tidligere forhold til en mann ved navn Lars

@@ -77,3 +77,10 @@ tier C (clauses), where span boundaries are long and judgement-heavy.
   major type; under-recall on ECONOMIC_STATUS (0.69x) and CRIMINAL (0.70x), matching E0's weak types;
   0.7% of spans dropped as non-verbatim; template conventions (e.g. `Referanse:` numbers untagged)
   match gold. Re-run when the dossier template (longer docs) comes through.
+- 2026-10-10 — Sonnet annotation pilot. gold2 (40 docs, dossier-weighted): two blind annotators,
+  inter-annotator strict 0.948 / relaxed 0.983, then adjudicated → `data/gold2_v2/batch_g2a_gold.jsonl`
+  (1,448 spans). slice2 (60 docs, one annotator) → `data/slice2_v2/` (1,803 spans; per-type rates
+  within ~10% of slice_v2). Calibration: single agents re-annotating 20 existing gold docs blind score
+  strict 0.795 / relaxed 0.922 against gold (old human-protocol IAA was 0.85 / 0.94); the strict gap is
+  Tier C boundaries (HEALTH 0.58, CRIMINAL 0.56), mostly leading evidential verbs on which gold itself
+  is split (→ spec B36). Spec B33-B36 added from the annotators' questions.
