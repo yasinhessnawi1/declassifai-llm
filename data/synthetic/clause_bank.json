@@ -1,5 +1,5 @@
 {
-  "version": 7,
+  "version": 8,
   "clause_bank": {
     "RELIGIOUS_BELIEF": [
       {
@@ -7755,28 +7755,6 @@
     ],
     "GENETIC_DATA": [
       {
-        "text": "DNA-test bekreftet farskap",
-        "form": "nb",
-        "subject": "person",
-        "difficulty": "easy",
-        "note": null,
-        "genres": [
-          "nav_decision",
-          "udi_decision",
-          "gp_referral"
-        ]
-      },
-      {
-        "text": "gentest bekreftet bærer av en arvelig sykdom",
-        "form": "nb",
-        "subject": "person",
-        "difficulty": "medium",
-        "note": null,
-        "genres": [
-          "gp_referral"
-        ]
-      },
-      {
         "text": "DNA-prøve sikret og analysert i saken",
         "form": "nb",
         "subject": "person",
@@ -7795,28 +7773,6 @@
         "genres": [
           "nav_decision",
           "udi_decision"
-        ]
-      },
-      {
-        "text": "DNA-test stadfesta farskap",
-        "form": "nn",
-        "subject": "person",
-        "difficulty": "easy",
-        "note": null,
-        "genres": [
-          "nav_decision",
-          "udi_decision",
-          "gp_referral"
-        ]
-      },
-      {
-        "text": "gentest stadfesta berar av ein arveleg sjukdom",
-        "form": "nn",
-        "subject": "person",
-        "difficulty": "medium",
-        "note": null,
-        "genres": [
-          "gp_referral"
         ]
       },
       {
@@ -7906,6 +7862,54 @@
           "gp_referral"
         ],
         "origin": "spec_v7"
+      },
+      {
+        "text": "farskap",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "nav_decision",
+          "udi_decision",
+          "gp_referral"
+        ],
+        "origin": "spec_v8"
+      },
+      {
+        "text": "bærer av en arvelig sykdom",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "gp_referral"
+        ],
+        "origin": "spec_v8"
+      },
+      {
+        "text": "farskap",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "easy",
+        "note": null,
+        "genres": [
+          "nav_decision",
+          "udi_decision",
+          "gp_referral"
+        ],
+        "origin": "spec_v8"
+      },
+      {
+        "text": "berar av ein arveleg sjukdom",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "gp_referral"
+        ],
+        "origin": "spec_v8"
       }
     ],
     "IMMIGRATION_STATUS": [
@@ -13399,5 +13403,5 @@
       }
     ]
   },
-  "schema_note": "Entry fields: text, form (nb/nn/en), subject (person/animal/org), difficulty, note, genres (genre ids the clause is plausible in; [] = never sampled), and optional constraints on the record's subject: gender (M/F), age_range [min,max], origin (native/foreign), nationalities (list of nationality adjectives the subject must have), status (employed/unemployed/retired/uforetrygd), partner (opposite: implies an opposite-sex partner), marital (the MARITAL_STATUS value the clause implies). Negatives (version 4; version 5 adds the `nearmiss_v5` batch): `plantable` marks near-miss texts that are null under every type, so a benchmark run may plant them verbatim and leave them unlabelled; `genres` restricts them like a clause, `gender` (M/F) restricts the subject, and `also_labelled` maps a TYPE to a substring of the text that is a real value of that other type and is labelled as such (the near-miss is only for the type the negative is filed under). Negatives may carry `age_range` like a clause; without one a negative is for adult subjects only. `as_type` relabels an entry as another type when sampled (a civil-status clause with no kinship noun filed under FAMILY_RELATION is MARITAL_STATUS). Version 5: a negative's `text` may hold `{PRON}` (han/hun, han/ho), `{POSS}` (hans/hennes, hans/hennar) and `{OBJ}` (ham/henne, han/henne), filled from the document subject's gender and the document's form when the negative is planted; the planted text, and what G2 searches for, is the filled one. A near-miss that needs a subject carries its own (`og {PRON} svarte ...`) and starts with a coordinating word so it cannot open a sentence and be capitalised. `why_not` begins with the ANNOTATION_SPEC rule that makes the text a null; `kind` is one of refusal (B7), absence (B15), generic, ordinary, third_party, institution, id_shaped (B20), lawful, physical; `origin` names the batch so `gendoc_dataset.py extend-negatives` can partition it without moving earlier entries. Version 6 (`origin: multi_v6`) adds the entries several instances of one type are drawn from, and these optional fields on the multi-instance types (CRIMINAL, HEALTH, MEDICATION, BEHAVIORAL_PATTERN, FINANCIAL, ECONOMIC_STATUS, FAMILY_RELATION): `topic` (what the clause is about; no two clauses of one type in one document share a topic), `also` (further topics an entry occupies, e.g. a threat clause that mentions a weapon), `group` (at most one topic of a group per document across all types: one psychiatric condition, one general financial condition, one infection, the partner and the children of FAMILY_RELATION), `polarity` (poor or rich, which the means a clause implies; one per document across FINANCIAL and ECONOMIC_STATUS), and for FINANCIAL `kind` (debt, headline, asset, income, unspecified) with a numeric `amount` in NOK, so that the debts listed beside a headline total never exceed it. `subject: animal` entries are drawn only by the genres that list the type in `animal_types` (a veterinary record's HEALTH findings). Genre ids added for particular kinds of document: `crime` (police, prosecution, court, restraining-order, forensics and clearance documents), `forensics`, `bank`, `debt` (debt counselling, inkasso, bank AML), `barnevern`, `school` and, for the veterinary documents, `vet_clinical` and `vet_inspection`; a genre draws them through `clause_genres`. Version 7 (`origin: spec_v7` for clauses, `origin: nearmiss_v7` for negatives) follows the 2026-10-10 spec changes B31, B34 and B36: a SEXUAL_ORIENTATION entry that names a partner states the partner's gender or the orientation in its own text, name-only same-gender pairings are FAMILY_RELATION or (`as_type`) MARITAL_STATUS and carry no `partner` constraint, so they can sit beside an orientation clause; a regulatory breach is a CRIMINAL negative (`kind: regulatory`) unless the clause frames it criminally; no clause opens with an evidential verb."
+  "schema_note": "Entry fields: text, form (nb/nn/en), subject (person/animal/org), difficulty, note, genres (genre ids the clause is plausible in; [] = never sampled), and optional constraints on the record's subject: gender (M/F), age_range [min,max], origin (native/foreign), nationalities (list of nationality adjectives the subject must have), status (employed/unemployed/retired/uforetrygd), partner (opposite: implies an opposite-sex partner), marital (the MARITAL_STATUS value the clause implies). Negatives (version 4; version 5 adds the `nearmiss_v5` batch): `plantable` marks near-miss texts that are null under every type, so a benchmark run may plant them verbatim and leave them unlabelled; `genres` restricts them like a clause, `gender` (M/F) restricts the subject, and `also_labelled` maps a TYPE to a substring of the text that is a real value of that other type and is labelled as such (the near-miss is only for the type the negative is filed under). Negatives may carry `age_range` like a clause; without one a negative is for adult subjects only. `as_type` relabels an entry as another type when sampled (a civil-status clause with no kinship noun filed under FAMILY_RELATION is MARITAL_STATUS). Version 5: a negative's `text` may hold `{PRON}` (han/hun, han/ho), `{POSS}` (hans/hennes, hans/hennar) and `{OBJ}` (ham/henne, han/henne), filled from the document subject's gender and the document's form when the negative is planted; the planted text, and what G2 searches for, is the filled one. A near-miss that needs a subject carries its own (`og {PRON} svarte ...`) and starts with a coordinating word so it cannot open a sentence and be capitalised. `why_not` begins with the ANNOTATION_SPEC rule that makes the text a null; `kind` is one of refusal (B7), absence (B15), generic, ordinary, third_party, institution, id_shaped (B20), lawful, physical; `origin` names the batch so `gendoc_dataset.py extend-negatives` can partition it without moving earlier entries. Version 6 (`origin: multi_v6`) adds the entries several instances of one type are drawn from, and these optional fields on the multi-instance types (CRIMINAL, HEALTH, MEDICATION, BEHAVIORAL_PATTERN, FINANCIAL, ECONOMIC_STATUS, FAMILY_RELATION): `topic` (what the clause is about; no two clauses of one type in one document share a topic), `also` (further topics an entry occupies, e.g. a threat clause that mentions a weapon), `group` (at most one topic of a group per document across all types: one psychiatric condition, one general financial condition, one infection, the partner and the children of FAMILY_RELATION), `polarity` (poor or rich, which the means a clause implies; one per document across FINANCIAL and ECONOMIC_STATUS), and for FINANCIAL `kind` (debt, headline, asset, income, unspecified) with a numeric `amount` in NOK, so that the debts listed beside a headline total never exceed it. `subject: animal` entries are drawn only by the genres that list the type in `animal_types` (a veterinary record's HEALTH findings). Genre ids added for particular kinds of document: `crime` (police, prosecution, court, restraining-order, forensics and clearance documents), `forensics`, `bank`, `debt` (debt counselling, inkasso, bank AML), `barnevern`, `school` and, for the veterinary documents, `vet_clinical` and `vet_inspection`; a genre draws them through `clause_genres`. Version 7 (`origin: spec_v7` for clauses, `origin: nearmiss_v7` for negatives) follows the 2026-10-10 spec changes B31, B34 and B36: a SEXUAL_ORIENTATION entry that names a partner states the partner's gender or the orientation in its own text, name-only same-gender pairings are FAMILY_RELATION or (`as_type`) MARITAL_STATUS and carry no `partner` constraint, so they can sit beside an orientation clause; a regulatory breach is a CRIMINAL negative (`kind: regulatory`) unless the clause frames it criminally; no clause opens with an evidential verb. Version 8 (`origin: spec_v8`) follows the B36 scope ruling: a subject-first evidential frame goes with its subject, so `DNA-test bekreftet farskap` is the span `farskap`; the clause is the fact and the model writes the frame itself."
 }

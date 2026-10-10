@@ -134,10 +134,8 @@
    "utestående gjeld på over 700 000 NOK"
   ],
   "GENETIC_DATA": [
-   "DNA-test stadfesta farskap",
    "auka genetisk risiko for brystkreft",
-   "genetisk disposisjon for Huntingtons sykdom",
-   "gentest stadfesta berar av ein arveleg sjukdom"
+   "genetisk disposisjon for Huntingtons sykdom"
   ],
   "HEALTH": [
    "alvorleg tannråte",
@@ -682,9 +680,9 @@
  },
  "counts": {
   "clause_texts": {
-   "total": 666,
-   "benchmark": 174,
-   "share": 0.261
+   "total": 665,
+   "benchmark": 172,
+   "share": 0.259
   },
   "negative_texts": {
    "total": 296,
@@ -1092,6 +1090,9 @@
    "ubetalt husleige på 28 000 NOK"
   ],
   "GENETIC_DATA": [
+   "berar av ein arveleg sjukdom",
+   "bærer av en arvelig sykdom",
+   "farskap",
    "genetisk bærerstatus for en arvelig sykdom",
    "genetisk disposisjon for Huntingtons sjukdom",
    "økt genetisk risiko for brystkreft"
@@ -1167,6 +1168,13 @@
    "texts": 30,
    "benchmark": 9,
    "train": 21
+  },
+  "spec_v8": {
+   "salt": "gendoc-clauses-batch-v1",
+   "ratio": 0.25,
+   "texts": 3,
+   "benchmark": 0,
+   "train": 3
   }
  }
 }

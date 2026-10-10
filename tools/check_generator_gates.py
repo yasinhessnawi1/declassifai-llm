@@ -3570,6 +3570,16 @@ _EVIDENTIAL_VERB = re.compile(
     re.IGNORECASE)
 
 
+# A subject followed by a finite evidential verb (`DNA-test bekreftet farskap`, nn `stadfesta`): B36
+# puts such a frame with its subject, so the span starts at the fact. `bekreftet ved/av ...` after a
+# noun is a passive participle that belongs to the fact (`alvorlig depresjon, bekreftet av
+# journalnotater`), which B36 keeps.
+_SUBJECT_EVIDENTIAL = re.compile(
+    r"^\S+(?:[ -]\S+){0,3}? (?:bekreftet|bekrefta|bekrefter|stadfesta|stadfestet|stadfester|viste|viser|"
+    r"avdekket|avdekte|avdekka|avdekker|synte|syner|påviste|påviser|oppviste|oppviser)\b(?! (?:ved|av)\b)",
+    re.IGNORECASE)
+
+
 class _ClockMock(MockBackend):
     """Writes a clock time after the planned dates of each document's first generation, once.
 
@@ -3695,6 +3705,26 @@ def spec_change_checks(taxonomy_index, clause_bank: dict, partition: dict) -> bo
     report("b36_no_clause_holds_an_evidential_verb", not evidential and not fallback,
            f"clauses={evidential[:3]} embedded_fallback={fallback[:3]}")
 
+    framed = [(t, e["text"]) for t, e in entries if _SUBJECT_EVIDENTIAL.search(e["text"])]
+    framed_fallback = [e["text"] for t, v in data._DEFAULT_CLAUSE_BANK.items() if t != "negatives" for e in v
+                       if _SUBJECT_EVIDENTIAL.search(e["text"])]
+    # The detector must see the old shapes and spare the participles B36 keeps, or an empty result proves nothing.
+    detects = all(_SUBJECT_EVIDENTIAL.search(x) for x in (
+        "DNA-test bekreftet farskap", "gentest bekreftet bærer av en arvelig sykdom",
+        "DNA-test stadfesta farskap", "genetisk test viste anlegg for brystkreft"))
+    spares = not any(_SUBJECT_EVIDENTIAL.search(x) for x in (
+        "påvist tykktarmskreft i 2023", "observert økt hjertefrekvens", "farskap",
+        "alvorlig depresjon, bekreftet av journalnotater", "bovine tuberkulose bekreftet ved funn av lesjoner"))
+    genetic = [e for e in bank["GENETIC_DATA"]]
+    per_form = {f: sum(1 for e in genetic if e["form"] == f) for f in ("nb", "nn")}
+    spec_v8 = {e["text"] for e in genetic if e.get("origin") == "spec_v8"}
+    report("b36_no_clause_starts_with_subject_and_finite_evidential_verb",
+           not framed and not framed_fallback and detects and spares
+           and {"farskap", "bærer av en arvelig sykdom", "berar av ein arveleg sjukdom"} <= spec_v8
+           and len(genetic) >= 14 and min(per_form.values()) >= 5,
+           f"framed={framed[:3]} embedded_fallback={framed_fallback[:3]} detector_sees_old_shapes={detects} "
+           f"spares_participles={spares} GENETIC_DATA={len(genetic)} per_form={per_form} spec_v8={sorted(spec_v8)}")
+
     # -- B37 ---------------------------------------------------------------------------------
     outcome = re.compile(r"\((?:[^)]*\b)?(?:henlagt|frifunnet|frikjent|ikke tiltalt|ingen tiltale)", re.IGNORECASE)
     absorbed = [e["text"] for t, e in entries if outcome.search(e["text"])]
@@ -3722,10 +3752,30 @@ def spec_change_checks(taxonomy_index, clause_bank: dict, partition: dict) -> bo
                       {"27.10.2024": ["27.10.2024 kl. 08:05", "27.10.2024 kl. 14:35"]}),
     }
     got = {name: ext(text, date)[0] == want and not ext(text, date)[1] for name, (text, date, want) in cases.items()}
+    wider = {
+        "range_hyphen": ("Møtet var 27.10.2024 kl. 14:35-15:10.", "27.10.2024 kl. 14:35-15:10"),
+        "range_en_dash": ("Møtet var 27.10.2024 kl. 14:35\u201315:10.", "27.10.2024 kl. 14:35\u201315:10"),
+        "range_til": ("Møtet var 27.10.2024 kl. 14.35 til 15.10 i butikken.", "27.10.2024 kl. 14.35 til 15.10"),
+        "range_spaced_dash": ("Møtet var 27.10.2024 kl. 14:35 - 15:10 i butikken.", "27.10.2024 kl. 14:35 - 15:10"),
+        "seconds": ("Møtet var 27.10.2024 kl. 14:35:20 i butikken.", "27.10.2024 kl. 14:35:20"),
+        "seconds_range": ("Møtet var 27.10.2024 kl. 14:35:20-14:40:05.", "27.10.2024 kl. 14:35:20-14:40:05"),
+        "hour_only": ("Møtet var 27.10.2024 kl. 14 i butikken.", "27.10.2024 kl. 14"),
+        "hour_only_sentence_end": ("Møtet var 27.10.2024 kl. 14.", "27.10.2024 kl. 14"),
+        "hour_only_klokka": ("Møtet var 27.10.2024 klokka 8, så videre.", "27.10.2024 klokka 8"),
+        # The number after an hour-only time is not part of it.
+        "hour_only_next_number": ("Møtet var 27.10.2024 kl. 14 20 personer møtte.", "27.10.2024 kl. 14"),
+        "hour_only_next_count": ("Møtet var 27.10.2024 kl. 14 og 3 andre kom.", "27.10.2024 kl. 14"),
+    }
+    got_wider = {name: ext(text, "27.10.2024")[0] == {"27.10.2024": [want]} and not ext(text, "27.10.2024")[1]
+                 for name, (text, want) in wider.items()}
     untouched = {
-        "hour_only": "Møtet var 27.10.2024 kl. 14 i butikken.",
-        "range": "Møtet var 27.10.2024 kl. 14:35-15:10.",
-        "seconds": "Møtet var 27.10.2024 kl. 14:35:10.",
+        "hour_range": "Møtet var 27.10.2024 kl. 14-16.",
+        "hour_til_hour": "Møtet var 27.10.2024 kl. 14 til 15.",
+        "time_til_hour": "Møtet var 27.10.2024 kl. 14:35 til 15 i butikken.",
+        "range_cut_short": "Møtet var 27.10.2024 kl. 14:35-15:1.",
+        "hour_is_a_date": "Møtet var 27.10.2024 kl. 14.10.2024.",
+        "hour_decimal": "Møtet var 27.10.2024 kl. 14,5 timer.",
+        "seconds_cut_short": "Møtet var 27.10.2024 kl. 14:35:2.",
         "comma": "Møtet var 27.10.2024, kl. 14:35.",
         "no_time": "Møtet var 27.10.2024 og senere.",
         "invalid_hour": "Møtet var 27.10.2024 kl. 25:35.",
@@ -3734,6 +3784,8 @@ def spec_change_checks(taxonomy_index, clause_bank: dict, partition: dict) -> bo
     left = {name: ext(text, "27.10.2024") == ({}, []) for name, text in untouched.items()}
     mixed_text = "Først 27.10.2024 kl. 14:35, senere igjen 27.10.2024."
     year_only = ext("I 2024 kl. 14:35 skjedde det.", "2024")
+    report("b38_range_seconds_and_hour_only_are_inside_the_span", all(got_wider.values()),
+           f"extended={got_wider}")
     report("b38_date_time_extension_is_a_closed_shape", all(got.values()) and all(left.values())
            and ext(mixed_text, "27.10.2024") == ({}, ["27.10.2024"]) and year_only == ({}, []),
            f"extended={got} left_alone={left} mixed={ext(mixed_text, '27.10.2024')[1]}")
@@ -3742,6 +3794,25 @@ def spec_change_checks(taxonomy_index, clause_bank: dict, partition: dict) -> bo
     swept = gates.sweep_dates(sweep_text, [])
     swept_covered = gates.sweep_dates(sweep_text, [(8, 8 + len("27.10.2024 kl. 14:35"))])
     swept_mixed = gates.sweep_dates("Mottatt 27.10.2024 kl. 14:35 og igjen 27.10.2024.", [])
+    sweep_shapes = {
+        "Mottatt 27.10.2024 kl. 14:35-15:10 i butikken.": "27.10.2024 kl. 14:35-15:10",
+        "Mottatt 27.10.2024 kl. 14:35\u201315:10 i butikken.": "27.10.2024 kl. 14:35\u201315:10",
+        "Mottatt 27.10.2024 kl. 14.35 til 15.10 i butikken.": "27.10.2024 kl. 14.35 til 15.10",
+        "Mottatt 27.10.2024 kl. 14:35:20 i butikken.": "27.10.2024 kl. 14:35:20",
+        "Mottatt 27.10.2024 kl. 14 20 personer.": "27.10.2024 kl. 14",
+    }
+    swept_shapes = {text: [f["match"] for f in gates.sweep_dates(text, [])] for text in sweep_shapes}
+    swept_left = {text: [f["match"] for f in gates.sweep_dates(text, [])]
+                  for text in ("Mottatt 27.10.2024 kl. 14-16.", "Mottatt 27.10.2024 kl. 14:35 til 15.")}
+    swept_mixed_wide = gates.sweep_dates("Mottatt 27.10.2024 kl. 14:35-15:10 og igjen 27.10.2024.", [])
+    swept_mixed_hour = gates.sweep_dates("Mottatt 27.10.2024 kl. 14 og igjen 27.10.2024.", [])
+    report("b38_g7_sweep_covers_range_seconds_and_hour_only",
+           all(v == [sweep_shapes[t]] for t, v in swept_shapes.items())
+           and all(v == ["27.10.2024"] for v in swept_left.values())
+           and {f["action"] for f in swept_mixed_wide} == {"reject"} and len(swept_mixed_wide) == 2
+           and {f["action"] for f in swept_mixed_hour} == {"reject"} and len(swept_mixed_hour) == 2,
+           f"found={list(swept_shapes.values())} left_short={list(swept_left.values())} "
+           f"mixed_range={[f['action'] for f in swept_mixed_wide]} mixed_hour={[f['action'] for f in swept_mixed_hour]}")
     report("b38_g7_sweep_keeps_the_time_in_one_span",
            [f["match"] for f in swept] == ["27.10.2024 kl. 14:35"] and swept[0]["action"] == "label"
            and not swept_covered and {f["action"] for f in swept_mixed} == {"reject"} and len(swept_mixed) == 2,
@@ -3798,7 +3869,7 @@ def spec_change_checks(taxonomy_index, clause_bank: dict, partition: dict) -> bo
     pruned, dropped = dataset_mod.prune_partition(partition, clause_bank)
     report("partition_lists_no_retired_text", not stale and pruned == partition and not dropped,
            f"stale={stale[:3]} prune_is_a_no_op={pruned == partition}")
-    for batch, kind in (("spec_v7", "clauses"), ("nearmiss_v7", "negatives")):
+    for batch, kind in (("spec_v7", "clauses"), ("spec_v8", "clauses"), ("nearmiss_v7", "negatives")):
         rebuild = dataset_mod.rebuild_clauses if kind == "clauses" else dataset_mod.rebuild_negatives
         rebuilt = rebuild(partition, clause_bank, batch)
         again = rebuild(rebuilt, clause_bank, batch)

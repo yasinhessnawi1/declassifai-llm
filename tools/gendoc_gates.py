@@ -664,26 +664,38 @@ def sweep_ages(text: str, covered: List[Tuple[int, int]]) -> List[dict]:
 
 
 # `27.10.2024 kl. 14:35` is one DATE_TIME span as printed (B38; gold does it 99 times and never
-# splits it). Only this closed shape is joined: `kl.`, `kl` or `klokka`/`klokken`, then hours and
-# minutes with a colon or a point. A bare `kl. 14`, a range (`14:35-15:10`) and a time with seconds
-# are left alone, because where such a time ends is not settled and guessing it is the failure mode
-# the clause extension above also avoids.
+# splits it), and the span runs to the end of the time expression: a range (`kl. 14:35-15:10`,
+# `kl. 14:35–15:10`, `kl. 14.35 til 15.10`), seconds (`kl. 14:35:20`) and an hour-only time
+# (`kl. 14`) are inside it. `kl.`, `kl` or `klokka`/`klokken` opens it.
+# Seconds take a colon only: `14.35.20` is indistinguishable from a date.
+# Every alternative ends with the same guard, so a time that is only part of something longer is
+# not joined at the wrong place: a digit or colon next to it (`14:35:2`, `14:355`), a decimal point or
+# comma (`14.10.2024` is a date), and a range or `til` that the alternatives above did not match
+# (`kl. 14-16`, `kl. 14:35 til 15`, `kl. 14:35-15:1`): where such a time ends is not settled, so
+# the date is left short rather than cut in the middle of the expression. The hour-only form takes
+# only the hour, never the number after it (`kl. 14 20 personer` ends at `14`).
+_HOUR = r"(?:[01]?\d|2[0-3])"
+_TIME = _HOUR + r"[:.][0-5]\d(?::[0-5]\d)?"
+_CLOCK_END = r"(?![\d:])(?![.,]\d)(?![ \t]*[\u2013\-][ \t]*\d)(?![ \t]+til[ \t]+\d)"
 _CLOCK_AFTER_DATE_RE = re.compile(
-    r"[ \t]+(?:kl\.?|klokka|klokken)[ \t]*(?:[01]?\d|2[0-3])[:.][0-5]\d(?![\d:])(?![.,]\d)(?![\u2013\-]\d)",
+    r"[ \t]+(?:kl\.?|klokka|klokken)[ \t]*(?:"
+    + _TIME + r"(?:[ \t]*[\u2013\-][ \t]*|[ \t]+til[ \t]+)" + _TIME + _CLOCK_END
+    + "|" + _TIME + _CLOCK_END
+    + "|" + _HOUR + _CLOCK_END + ")",
     re.IGNORECASE)
 
 
 def clock_after(text: str, end: int) -> str:
-    """Return the ` kl. HH:MM` that immediately follows position `end`, or the empty string."""
+    """Return the ` kl. ...` time expression that immediately follows position `end`, or the empty string."""
     match = _CLOCK_AFTER_DATE_RE.match(text, end)
     return match.group(0) if match else ""
 
 
 def extend_date_time_spans(text: str, dates: Sequence[str]) -> Tuple[Dict[str, List[str]], List[str]]:
-    """Join each planned date to the `kl. HH:MM` that follows it (B38).
+    """Join each planned date to the `kl.` time expression that follows it (B38).
 
-    A date is extended only when *every* occurrence of it in the text is followed by a clock
-    time, so the document never carries both the short and the long form (`validate_labels.py`
+    A date is extended only when *every* occurrence of it in the text is followed by a time
+    expression, so the document never carries both the short and the long form (`validate_labels.py`
     reports that as a redundant nested span). A date that occurs both with and without a time
     cannot be labelled consistently by exact strings and is returned as mixed.
 
@@ -716,7 +728,7 @@ def extend_date_time_spans(text: str, dates: Sequence[str]) -> Tuple[Dict[str, L
 def sweep_dates(text: str, covered: List[Tuple[int, int]]) -> List[dict]:
     """Find date strings not covered by a planned span; these are labelled, not rejected.
 
-    A date followed by `kl. HH:MM` is one finding covering both (B38). If the same date also
+    A date followed by a `kl.` time expression is one finding covering both (B38). If the same date also
     occurs without a time, the short and the long finding cannot both be labelled, so both
     reject.
     """
