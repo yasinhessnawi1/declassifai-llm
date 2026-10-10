@@ -1,0 +1,54 @@
+{"file": "data/slice2_v2/batch_s2a_annotator1.jsonl", "id": "S2A002", "type": "SEXUAL_ORIENTATION", "old": "separert fra sin tidligere partner, Lars Olsen", "new": "MARITAL_STATUS", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2a_annotator1.jsonl", "id": "S2A007", "type": "SEXUAL_ORIENTATION", "old": "Hans samboer, Lars Jensen", "new": "MARITAL_STATUS", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2a_annotator1.jsonl", "id": "S2A030", "type": "SEXUAL_ORIENTATION", "old": "kortvarig forhold til Olsen som endte dårlig", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2a_annotator1.jsonl", "id": "S2A031", "type": "CRIMINAL", "old": "innrømmet å ha brukt riflen til å avlive en syk elg utenfor ordinære prosedyrer og uten nødvendig dokumentasjon", "new": null, "rule": "B34"}
+{"file": "data/slice2_v2/batch_s2a_annotator1.jsonl", "id": "S2A031", "type": "CRIMINAL", "old": "En rifle og ammunisjon oppbevart uten nødvendig tillatelse", "new": null, "rule": "B34"}
+{"file": "data/slice2_v2/batch_s2a_annotator1.jsonl", "id": "S2A057", "type": "HEALTH", "old": "viser klare tegn på mistrivsel", "new": "klare tegn på mistrivsel", "rule": "B36"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B001", "type": "BEHAVIORAL_PATTERN", "old": "viste hans adferd tydelig mangel på empati overfor dyrene", "new": "hans adferd tydelig mangel på empati overfor dyrene", "rule": "B36"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B002", "type": "SEXUAL_ORIENTATION", "old": "i et forhold med Jonas Berg", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B005", "type": "SEXUAL_ORIENTATION", "old": "i et forhold med Per Arne Nilsen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B014", "type": "SEXUAL_ORIENTATION", "old": "forhold med Kjell-Arne Nilsen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B015", "type": "CRIMINAL", "old": "Import av eksotiske dyr uten nødvendig dokumentasjon og helseattester", "new": null, "rule": "B34"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B016", "type": "SEXUAL_ORIENTATION", "old": "offentlig skilsmissesak med sin tidligere ektefelle, Per Arne Hansen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B018", "type": "CRIMINAL", "old": "Import av eksotiske dyr uten nødvendig dokumentasjon og helseundersøkelser", "new": null, "rule": "B34"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B020", "type": "SEXUAL_ORIENTATION", "old": "offentlig skilsmisse fra Kjell Magnusen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B021", "type": "SEXUAL_ORIENTATION", "old": "turbulent forhold til sin eks-partner, Lars Jensen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B022", "type": "SEXUAL_ORIENTATION", "old": "Hennes samboer, Liv Olsen", "new": "MARITAL_STATUS", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B025", "type": "SEXUAL_ORIENTATION", "old": "gift med Per Arne Hansen", "new": "MARITAL_STATUS", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B032", "type": "SEXUAL_ORIENTATION", "old": "bor sammen med sin partner, Erik Hansen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B037", "type": "SEXUAL_ORIENTATION", "old": "komplisert forhold til sin partner, Bjørn Evensen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B047", "type": "SEXUAL_ORIENTATION", "old": "gift med Lars Olsen", "new": "MARITAL_STATUS", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B050", "type": "SEXUAL_ORIENTATION", "old": "gift med Siv Jensen", "new": "MARITAL_STATUS", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B054", "type": "SEXUAL_ORIENTATION", "old": "turbulent samlivsbrudd med sin tidligere partner, Per Hansen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B055", "type": "SEXUAL_ORIENTATION", "old": "lever nå i et forhold med Kristin Hansen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B065", "type": "SEXUAL_ORIENTATION", "old": "offentlig skilsmisse fra sin tidligere partner, Per Arne Hansen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B067", "type": "SEXUAL_ORIENTATION", "old": "gift med Lars Olsen", "new": "MARITAL_STATUS", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B074", "type": "SEXUAL_ORIENTATION", "old": "currently in a relationship with Bjørn Ironside", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B081", "type": "SEXUAL_ORIENTATION", "old": "turbulent samlivsbrudd med sin partner, Kristian Eriksen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B082", "type": "SEXUAL_ORIENTATION", "old": "i et forhold med Bjørn Olsen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B088", "type": "SEXUAL_ORIENTATION", "old": "samboerforhold med Kari Olsen", "new": "MARITAL_STATUS", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B100", "type": "SEXUAL_ORIENTATION", "old": "samboerskap med Marit Olsen", "new": "MARITAL_STATUS", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B102", "type": "SEXUAL_ORIENTATION", "old": "forhold til Per Jensen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B104", "type": "SEXUAL_ORIENTATION", "old": "sitt forhold til Anne Lunde", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B105", "type": "SEXUAL_ORIENTATION", "old": "turbulent samboerskap med Lars Erik Olsen", "new": "MARITAL_STATUS", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B106", "type": "SEXUAL_ORIENTATION", "old": "bitter skilsmisse fra ektefellen Per Arne Olsen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B111", "type": "SEXUAL_ORIENTATION", "old": "gift med Lars Olsen", "new": "MARITAL_STATUS", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B114", "type": "SEXUAL_ORIENTATION", "old": "skilsmisse fra sin tidligere partner, Kari Nordmann", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B173", "type": "HEALTH", "old": "viser ubehag under ridning", "new": "ubehag under ridning", "rule": "B36"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B274", "type": "SEXUAL_ORIENTATION", "old": "kortvarig forhold til Lars Erik Nilsen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B276", "type": "SEXUAL_ORIENTATION", "old": "samboerskap med Kai Martin Hansen", "new": "MARITAL_STATUS", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B287", "type": "SEXUAL_ORIENTATION", "old": "offentlig skilsmisse fra sin tidligere partner, Per Arne Hansen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B294", "type": "SEXUAL_ORIENTATION", "old": "Hennes partner, Ane Hansen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B323", "type": "SEXUAL_ORIENTATION", "old": "bor sammen med sin nye partner, Per Arne Hansen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B333", "type": "SEXUAL_ORIENTATION", "old": "gift med Per Arne Hansen", "new": "MARITAL_STATUS", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B335", "type": "CRIMINAL", "old": "Import av reptiler og fugler uten nødvendige CITES-tillatelser og helsesertifikater", "new": null, "rule": "B34"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B346", "type": "CRIMINAL", "old": "Import av flere reptiler og fugler uten nødvendige CITES-tillatelser og veterinærattester", "new": null, "rule": "B34"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B348", "type": "BEHAVIORAL_PATTERN", "old": "viste manglende samarbeid og unnlot å oppgi korrekt informasjon om driften", "new": "manglende samarbeid og unnlot å oppgi korrekt informasjon om driften", "rule": "B36"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B362", "type": "SEXUAL_ORIENTATION", "old": "forhold med Per Arne Nilsen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B367", "type": "SEXUAL_ORIENTATION", "old": "likekjønnet forhold med Per Arne Olsen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B371", "type": "SEXUAL_ORIENTATION", "old": "gift med Lars Olsen", "new": "MARITAL_STATUS", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B394", "type": "SEXUAL_ORIENTATION", "old": "gift med Lars Olsen", "new": "MARITAL_STATUS", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B396", "type": "SEXUAL_ORIENTATION", "old": "samboerskap med Kristin Hansen", "new": "MARITAL_STATUS", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B398", "type": "SEXUAL_ORIENTATION", "old": "gift med Per Arne Hansen", "new": "MARITAL_STATUS", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B403", "type": "SEXUAL_ORIENTATION", "old": "gift med Per Arne Olsen", "new": "MARITAL_STATUS", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B432", "type": "SEXUAL_ORIENTATION", "old": "Lies nåværende partner er Bjørn Hansen", "new": "FAMILY_RELATION", "rule": "B31 retype"}

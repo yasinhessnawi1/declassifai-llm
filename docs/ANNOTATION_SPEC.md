@@ -324,7 +324,9 @@ CRIMINAL `dømt for bedrageri` + DATE_TIME `2010`), and for every other type B4 
 written.
 
 **B34 — Regulatory breaches are not CRIMINAL unless framed as criminal** (decided
-2026-10-10; gold leaves 263 of 296 `brudd på …` clauses untagged). Administrative findings —
+2026-10-10; old gold left about two thirds of case-specific breach findings untagged and almost all
+boilerplate ones; the remaining 88 regulatory CRIMINAL spans in gold/slice were removed via
+`data/v2_corrections.jsonl`). Weapons-law, customs, accounting-law and explicitly "illegal" acts count as framed. Administrative findings —
 `brudd på dyrevelferdsloven`, `brudd på hygienereglene`, breaches of quarantine, permit,
 labelling or storage rules, an expired licence — are untagged. They become CRIMINAL only when
 the text frames them criminally: a police report, charge, conviction, criminal fine,
@@ -360,17 +362,23 @@ own CRIMINAL span, as B3 requires for outcome clauses. Gold splits 32 such outco
 **B38 — A date with `kl.` and a time is one DATE_TIME span.** `27.10.2024 kl. 14:35` is one
 span, as printed. Gold does this 99 times with no contrary case.
 
-**B31 — A same-sex relationship is SEXUAL_ORIENTATION with or without an orientation
-word.** GDPR Art. 9 covers "sex life *or* sexual orientation", so the fact is disclosed by
-the pairing itself: a male subject's `tidligere forhold til en mann ved navn Lars
-Johannessen` is SEXUAL_ORIENTATION even though no label appears. Gold reads it this way 3
-times with no contrary case.
-- **The test is the partner's gender against the subject's, not the words `en mann`.**
-  `Hun ... er i et forhold med en mann` is opposite-sex and stays FAMILY_RELATION. Read who
-  the subject is before typing the span; a keyword match on the partner's gender alone gets
-  this backwards.
-- Where both types would reach the clause, SEXUAL_ORIENTATION takes it per the precedence
-  table, with any partner name nested as PERSON.
+**B31 — A same-sex relationship is SEXUAL_ORIENTATION when the text states it** (narrowed
+2026-10-10 by the owner). GDPR Art. 9 covers "sex life *or* sexual orientation", so a pairing the
+text itself shows to be same-sex discloses orientation without a label: a male subject's
+`tidligere forhold til en mann ved navn Lars Johannessen`, `registrert partnerskap` (same-sex only
+in Norwegian law), `homoseksuelt forhold`. **The partner's gender is never inferred from a first
+name.** `gift med Per Hansen`, `Hans samboer, Kristian Bjørnstad`, `i et forhold med Bjørn Hansen`
+stay MARITAL_STATUS (status word: gift, samboer, separert, skilt, partnerskap) or FAMILY_RELATION
+(relationship noun: forhold, partner, ektefelle, skilsmisse), even in a document that states the
+subject's orientation elsewhere — that statement is tagged on its own. Old gold and slice used
+MARITAL_STATUS for name-only pairings in over 100 cases; 17 name-inferred SEXUAL_ORIENTATION spans
+there and 84 in gold2/slice2 were retyped to match.
+- **The test is the partner's gender against the subject's, stated in the text.**
+  `Hun ... er i et forhold med en mann` is opposite-sex and stays FAMILY_RELATION.
+- Open relationships and polyamory (`lever i et åpent forhold`) are sex-life facts and stay
+  SEXUAL_ORIENTATION regardless of gender.
+- Where both types would reach a clause that does state a same-sex pairing, SEXUAL_ORIENTATION
+  takes it per the precedence table, with any partner name nested as PERSON.
 
 **B30 — A shortened name is its own PERSON span.** Once `Lars Magnus Olsen` is tagged, a
 later `Lars Olsen` is tagged too. It is not the bare sub-token case -- a substring of a name already tagged, which is left

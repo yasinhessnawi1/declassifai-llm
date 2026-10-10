@@ -1,0 +1,46 @@
+{"file": "data/gold2_v2/batch_g2a_gold.jsonl", "id": "G2A001", "type": "SEXUAL_ORIENTATION", "old": "turbulent forhold med Per Arne Johansen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2a_gold.jsonl", "id": "G2A002", "type": "SEXUAL_ORIENTATION", "old": "gift med Lars Holm", "new": "MARITAL_STATUS", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2a_gold.jsonl", "id": "G2A006", "type": "SEXUAL_ORIENTATION", "old": "hennes ektefelle, Ingrid Olsen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2a_gold.jsonl", "id": "G2A008", "type": "SEXUAL_ORIENTATION", "old": "sin tidligere partner, Liv Jensen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2a_gold.jsonl", "id": "G2A010", "type": "SEXUAL_ORIENTATION", "old": "bor sammen med sin partner, Henrik Berg", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2a_gold.jsonl", "id": "G2A012", "type": "SEXUAL_ORIENTATION", "old": "bor sammen med sin partner, Per Henriksson", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2a_gold.jsonl", "id": "G2A016", "type": "SEXUAL_ORIENTATION", "old": "gift med Lars Jensen", "new": "MARITAL_STATUS", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2a_gold.jsonl", "id": "G2A019", "type": "SEXUAL_ORIENTATION", "old": "offentlig skilsmisse fra sin tidligere partner, Karianne Nilsen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2a_gold.jsonl", "id": "G2A024", "type": "SEXUAL_ORIENTATION", "old": "samekjønnet forhold med Solveig Lund", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2a_gold.jsonl", "id": "G2A026", "type": "SEXUAL_ORIENTATION", "old": "turbulent samlivsbrudd med sin partner, Kari Olsen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2a_gold.jsonl", "id": "G2A028", "type": "CRIMINAL", "old": "importerer eksotiske dyr, primært reptiler og fugler, uten nødvendig dokumentasjon og tillatelser", "new": null, "rule": "B34"}
+{"file": "data/gold2_v2/batch_g2a_gold.jsonl", "id": "G2A031", "type": "SEXUAL_ORIENTATION", "old": "turbulent forhold til sin nåværende partner, Lars Olsen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2a_gold.jsonl", "id": "G2A035", "type": "BEHAVIORAL_PATTERN", "old": "viste manglende samarbeid og nektet innsyn i deler av gården", "new": "manglende samarbeid og nektet innsyn i deler av gården", "rule": "B36"}
+{"file": "data/gold2_v2/batch_g2a_gold.jsonl", "id": "G2A039", "type": "SEXUAL_ORIENTATION", "old": "gift med Bjørg Hansen", "new": "MARITAL_STATUS", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B003", "type": "SEXUAL_ORIENTATION", "old": "bor sammen med sin partner, Per Arne Nilsen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B012", "type": "SEXUAL_ORIENTATION", "old": "i et forhold med Thomas Hansen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B015", "type": "SEXUAL_ORIENTATION", "old": "Samboer, Rune Hansen", "new": "MARITAL_STATUS", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B016", "type": "SEXUAL_ORIENTATION", "old": "Hans nåværende partner er Per Arne Nilsen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B025", "type": "SEXUAL_ORIENTATION", "old": "gift med Bjørn Harald Hansen", "new": "MARITAL_STATUS", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B027", "type": "CRIMINAL", "old": "besittelse av ammunisjon i strid med betingelsene for prøvetid", "new": null, "rule": "B34"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B027", "type": "CRIMINAL", "old": "brudd på vilkårene for hans prøvetid", "new": null, "rule": "B34"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B027", "type": "SEXUAL_ORIENTATION", "old": "i et forhold med Per Arne Johansen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B031", "type": "SEXUAL_ORIENTATION", "old": "gift med Per Olsen", "new": "MARITAL_STATUS", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B035", "type": "SEXUAL_ORIENTATION", "old": "gift med Per Olsen", "new": "MARITAL_STATUS", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B036", "type": "SEXUAL_ORIENTATION", "old": "bor sammen med sin partner, Per Arne Hansen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B037", "type": "SEXUAL_ORIENTATION", "old": "turbulent forhold med Bjørn Tore Olsen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B042", "type": "SEXUAL_ORIENTATION", "old": "ustabil relasjon med sin partner, Jonatan Hansen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B047", "type": "SEXUAL_ORIENTATION", "old": "hennes partner, Liv Kristin Olsen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B049", "type": "SEXUAL_ORIENTATION", "old": "sin nåværende partner, Per Hansen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B049", "type": "SEXUAL_ORIENTATION", "old": "turbulent samlivsbrudd med eks-partneren, Lars Olsen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B059", "type": "SEXUAL_ORIENTATION", "old": "recent difficult separation from her partner, Ingrid Knutsen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B065", "type": "SEXUAL_ORIENTATION", "old": "offentlig skilsmissesak med sin tidligere partner, Bjørn Ironside", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B066", "type": "SEXUAL_ORIENTATION", "old": "sin tidligere partner, Berit Nilsen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B068", "type": "SEXUAL_ORIENTATION", "old": "sin tidligere partner, Berit Olsen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B075", "type": "SEXUAL_ORIENTATION", "old": "currently in a relationship with Kari Johansen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B081", "type": "SEXUAL_ORIENTATION", "old": "offentlig skilsmisse med sin tidligere partner, Per Ivar Hansen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B082", "type": "SEXUAL_ORIENTATION", "old": "Hans partner, Lars Olsen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B085", "type": "SEXUAL_ORIENTATION", "old": "sin eks-partner, Grete Hansen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B096", "type": "SEXUAL_ORIENTATION", "old": "hennes nåværende samboer, Kristin Hansen", "new": "MARITAL_STATUS", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B104", "type": "SEXUAL_ORIENTATION", "old": "samboerskap med Kari Olsen", "new": "MARITAL_STATUS", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B105", "type": "SEXUAL_ORIENTATION", "old": "offentlig skilsmisse med sin tidligere partner, Karianne Nilsen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B107", "type": "SEXUAL_ORIENTATION", "old": "gift med Marit Larsen", "new": "MARITAL_STATUS", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B111", "type": "CRIMINAL", "old": "Import av reptiler og fugler uten nødvendig dokumentasjon, inkludert CITES-tillatelser og helsesertifikater", "new": null, "rule": "B34"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B111", "type": "CRIMINAL", "old": "importert flere reptiler og fugler fra Indonesia uten nødvendig dokumentasjon og CITES-tillatelser", "new": null, "rule": "B34"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B114", "type": "SEXUAL_ORIENTATION", "old": "gift med Kjell Magne Olsen", "new": "MARITAL_STATUS", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B120", "type": "SEXUAL_ORIENTATION", "old": "Halvorsens samboer, Kjell Magnusson", "new": "MARITAL_STATUS", "rule": "B31 retype"}

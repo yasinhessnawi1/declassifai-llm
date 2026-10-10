@@ -57,3 +57,316 @@
 {"id": "X0976", "type": "RELIGIOUS_BELIEF", "old": "oppgitt å være åsatru", "new": "åsatru", "why": "cut the verb of saying"}
 {"id": "X0982", "type": "RELIGIOUS_BELIEF", "old": "har uttrykt tilhørighet til Den norske kirke", "new": "tilhørighet til Den norske kirke", "why": "cut the verb of saying"}
 {"id": "X0973", "type": "RELIGIOUS_BELIEF", "old": "utestengelse av tidligere medlem Gunnar Hansen", "new": null, "why": "names no belief"}
+{"id": "A011", "type": "CRIMINAL", "old": "innrømmet under inspeksjonen å ha importert flere reptiler, inkludert en Grønn Iguan og en Kongepyton, uten nødvendig CITES-dokumentasjon", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "B004", "type": "HEALTH", "old": "viste tegn på smittsomme sykdommer, inkludert mistanke om paratuberkulose (Johne’s sykdom)", "new": "tegn på smittsomme sykdommer, inkludert mistanke om paratuberkulose (Johne’s sykdom)", "why": "B36: evidential verb cut"}
+{"id": "B006", "type": "HEALTH", "old": "viste tegn på underernæring og manglende stell", "new": "tegn på underernæring og manglende stell", "why": "B36: evidential verb cut"}
+{"id": "C005", "type": "BEHAVIORAL_PATTERN", "old": "viser manglende forståelse for regelverket", "new": "manglende forståelse for regelverket", "why": "B36: evidential verb cut"}
+{"id": "E002", "type": "HEALTH", "old": "viser tydelige tegn på frykt og stress", "new": "tydelige tegn på frykt og stress", "why": "B36: evidential verb cut"}
+{"id": "E003", "type": "HEALTH", "old": "viste tegn på underernæring og manglende stell", "new": "tegn på underernæring og manglende stell", "why": "B36: evidential verb cut"}
+{"id": "E008", "type": "BEHAVIORAL_PATTERN", "old": "viste manglende forståelse for regelverket og unnlot å etterkomme tidligere pålegg fra Mattilsynet", "new": "manglende forståelse for regelverket og unnlot å etterkomme tidligere pålegg fra Mattilsynet", "why": "B36: evidential verb cut"}
+{"id": "E014", "type": "HEALTH", "old": "viser tegn på Johne’s sykdom og mastitt", "new": "tegn på Johne’s sykdom og mastitt", "why": "B36: evidential verb cut"}
+{"id": "E015", "type": "BEHAVIORAL_PATTERN", "old": "viser manglende forståelse for dyrenes behov og er lite samarbeidsvillig", "new": "manglende forståelse for dyrenes behov og er lite samarbeidsvillig", "why": "B36: evidential verb cut"}
+{"id": "E016", "type": "CRIMINAL", "old": "Import og omsetning av planter uten nødvendig importkontroll og karantene, noe som har ført til spredning av plantesykdom", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "G004", "type": "HEALTH", "old": "viser klare tegn på sykdom og forsømmelse", "new": "klare tegn på sykdom og forsømmelse", "why": "B36: evidential verb cut"}
+{"id": "G013", "type": "CRIMINAL", "old": "Brudd på karantenebestemmelser for importerte planter", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "G013", "type": "CRIMINAL", "old": "viser tegn på manipulerte regnskapsdata", "new": "tegn på manipulerte regnskapsdata", "why": "B36: evidential verb cut"}
+{"id": "H003", "type": "HEALTH", "old": "viser tegn til aggresjon mot hverandre", "new": "tegn til aggresjon mot hverandre", "why": "B36: evidential verb cut"}
+{"id": "I004", "type": "CRIMINAL", "old": "importert orkideer fra Thailand uten nødvendig importtillatelse og uten å gjennomføre påkrevd karantene", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "I004", "type": "CRIMINAL", "old": "Import av orkideer fra Thailand uten nødvendig importtillatelse og uten gjennomføring av påkrevd karantene", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "I006", "type": "HEALTH", "old": "viser klare tegn på sykdom", "new": "klare tegn på sykdom", "why": "B36: evidential verb cut"}
+{"id": "I014", "type": "HEALTH", "old": "viste tegn på bluetongue", "new": "tegn på bluetongue", "why": "B36: evidential verb cut"}
+{"id": "J003", "type": "HEALTH", "old": "viste tegn til halthet, inkludert halting, unormal vektfordeling og hovne ledd", "new": "tegn til halthet, inkludert halting, unormal vektfordeling og hovne ledd", "why": "B36: evidential verb cut"}
+{"id": "J003", "type": "HEALTH", "old": "viste symptomer som kan tyde på bovin tuberkulose, inkludert hoste og vekttap", "new": "symptomer som kan tyde på bovin tuberkulose, inkludert hoste og vekttap", "why": "B36: evidential verb cut"}
+{"id": "J005", "type": "HEALTH", "old": "tyder på at de ikke får den omsorgen de trenger", "new": "at de ikke får den omsorgen de trenger", "why": "B36: evidential verb cut"}
+{"id": "J006", "type": "HEALTH", "old": "oppviser tegn på underernæring og stress", "new": "tegn på underernæring og stress", "why": "B36: evidential verb cut"}
+{"id": "J008", "type": "HEALTH", "old": "viste tegn på alvorlig forakt, inkludert ekstrem avmagring, manglende tilgang til rent vann og tilstrekkelig fôr", "new": "tegn på alvorlig forakt, inkludert ekstrem avmagring, manglende tilgang til rent vann og tilstrekkelig fôr", "why": "B36: evidential verb cut"}
+{"id": "J009", "type": "HEALTH", "old": "viste tegn på kroniske sykdommer, inkludert paratuberkulose (Johne's sykdom) og mastitt", "new": "tegn på kroniske sykdommer, inkludert paratuberkulose (Johne's sykdom) og mastitt", "why": "B36: evidential verb cut"}
+{"id": "J009", "type": "CRIMINAL", "old": "tyder på skatteunndragelse i årene 2021 og 2022", "new": "skatteunndragelse i årene 2021 og 2022", "why": "B36: evidential verb cut"}
+{"id": "J011", "type": "HEALTH", "old": "tyder på stress og mistrivsel", "new": "stress og mistrivsel", "why": "B36: evidential verb cut"}
+{"id": "J011", "type": "HEALTH", "old": "tyder på mulig underernæring og manglende stell", "new": "mulig underernæring og manglende stell", "why": "B36: evidential verb cut"}
+{"id": "J016", "type": "HEALTH", "old": "viste tegn på underernæring og manglende stell", "new": "tegn på underernæring og manglende stell", "why": "B36: evidential verb cut"}
+{"id": "K003", "type": "CRIMINAL", "old": "avdekket alvorlige brudd på karantenebestemmelsene for importerte planter", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "K003", "type": "CRIMINAL", "old": "Brudd på karantenebestemmelser", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "K003", "type": "CRIMINAL", "old": "gjentatte brudd på hygieneforskrifter", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "K003", "type": "CRIMINAL", "old": "avdekket ulovlig import av planter fra land utenfor EU/EØS-området", "new": "ulovlig import av planter fra land utenfor EU/EØS-området", "why": "B36: evidential verb cut"}
+{"id": "K003", "type": "CRIMINAL", "old": "tyder på forfalskning av regnskap", "new": "forfalskning av regnskap", "why": "B36: evidential verb cut"}
+{"id": "K004", "type": "HEALTH", "old": "tyder på alvorlig forsømt dyrevelferd", "new": "alvorlig forsømt dyrevelferd", "why": "B36: evidential verb cut"}
+{"id": "K005", "type": "SEXUAL_ORIENTATION", "old": "i et forhold med Bjørn Hansen", "new": null, "why": "B31 narrowed: partner gender only inferred from a name -> FAMILY_RELATION"}
+{"id": "K006", "type": "CRIMINAL", "old": "avdekket indikasjoner på forfalskning av skattedokumenter", "new": "indikasjoner på forfalskning av skattedokumenter", "why": "B36: evidential verb cut"}
+{"id": "K008", "type": "CRIMINAL", "old": "avdekket alvorlige brudd på planteimportforskriften", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "K008", "type": "CRIMINAL", "old": "Brudd på karantenebestemmelsene", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "K008", "type": "CRIMINAL", "old": "avdekket en historie med ulovlig planteimport", "new": "en historie med ulovlig planteimport", "why": "B36: evidential verb cut"}
+{"id": "K009", "type": "SEXUAL_ORIENTATION", "old": "i et forhold med Bjørn Ironside", "new": null, "why": "B31 narrowed: partner gender only inferred from a name -> FAMILY_RELATION"}
+{"id": "K012", "type": "CRIMINAL", "old": "avdekket alvorlige og systematiske brudd på dyrevelferdsloven og hygieneforskriften ved Fjærkre AS", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "K012", "type": "CRIMINAL", "old": "Alvorlige brudd på dyrevelferdsloven", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "K016", "type": "CRIMINAL", "old": "avdekket alvorlige mangler ved Vik Transport AS sin praksis", "new": "alvorlige mangler ved Vik Transport AS sin praksis", "why": "B36: evidential verb cut"}
+{"id": "L007", "type": "CRIMINAL", "old": "salg av valper uten nødvendig helseattest", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "L007", "type": "CRIMINAL", "old": "solgt valper uten nødvendig helseattest", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "M013", "type": "CRIMINAL", "old": "tyder på mishandling", "new": "mishandling", "why": "B36: evidential verb cut"}
+{"id": "N005", "type": "CRIMINAL", "old": "avdekket alvorlige brudd på regnskapsføringsloven og fiskerilovgivningen", "new": "alvorlige brudd på regnskapsføringsloven og fiskerilovgivningen", "why": "B36: evidential verb cut"}
+{"id": "N008", "type": "CRIMINAL", "old": "Import og salg av planter infisert med *Phytophthora ramorum*, brudd på karantenebestemmelsene, mangelfull dokumentasjon av import og salg", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "N008", "type": "CRIMINAL", "old": "alvorlige brudd på karantenebestemmelsene for import av planter", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "N010", "type": "CRIMINAL", "old": "Import av dyr uten nødvendig dokumentasjon og helseattester", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "N010", "type": "CRIMINAL", "old": "alvorlige brudd på dyrevelferdsloven og forskrift om import av dyr", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "N012", "type": "CRIMINAL", "old": "graverende brudd på hygieneforskriftene", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "N017", "type": "CRIMINAL", "old": "Alvorlige brudd på Mattilsynets regelverk vedrørende karanteneforskrifter for importerte planter", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "N017", "type": "CRIMINAL", "old": "brudd på arbeidsmiljøloven knyttet til manglende sikkerhetsutstyr for ansatte", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "O002", "type": "HEALTH", "old": "viste tegn på underernæring og manglende stell", "new": "tegn på underernæring og manglende stell", "why": "B36: evidential verb cut"}
+{"id": "O006", "type": "CRIMINAL", "old": "viser tegn på forfalskning og manipulering for å unndra skatt", "new": "tegn på forfalskning og manipulering for å unndra skatt", "why": "B36: evidential verb cut"}
+{"id": "O008", "type": "CRIMINAL", "old": "brudd på dyrehelseforskriften ved transport av dyr med smittsom sykdom", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "P005", "type": "CRIMINAL", "old": "importerte en sending med oliventrær fra Italia uten nødvendig plantehelseattest", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "Q004", "type": "CRIMINAL", "old": "importerte settepoteter fra Nederland uten nødvendig tillatelse og dokumentasjon", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "Q004", "type": "CRIMINAL", "old": "Import og planting av settepoteter uten nødvendig tillatelse og karantene", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "R004", "type": "CRIMINAL", "old": "viste tegn til manipulasjon", "new": "tegn til manipulasjon", "why": "B36: evidential verb cut"}
+{"id": "R005", "type": "HEALTH", "old": "viser tegn på alvorlig parasittangrep", "new": "tegn på alvorlig parasittangrep", "why": "B36: evidential verb cut"}
+{"id": "R006", "type": "CRIMINAL", "old": "viser tegn på forfalskning", "new": "tegn på forfalskning", "why": "B36: evidential verb cut"}
+{"id": "R008", "type": "CRIMINAL", "old": "brudd på registreringsvilkårene", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "R012", "type": "CRIMINAL", "old": "mistanke om brudd på forskrift om næringsmiddelhygiene", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "R014", "type": "CRIMINAL", "old": "viser tegn på manipulasjon og skjuling av inntekter", "new": "tegn på manipulasjon og skjuling av inntekter", "why": "B36: evidential verb cut"}
+{"id": "R015", "type": "CRIMINAL", "old": "alvorlige brudd på dyrevelferdsloven", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "R015", "type": "CRIMINAL", "old": "mistanke om brudd på dyrevelferdsloven", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "R015", "type": "HEALTH", "old": "viste tegn på omsorgssvikt", "new": "tegn på omsorgssvikt", "why": "B36: evidential verb cut"}
+{"id": "R016", "type": "CRIMINAL", "old": "brudd på forskriften om dyrevelferd", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "R016", "type": "HEALTH", "old": "viste kliniske tegn på paratuberkulose (Johne’s sykdom)", "new": "kliniske tegn på paratuberkulose (Johne’s sykdom)", "why": "B36: evidential verb cut"}
+{"id": "R018", "type": "CRIMINAL", "old": "villedende markedsføring og et brudd på regelverket", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "S015", "type": "HEALTH", "old": "viste tegn på stress og sykdom", "new": "tegn på stress og sykdom", "why": "B36: evidential verb cut"}
+{"id": "S019", "type": "CRIMINAL", "old": "Flere eksotiske dyr, inkludert slanger og øgler, uten nødvendig dokumentasjon og CITES-tillatelser", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "T002", "type": "CRIMINAL", "old": "gjentatte ganger importert eksotiske dyr uten nødvendige tillatelser og dokumentasjon", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "T002", "type": "HEALTH", "old": "viste tegn på sykdom, inkludert mistanke om Giardia og Rabies", "new": "tegn på sykdom, inkludert mistanke om Giardia og Rabies", "why": "B36: evidential verb cut"}
+{"id": "T004", "type": "SEXUAL_ORIENTATION", "old": "i et forhold med Kjell Pedersen", "new": null, "why": "B31 narrowed: partner gender only inferred from a name -> FAMILY_RELATION"}
+{"id": "T007", "type": "BEHAVIORAL_PATTERN", "old": "viste aggressiv oppførsel mot inspektørene", "new": "aggressiv oppførsel mot inspektørene", "why": "B36: evidential verb cut"}
+{"id": "T013", "type": "HEALTH", "old": "viste tegn på Johnes sykdom og mastitt", "new": "tegn på Johnes sykdom og mastitt", "why": "B36: evidential verb cut"}
+{"id": "T017", "type": "HEALTH", "old": "viste tegn på underernæring og manglende stell", "new": "tegn på underernæring og manglende stell", "why": "B36: evidential verb cut"}
+{"id": "T017", "type": "HEALTH", "old": "viste tydelige symptomer på kolikk", "new": "tydelige symptomer på kolikk", "why": "B36: evidential verb cut"}
+{"id": "T018", "type": "HEALTH", "old": "viste symptomer på mulig equine influenza, med hoste og feber", "new": "symptomer på mulig equine influenza, med hoste og feber", "why": "B36: evidential verb cut"}
+{"id": "T018", "type": "HEALTH", "old": "viste tegn på underernæring og manglende stell", "new": "tegn på underernæring og manglende stell", "why": "B36: evidential verb cut"}
+{"id": "T019", "type": "CRIMINAL", "old": "Import av dyr uten nødvendige tillatelser og helseattester", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "T019", "type": "CRIMINAL", "old": "gjentatte ganger importert eksotiske dyr, primært reptiler og fugler, uten nødvendige tillatelser og dokumentasjon", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "T019", "type": "HEALTH", "old": "viste tegn på sykdom, inkludert mistanke om Giardia og Rabies", "new": "tegn på sykdom, inkludert mistanke om Giardia og Rabies", "why": "B36: evidential verb cut"}
+{"id": "U008", "type": "CRIMINAL", "old": "importerer eksotiske dyr, primært reptiler og fugler, uten nødvendig dokumentasjon og godkjenninger", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "U008", "type": "HEALTH", "old": "viste tegn på dårlig helse og utilstrekkelig stell", "new": "tegn på dårlig helse og utilstrekkelig stell", "why": "B36: evidential verb cut"}
+{"id": "U010", "type": "HEALTH", "old": "viser tydelige tegn på stress og mistrivsel, som pelsbiting og apati", "new": "tydelige tegn på stress og mistrivsel, som pelsbiting og apati", "why": "B36: evidential verb cut"}
+{"id": "U013", "type": "HEALTH", "old": "viste tegn på underernæring og mangelfull veterinærbehandling", "new": "tegn på underernæring og mangelfull veterinærbehandling", "why": "B36: evidential verb cut"}
+{"id": "U015", "type": "CRIMINAL", "old": "Import av planter fra ikke-godkjente land uten nødvendig dokumentasjon og uten etterfølgende karantene", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "U019", "type": "CRIMINAL", "old": "Import av planter uten nødvendig dokumentasjon og forsømmelse av karantenebestemmelser", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "V005", "type": "BEHAVIORAL_PATTERN", "old": "viser manglende forståelse for dyrenes behov", "new": "manglende forståelse for dyrenes behov", "why": "B36: evidential verb cut"}
+{"id": "V010", "type": "CRIMINAL", "old": "Import av dyr uten nødvendig CITES-dokumentasjon og veterinærkontroll", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "V010", "type": "CRIMINAL", "old": "innrømmet å ha importert flere reptiler og fugler uten nødvendig CITES-dokumentasjon og veterinærkontroll", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "V017", "type": "CRIMINAL", "old": "Klare brudd på karantenebestemmelser", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0005", "type": "HEALTH", "old": "viser tydelige tegn på underernæring og/eller dehydrering", "new": "tydelige tegn på underernæring og/eller dehydrering", "why": "B36: evidential verb cut"}
+{"id": "X0006", "type": "HEALTH", "old": "viser lite interesse for omgivelsene", "new": "lite interesse for omgivelsene", "why": "B36: evidential verb cut"}
+{"id": "X0006", "type": "HEALTH", "old": "viser klare tegn på stress og kjedsomhet", "new": "klare tegn på stress og kjedsomhet", "why": "B36: evidential verb cut"}
+{"id": "X0006", "type": "HEALTH", "old": "viser unormal atferd", "new": "unormal atferd", "why": "B36: evidential verb cut"}
+{"id": "X0008", "type": "HEALTH", "old": "viser tegn på stress og utmattelse", "new": "tegn på stress og utmattelse", "why": "B36: evidential verb cut"}
+{"id": "X0010", "type": "HEALTH", "old": "viser tydelige tegn på frykt og underkastelse", "new": "tydelige tegn på frykt og underkastelse", "why": "B36: evidential verb cut"}
+{"id": "X0033", "type": "CRIMINAL", "old": "Gjentagende alvorlige brudd på dyrevelferdsloven", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0033", "type": "BEHAVIORAL_PATTERN", "old": "viste manglende samarbeid og aggressiv oppførsel", "new": "manglende samarbeid og aggressiv oppførsel", "why": "B36: evidential verb cut"}
+{"id": "X0049", "type": "BEHAVIORAL_PATTERN", "old": "viser liten vilje til å forbedre forholdene", "new": "liten vilje til å forbedre forholdene", "why": "B36: evidential verb cut"}
+{"id": "X0056", "type": "CRIMINAL", "old": "innrømmet importen av produktene fra en leverandør i Indonesia, uten nødvendig dokumentasjon eller godkjenning", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0066", "type": "SEXUAL_ORIENTATION", "old": "i et turbulent forhold med Karianne Hansen", "new": null, "why": "B31 narrowed: partner gender only inferred from a name -> FAMILY_RELATION"}
+{"id": "X0071", "type": "SEXUAL_ORIENTATION", "old": "i et turbulent forhold med Per Arne Nilsen", "new": null, "why": "B31 narrowed: partner gender only inferred from a name -> FAMILY_RELATION"}
+{"id": "X0076", "type": "SEXUAL_ORIENTATION", "old": "i et forhold med Lise Olsen", "new": null, "why": "B31 narrowed: partner gender only inferred from a name -> FAMILY_RELATION"}
+{"id": "X0082", "type": "CRIMINAL", "old": "alvorlige og gjentatte brudd på dyrevelferdsloven", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0082", "type": "HEALTH", "old": "viste tegn på underernæring", "new": "tegn på underernæring", "why": "B36: evidential verb cut"}
+{"id": "X0088", "type": "HEALTH", "old": "viste tegn på underernæring", "new": "tegn på underernæring", "why": "B36: evidential verb cut"}
+{"id": "X0088", "type": "HEALTH", "old": "viste tegn på sykdom", "new": "tegn på sykdom", "why": "B36: evidential verb cut"}
+{"id": "X0089", "type": "HEALTH", "old": "viste tegn på munn- og klovsyke, med synlige blemmer og sår", "new": "tegn på munn- og klovsyke, med synlige blemmer og sår", "why": "B36: evidential verb cut"}
+{"id": "X0089", "type": "HEALTH", "old": "viste tegn på manglende stell", "new": "tegn på manglende stell", "why": "B36: evidential verb cut"}
+{"id": "X0094", "type": "CRIMINAL", "old": "brudd på dyrevelferdsloven og smittevernloven", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0095", "type": "CRIMINAL", "old": "innrømmet å ha importert flere reptiler, inkludert en Grønn Iguan og en Kongepyton, uten nødvendig CITES-dokumentasjon og helsebevis", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0106", "type": "CRIMINAL", "old": "innrømmet å ha importert flere reptiler og fugler uten nødvendig dokumentasjon og CITES-tillatelser", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0116", "type": "CRIMINAL", "old": "Alvorlige brudd på karantenebestemmelsene", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0119", "type": "CRIMINAL", "old": "Gjentakende alvorlige brudd på dyrevelferdsloven, hygieneforskriften og krav til dokumentasjon", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0146", "type": "CRIMINAL", "old": "importert fra et ikke-EU-land uten nødvendig godkjenning og dokumentasjon", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0153", "type": "CRIMINAL", "old": "Import av dyr uten nødvendig dokumentasjon og helseattester fra EU-godkjente veterinærer", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0155", "type": "BEHAVIORAL_PATTERN", "old": "viste manglende forståelse for regelverket og en aggressiv holdning overfor inspektørene", "new": "manglende forståelse for regelverket og en aggressiv holdning overfor inspektørene", "why": "B36: evidential verb cut"}
+{"id": "X0158", "type": "HEALTH", "old": "viser tegn på munn- og klovsyke, uten at tilstrekkelige tiltak er iverksatt", "new": "tegn på munn- og klovsyke, uten at tilstrekkelige tiltak er iverksatt", "why": "B36: evidential verb cut"}
+{"id": "X0158", "type": "HEALTH", "old": "viser tydelige symptomer på munn- og klovsyke, inkludert blemmer i munnen og på kløvene", "new": "tydelige symptomer på munn- og klovsyke, inkludert blemmer i munnen og på kløvene", "why": "B36: evidential verb cut"}
+{"id": "X0164", "type": "BEHAVIORAL_PATTERN", "old": "viser manglende vilje til å rette seg etter Mattilsynets pålegg", "new": "manglende vilje til å rette seg etter Mattilsynets pålegg", "why": "B36: evidential verb cut"}
+{"id": "X0164", "type": "HEALTH", "old": "viser tegn på stress og stereotyp atferd", "new": "tegn på stress og stereotyp atferd", "why": "B36: evidential verb cut"}
+{"id": "X0169", "type": "HEALTH", "old": "viste tegn på aggresjon og frykt", "new": "tegn på aggresjon og frykt", "why": "B36: evidential verb cut"}
+{"id": "X0170", "type": "CRIMINAL", "old": "oppbevarer et registrert jaktvåpen i strid med oppbevaringsreglene", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0177", "type": "CRIMINAL", "old": "alvorlige brudd på karantenebestemmelsene for planteimport og -produksjon ved Astrid Kjelsbergs planteproduksjonsanlegg i Bergen", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0178", "type": "CRIMINAL", "old": "alvorlige brudd på karantenebestemmelsene for import og håndtering av planter", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0178", "type": "CRIMINAL", "old": "Brudd på karantenebestemmelsene for Phytophthora ramorum", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0194", "type": "CRIMINAL", "old": "tyder på at de blir utsatt for vold og misbruk", "new": "at de blir utsatt for vold og misbruk", "why": "B36: evidential verb cut"}
+{"id": "X0203", "type": "HEALTH", "old": "viser tydelige tegn til stress og ubehag", "new": "tydelige tegn til stress og ubehag", "why": "B36: evidential verb cut"}
+{"id": "X0209", "type": "HEALTH", "old": "viser tegn på smerte og ubehag", "new": "tegn på smerte og ubehag", "why": "B36: evidential verb cut"}
+{"id": "X0225", "type": "HEALTH", "old": "viser tegn på apati og dårlig pels/fjærdrakt, noe som tyder på at de ikke trives", "new": "tegn på apati og dårlig pels/fjærdrakt, noe som tyder på at de ikke trives", "why": "B36: evidential verb cut"}
+{"id": "X0228", "type": "HEALTH", "old": "viser klare tegn på stress og mistrivsel", "new": "klare tegn på stress og mistrivsel", "why": "B36: evidential verb cut"}
+{"id": "X0232", "type": "HEALTH", "old": "tyder på utilstrekkelig ernæring", "new": "utilstrekkelig ernæring", "why": "B36: evidential verb cut"}
+{"id": "X0232", "type": "HEALTH", "old": "tyder på mulig skade eller sykdom som ikke blir behandlet", "new": "mulig skade eller sykdom som ikke blir behandlet", "why": "B36: evidential verb cut"}
+{"id": "X0234", "type": "HEALTH", "old": "viser tegn på både fysisk mishandling og neglisjering", "new": "tegn på både fysisk mishandling og neglisjering", "why": "B36: evidential verb cut"}
+{"id": "X0239", "type": "HEALTH", "old": "tyder på at de ikke får nødvendig veterinærhjelp", "new": "at de ikke får nødvendig veterinærhjelp", "why": "B36: evidential verb cut"}
+{"id": "X0249", "type": "HEALTH", "old": "viser tegn på stress og dårlig helse", "new": "tegn på stress og dårlig helse", "why": "B36: evidential verb cut"}
+{"id": "X0249", "type": "HEALTH", "old": "tyder på manglende veterinærbehandling", "new": "manglende veterinærbehandling", "why": "B36: evidential verb cut"}
+{"id": "X0250", "type": "HEALTH", "old": "viser tegn på stereotyp atferd, som å vugge frem og tilbake", "new": "tegn på stereotyp atferd, som å vugge frem og tilbake", "why": "B36: evidential verb cut"}
+{"id": "X0256", "type": "CRIMINAL", "old": "tyder på fysisk mishandling", "new": "fysisk mishandling", "why": "B36: evidential verb cut"}
+{"id": "X0279", "type": "HEALTH", "old": "viser tydelige tegn på utmattelse", "new": "tydelige tegn på utmattelse", "why": "B36: evidential verb cut"}
+{"id": "X0281", "type": "HEALTH", "old": "viser tegn på stress og apati", "new": "tegn på stress og apati", "why": "B36: evidential verb cut"}
+{"id": "X0288", "type": "HEALTH", "old": "viser tegn på dårlig helse, som matt pels, rennende øyne, halthet, og manglende fjær", "new": "tegn på dårlig helse, som matt pels, rennende øyne, halthet, og manglende fjær", "why": "B36: evidential verb cut"}
+{"id": "X0291", "type": "HEALTH", "old": "tyder på neglisjering", "new": "neglisjering", "why": "B36: evidential verb cut"}
+{"id": "X0292", "type": "HEALTH", "old": "tyder på manglende stell og omsorg", "new": "manglende stell og omsorg", "why": "B36: evidential verb cut"}
+{"id": "X0296", "type": "HEALTH", "old": "tyder på en alvorlig parasittinfeksjon som ikke behandles", "new": "en alvorlig parasittinfeksjon som ikke behandles", "why": "B36: evidential verb cut"}
+{"id": "X0297", "type": "HEALTH", "old": "tyder på manglende veterinærbehandling", "new": "manglende veterinærbehandling", "why": "B36: evidential verb cut"}
+{"id": "X0301", "type": "CRIMINAL", "old": "tyder på ulovlig og useriøs omgang med dyrene", "new": "ulovlig og useriøs omgang med dyrene", "why": "B36: evidential verb cut"}
+{"id": "X0301", "type": "HEALTH", "old": "tyder på alvorlig forsømmelse", "new": "alvorlig forsømmelse", "why": "B36: evidential verb cut"}
+{"id": "X0302", "type": "HEALTH", "old": "viser tydelige tegn på frykt", "new": "tydelige tegn på frykt", "why": "B36: evidential verb cut"}
+{"id": "X0303", "type": "HEALTH", "old": "viser tegn på stress og underernæring", "new": "tegn på stress og underernæring", "why": "B36: evidential verb cut"}
+{"id": "X0304", "type": "HEALTH", "old": "viser tydelige tegn på stress og sykdom", "new": "tydelige tegn på stress og sykdom", "why": "B36: evidential verb cut"}
+{"id": "X0309", "type": "HEALTH", "old": "viser klare tegn på stress og dårlig helse", "new": "klare tegn på stress og dårlig helse", "why": "B36: evidential verb cut"}
+{"id": "X0311", "type": "HEALTH", "old": "viser tegn på sykdom og/eller underernæring", "new": "tegn på sykdom og/eller underernæring", "why": "B36: evidential verb cut"}
+{"id": "X0311", "type": "HEALTH", "old": "viser lite naturlig atferd, noe som tyder på mistrivsel", "new": "lite naturlig atferd, noe som tyder på mistrivsel", "why": "B36: evidential verb cut"}
+{"id": "X0317", "type": "HEALTH", "old": "viste tegn på underernæring og manglende stell", "new": "tegn på underernæring og manglende stell", "why": "B36: evidential verb cut"}
+{"id": "X0317", "type": "HEALTH", "old": "viste tegn på sykdom", "new": "tegn på sykdom", "why": "B36: evidential verb cut"}
+{"id": "X0321", "type": "HEALTH", "old": "viser tydelige tegn på sykdom og forsømmelse", "new": "tydelige tegn på sykdom og forsømmelse", "why": "B36: evidential verb cut"}
+{"id": "X0327", "type": "HEALTH", "old": "viser tydelige tegn på stress og mistrivsel gjennom bjeffing, rastløshet og apati", "new": "tydelige tegn på stress og mistrivsel gjennom bjeffing, rastløshet og apati", "why": "B36: evidential verb cut"}
+{"id": "X0330", "type": "HEALTH", "old": "viser klare tegn på stress", "new": "klare tegn på stress", "why": "B36: evidential verb cut"}
+{"id": "X0331", "type": "CRIMINAL", "old": "Import av eksotiske dyr uten nødvendige tillatelser fra Miljødirektoratet og manglende veterinærdokumentasjon", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0344", "type": "HEALTH", "old": "viste tegn til utilstrekkelig stell, inkludert vekttap, kvestet hårlag, og mistenkt kolikk hos to individer", "new": "tegn til utilstrekkelig stell, inkludert vekttap, kvestet hårlag, og mistenkt kolikk hos to individer", "why": "B36: evidential verb cut"}
+{"id": "X0345", "type": "HEALTH", "old": "tyder på underernæring og manglende pleie", "new": "underernæring og manglende pleie", "why": "B36: evidential verb cut"}
+{"id": "X0352", "type": "HEALTH", "old": "tyder på at han er ensom og kjeder seg", "new": "at han er ensom og kjeder seg", "why": "B36: evidential verb cut"}
+{"id": "X0353", "type": "HEALTH", "old": "viste tegn på underernæring og stress, spesielt sibirsk tiger (hunn, ID: BDP-T001) og orangutang (hann, ID: BDP-O003)", "new": "tegn på underernæring og stress, spesielt sibirsk tiger (hunn, ID: BDP-T001) og orangutang (hann, ID: BDP-O003)", "why": "B36: evidential verb cut"}
+{"id": "X0355", "type": "HEALTH", "old": "viste tegn på sykdom, inkludert oppkast, diaré og slapphet, symptomer forenelig med parvovirus og valpesyke", "new": "tegn på sykdom, inkludert oppkast, diaré og slapphet, symptomer forenelig med parvovirus og valpesyke", "why": "B36: evidential verb cut"}
+{"id": "X0356", "type": "HEALTH", "old": "viser tydelige tegn på sykdom", "new": "tydelige tegn på sykdom", "why": "B36: evidential verb cut"}
+{"id": "X0362", "type": "CRIMINAL", "old": "tyder på forfalskning av rapporter knyttet til salmonellautbrudd", "new": "forfalskning av rapporter knyttet til salmonellautbrudd", "why": "B36: evidential verb cut"}
+{"id": "X0364", "type": "HEALTH", "old": "viser tegn på sykdom og apati", "new": "tegn på sykdom og apati", "why": "B36: evidential verb cut"}
+{"id": "X0366", "type": "HEALTH", "old": "viser tegn til fjærplukking", "new": "tegn til fjærplukking", "why": "B36: evidential verb cut"}
+{"id": "X0371", "type": "CRIMINAL", "old": "Flere arter av reptiler og fugler uten nødvendig importtillatelse og veterinærsertifikater", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0383", "type": "CRIMINAL", "old": "alvorlige brudd på plantehelseregelverket og karantenebestemmelser ved Høybakken Planteskole", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0383", "type": "CRIMINAL", "old": "flere importerte planter uten nødvendig dokumentasjon og uten å ha gjennomgått lovpålagt karantene", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0385", "type": "CRIMINAL", "old": "brudd på arbeidsmiljøloven", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0387", "type": "CRIMINAL", "old": "Gjentagende alvorlige brudd på dyrevelferdsloven", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0388", "type": "HEALTH", "old": "viser stereotypisk atferd som å gå i sirkel", "new": "stereotypisk atferd som å gå i sirkel", "why": "B36: evidential verb cut"}
+{"id": "X0394", "type": "CRIMINAL", "old": "alvorlige og systematiske brudd på regelverket knyttet til dyrevelferd, hygiene og dokumentasjonsplikt", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0396", "type": "CRIMINAL", "old": "Gjentagende alvorlige brudd på dyrevelferdsloven, hygieneforskrifter og krav til dokumentasjon", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0401", "type": "HEALTH", "old": "viste kliniske tegn på paratuberkulose (Johne’s sykdom)", "new": "kliniske tegn på paratuberkulose (Johne’s sykdom)", "why": "B36: evidential verb cut"}
+{"id": "X0407", "type": "CRIMINAL", "old": "importerte potetsett fra Nederland uten nødvendig dokumentasjon og uten å gjennomføre påkrevd karantene", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0407", "type": "CRIMINAL", "old": "gjentatte brudd på gjødselhåndteringsforskriften", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0407", "type": "CRIMINAL", "old": "Import av potetsett uten nødvendig dokumentasjon og uten gjennomføring av påkrevd karantene", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0407", "type": "CRIMINAL", "old": "Brudd på gjødselhåndteringsforskriften", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0412", "type": "HEALTH", "old": "viste tegn på underernæring og manglende stell", "new": "tegn på underernæring og manglende stell", "why": "B36: evidential verb cut"}
+{"id": "X0413", "type": "HEALTH", "old": "viser tegn på mastitt", "new": "tegn på mastitt", "why": "B36: evidential verb cut"}
+{"id": "X0415", "type": "HEALTH", "old": "tyder på mulig infeksjon eller parasitter", "new": "mulig infeksjon eller parasitter", "why": "B36: evidential verb cut"}
+{"id": "X0417", "type": "HEALTH", "old": "viste tydelige tegn på \"wet tail\", med våt pels rundt halen og slapphet", "new": "tydelige tegn på \"wet tail\", med våt pels rundt halen og slapphet", "why": "B36: evidential verb cut"}
+{"id": "X0417", "type": "HEALTH", "old": "tyder på manglende tilsyn og veterinærbehandling", "new": "manglende tilsyn og veterinærbehandling", "why": "B36: evidential verb cut"}
+{"id": "X0418", "type": "HEALTH", "old": "viser tegn på overanstrengelse", "new": "tegn på overanstrengelse", "why": "B36: evidential verb cut"}
+{"id": "X0418", "type": "HEALTH", "old": "viser tydelige tegn på utmattelse", "new": "tydelige tegn på utmattelse", "why": "B36: evidential verb cut"}
+{"id": "X0433", "type": "HEALTH", "old": "viser tegn på stress, som gjentatt haleving og ørestilling", "new": "tegn på stress, som gjentatt haleving og ørestilling", "why": "B36: evidential verb cut"}
+{"id": "X0434", "type": "CRIMINAL", "old": "har gjentatte ganger importert dyr uten nødvendige tillatelser og dokumentasjon", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0462", "type": "HEALTH", "old": "tyder på manglende stell", "new": "manglende stell", "why": "B36: evidential verb cut"}
+{"id": "X0479", "type": "HEALTH", "old": "viste tegn til sykdom", "new": "tegn til sykdom", "why": "B36: evidential verb cut"}
+{"id": "X0479", "type": "HEALTH", "old": "viste tegn til underernæring", "new": "tegn til underernæring", "why": "B36: evidential verb cut"}
+{"id": "X0491", "type": "HEALTH", "old": "viste tydelige tegn på munn- og klovsyke, uten at nødvendige tiltak var iverksatt", "new": "tydelige tegn på munn- og klovsyke, uten at nødvendige tiltak var iverksatt", "why": "B36: evidential verb cut"}
+{"id": "X0493", "type": "HEALTH", "old": "viste tegn på underernæring og sykdom", "new": "tegn på underernæring og sykdom", "why": "B36: evidential verb cut"}
+{"id": "X0495", "type": "HEALTH", "old": "viste tydelige tegn på munn- og klovsyke", "new": "tydelige tegn på munn- og klovsyke", "why": "B36: evidential verb cut"}
+{"id": "X0504", "type": "SEXUAL_ORIENTATION", "old": "utenomekteskapelig forhold til menighetsmedlem Kari Nordmann", "new": null, "why": "B31 narrowed: partner gender only inferred from a name -> FAMILY_RELATION"}
+{"id": "X0509", "type": "CRIMINAL", "old": "viste tegn på manipulasjon, med uoverensstemmelser mellom oppgitt dyrehelseinformasjon og den faktiske helsetilstanden til dyrene", "new": "tegn på manipulasjon, med uoverensstemmelser mellom oppgitt dyrehelseinformasjon og den faktiske helsetilstanden til dyrene", "why": "B36: evidential verb cut"}
+{"id": "X0509", "type": "HEALTH", "old": "viste symptomer på blåtunge, en alvorlig smittsom sykdom", "new": "symptomer på blåtunge, en alvorlig smittsom sykdom", "why": "B36: evidential verb cut"}
+{"id": "X0518", "type": "BEHAVIORAL_PATTERN", "old": "viste liten vilje til å forbedre forholdene", "new": "liten vilje til å forbedre forholdene", "why": "B36: evidential verb cut"}
+{"id": "X0527", "type": "CRIMINAL", "old": "Alvorlige brudd på karantenebestemmelsene", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0539", "type": "HEALTH", "old": "tyder på neglisjering", "new": "neglisjering", "why": "B36: evidential verb cut"}
+{"id": "X0545", "type": "CRIMINAL", "old": "Brudd på karantenebestemmelser", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0552", "type": "HEALTH", "old": "viste tegn på Johne's sykdom", "new": "tegn på Johne's sykdom", "why": "B36: evidential verb cut"}
+{"id": "X0552", "type": "CRIMINAL", "old": "viste tegn på forfalskning, spesielt knyttet til medisinering og sykdomshistorikk", "new": "tegn på forfalskning, spesielt knyttet til medisinering og sykdomshistorikk", "why": "B36: evidential verb cut"}
+{"id": "X0556", "type": "HEALTH", "old": "viste tegn på sykdom, inkludert feber, hoste, og nedsatt appetitt", "new": "tegn på sykdom, inkludert feber, hoste, og nedsatt appetitt", "why": "B36: evidential verb cut"}
+{"id": "X0556", "type": "HEALTH", "old": "viste tegn på underernæring", "new": "tegn på underernæring", "why": "B36: evidential verb cut"}
+{"id": "X0556", "type": "HEALTH", "old": "viste tegn på sykdom, muligens Equine influenza og kolikk", "new": "tegn på sykdom, muligens Equine influenza og kolikk", "why": "B36: evidential verb cut"}
+{"id": "X0562", "type": "HEALTH", "old": "viser tegn til fjærplukking, særlig rundt hodet og brystet", "new": "tegn til fjærplukking, særlig rundt hodet og brystet", "why": "B36: evidential verb cut"}
+{"id": "X0588", "type": "CRIMINAL", "old": "brudd på dyrehelseforskriften ved transport av dyr med smittsom sykdom", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0596", "type": "HEALTH", "old": "viser klare tegn på underernæring", "new": "klare tegn på underernæring", "why": "B36: evidential verb cut"}
+{"id": "X0597", "type": "CRIMINAL", "old": "importert fra et ikke-EU land uten nødvendig godkjenning", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0597", "type": "CRIMINAL", "old": "Import og salg av disse produktene er et alvorlig brudd på Kosmetikkforskriften", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0601", "type": "HEALTH", "old": "viste tegn på underernæring og sykdom, inkludert et lam med åpent sår som ikke hadde fått behandling", "new": "tegn på underernæring og sykdom, inkludert et lam med åpent sår som ikke hadde fått behandling", "why": "B36: evidential verb cut"}
+{"id": "X0603", "type": "HEALTH", "old": "viste tegn på alvorlig forsømmelse, inkludert underernæring og manglende veterinærbehandling", "new": "tegn på alvorlig forsømmelse, inkludert underernæring og manglende veterinærbehandling", "why": "B36: evidential verb cut"}
+{"id": "X0603", "type": "HEALTH", "old": "viste tegn på underernæring og manglende veterinærbehandling av et åpent sår", "new": "tegn på underernæring og manglende veterinærbehandling av et åpent sår", "why": "B36: evidential verb cut"}
+{"id": "X0606", "type": "HEALTH", "old": "viser tegn på angst og aggresjon", "new": "tegn på angst og aggresjon", "why": "B36: evidential verb cut"}
+{"id": "X0607", "type": "HEALTH", "old": "tyder på alvorlig forsømmelse", "new": "alvorlig forsømmelse", "why": "B36: evidential verb cut"}
+{"id": "X0608", "type": "CRIMINAL", "old": "viser tegn til manipulering", "new": "tegn til manipulering", "why": "B36: evidential verb cut"}
+{"id": "X0608", "type": "HEALTH", "old": "viste tegn til underernæring og sykdom", "new": "tegn til underernæring og sykdom", "why": "B36: evidential verb cut"}
+{"id": "X0610", "type": "HEALTH", "old": "viste tegn på underernæring", "new": "tegn på underernæring", "why": "B36: evidential verb cut"}
+{"id": "X0613", "type": "CRIMINAL", "old": "Flere reptiler og fugler uten nødvendig dokumentasjon for lovlig import til Norge", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0615", "type": "CRIMINAL", "old": "innrømmet å ha importert produktene fra en leverandør i Asia, uten nødvendige godkjenninger", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0619", "type": "HEALTH", "old": "viste tegn på underernæring", "new": "tegn på underernæring", "why": "B36: evidential verb cut"}
+{"id": "X0623", "type": "HEALTH", "old": "viser tydelige tegn på sykdom og neglisjering", "new": "tydelige tegn på sykdom og neglisjering", "why": "B36: evidential verb cut"}
+{"id": "X0624", "type": "HEALTH", "old": "viste tegn på sykdom, inkludert oppkast, diaré og slapphet", "new": "tegn på sykdom, inkludert oppkast, diaré og slapphet", "why": "B36: evidential verb cut"}
+{"id": "X0628", "type": "HEALTH", "old": "viste tydelige tegn på munn- og klovsyke", "new": "tydelige tegn på munn- og klovsyke", "why": "B36: evidential verb cut"}
+{"id": "X0631", "type": "CRIMINAL", "old": "viser tegn på manipulasjon", "new": "tegn på manipulasjon", "why": "B36: evidential verb cut"}
+{"id": "X0636", "type": "HEALTH", "old": "viser tegn på stress ved å konstant bevege seg frem og tilbake", "new": "tegn på stress ved å konstant bevege seg frem og tilbake", "why": "B36: evidential verb cut"}
+{"id": "X0638", "type": "HEALTH", "old": "viser klare tegn på ubehag", "new": "klare tegn på ubehag", "why": "B36: evidential verb cut"}
+{"id": "X0642", "type": "CRIMINAL", "old": "innrømmet under avhør å ha brukt riflen til å avlive en syk elg utenfor ordinære prosedyrer og uten nødvendig dokumentasjon", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0644", "type": "HEALTH", "old": "viste tegn på munn- og klovsyke", "new": "tegn på munn- og klovsyke", "why": "B36: evidential verb cut"}
+{"id": "X0645", "type": "HEALTH", "old": "viser tydelige tegn på utmattelse", "new": "tydelige tegn på utmattelse", "why": "B36: evidential verb cut"}
+{"id": "X0649", "type": "HEALTH", "old": "viste tegn på influensa med feber, hoste og nedsatt allmenntilstand", "new": "tegn på influensa med feber, hoste og nedsatt allmenntilstand", "why": "B36: evidential verb cut"}
+{"id": "X0649", "type": "HEALTH", "old": "viste tegn på kolikk", "new": "tegn på kolikk", "why": "B36: evidential verb cut"}
+{"id": "X0653", "type": "HEALTH", "old": "viste tegn på underernæring og manglende stell", "new": "tegn på underernæring og manglende stell", "why": "B36: evidential verb cut"}
+{"id": "X0654", "type": "HEALTH", "old": "viser tegn til alvorlige øyeinfeksjoner", "new": "tegn til alvorlige øyeinfeksjoner", "why": "B36: evidential verb cut"}
+{"id": "X0662", "type": "HEALTH", "old": "viser tegn på omsorgssvikt og frykt", "new": "tegn på omsorgssvikt og frykt", "why": "B36: evidential verb cut"}
+{"id": "X0664", "type": "HEALTH", "old": "viste tegn på underernæring og manglende stell", "new": "tegn på underernæring og manglende stell", "why": "B36: evidential verb cut"}
+{"id": "X0673", "type": "CRIMINAL", "old": "Import av planter uten nødvendig dokumentasjon og brudd på karanteneregler", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0682", "type": "CRIMINAL", "old": "Importplanter uten nødvendig dokumentasjon, manglende karantenetiltak", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0685", "type": "HEALTH", "old": "viste tegn på underernæring og sykdom", "new": "tegn på underernæring og sykdom", "why": "B36: evidential verb cut"}
+{"id": "X0685", "type": "HEALTH", "old": "viste tegn på underernæring, med synlige ribbein og redusert muskelmasse", "new": "tegn på underernæring, med synlige ribbein og redusert muskelmasse", "why": "B36: evidential verb cut"}
+{"id": "X0687", "type": "CRIMINAL", "old": "Brudd på karantenebestemmelsene for import av planter", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0691", "type": "HEALTH", "old": "viste tegn på sykdom, inkludert oppkast, diaré, og sløvhet", "new": "tegn på sykdom, inkludert oppkast, diaré, og sløvhet", "why": "B36: evidential verb cut"}
+{"id": "X0691", "type": "HEALTH", "old": "viste tegn på betydelig psykisk stress", "new": "tegn på betydelig psykisk stress", "why": "B36: evidential verb cut"}
+{"id": "X0698", "type": "HEALTH", "old": "viste tegn på Johnes sykdom", "new": "tegn på Johnes sykdom", "why": "B36: evidential verb cut"}
+{"id": "X0700", "type": "HEALTH", "old": "viste tegn på underernæring og sykdom", "new": "tegn på underernæring og sykdom", "why": "B36: evidential verb cut"}
+{"id": "X0700", "type": "HEALTH", "old": "viser tegn på underernæring", "new": "tegn på underernæring", "why": "B36: evidential verb cut"}
+{"id": "X0703", "type": "HEALTH", "old": "viste tegn til alvorlig neglisjering, inkludert sår og infeksjoner på kløvene, konsistente med Foot-and-mouth disease", "new": "tegn til alvorlig neglisjering, inkludert sår og infeksjoner på kløvene, konsistente med Foot-and-mouth disease", "why": "B36: evidential verb cut"}
+{"id": "X0703", "type": "CRIMINAL", "old": "tyder på ulovlig slakting av dyr", "new": "ulovlig slakting av dyr", "why": "B36: evidential verb cut"}
+{"id": "X0707", "type": "CRIMINAL", "old": "bevisst importert planter fra et land med kjent forekomst av Phytophthora ramorum uten nødvendig tillatelse og uten å gjennomføre påkrevd karantene", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0707", "type": "CRIMINAL", "old": "Import av planter uten nødvendig tillatelse og uten gjennomføring av påkrevd karantene", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0714", "type": "CRIMINAL", "old": "viste tegn på forfalskning", "new": "tegn på forfalskning", "why": "B36: evidential verb cut"}
+{"id": "X0718", "type": "CRIMINAL", "old": "tyder på forsøk på å skjule import av planter fra land med kjente plantesykdommer", "new": "forsøk på å skjule import av planter fra land med kjente plantesykdommer", "why": "B36: evidential verb cut"}
+{"id": "X0723", "type": "HEALTH", "old": "viste tegn på underernæring og manglende stell", "new": "tegn på underernæring og manglende stell", "why": "B36: evidential verb cut"}
+{"id": "X0723", "type": "HEALTH", "old": "viste tydelige symptomer på kolikk", "new": "tydelige symptomer på kolikk", "why": "B36: evidential verb cut"}
+{"id": "X0728", "type": "CRIMINAL", "old": "importerer orkideer fra Thailand uten nødvendig importtillatelse og uten å gjennomføre tilstrekkelig kontroll for planteskadegjørere", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0730", "type": "HEALTH", "old": "viste kliniske tegn på paratuberkulose (Johne's sykdom)", "new": "kliniske tegn på paratuberkulose (Johne's sykdom)", "why": "B36: evidential verb cut"}
+{"id": "X0730", "type": "HEALTH", "old": "viser symptomer på Johne's sykdom", "new": "symptomer på Johne's sykdom", "why": "B36: evidential verb cut"}
+{"id": "X0730", "type": "CRIMINAL", "old": "viste tegn på forfalskning, spesielt knyttet til medisinering og sykdomshistorikk", "new": "tegn på forfalskning, spesielt knyttet til medisinering og sykdomshistorikk", "why": "B36: evidential verb cut"}
+{"id": "X0732", "type": "HEALTH", "old": "viste tegn på alvorlig underernæring", "new": "tegn på alvorlig underernæring", "why": "B36: evidential verb cut"}
+{"id": "X0735", "type": "HEALTH", "old": "tyder på at de kanskje ikke får nok mat", "new": "at de kanskje ikke får nok mat", "why": "B36: evidential verb cut"}
+{"id": "X0737", "type": "CRIMINAL", "old": "transportert den 15. oktober, uten nødvendig veterinærgodkjenning", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0737", "type": "CRIMINAL", "old": "transport av dyr uten nødvendig godkjenning", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0737", "type": "CRIMINAL", "old": "viser tegn til manipulasjon", "new": "tegn til manipulasjon", "why": "B36: evidential verb cut"}
+{"id": "X0738", "type": "HEALTH", "old": "tyder på alvorlig underernæring og mulig metabolske sykdommer på grunn av mangel på vitaminer og kalsium", "new": "alvorlig underernæring og mulig metabolske sykdommer på grunn av mangel på vitaminer og kalsium", "why": "B36: evidential verb cut"}
+{"id": "X0738", "type": "HEALTH", "old": "tyder på at dyrene ikke har det bra, som piping og klynking", "new": "at dyrene ikke har det bra, som piping og klynking", "why": "B36: evidential verb cut"}
+{"id": "X0765", "type": "HEALTH", "old": "viser tydelige tegn på stress og ubehag", "new": "tydelige tegn på stress og ubehag", "why": "B36: evidential verb cut"}
+{"id": "X0800", "type": "BEHAVIORAL_PATTERN", "old": "viste Haraldsen en aggressiv og utagerende oppførsel", "new": "Haraldsen en aggressiv og utagerende oppførsel", "why": "B36: evidential verb cut"}
+{"id": "X0800", "type": "SEXUAL_ORIENTATION", "old": "et turbulent forhold med Bjørn Olsen", "new": null, "why": "B31 narrowed: partner gender only inferred from a name -> FAMILY_RELATION"}
+{"id": "X0806", "type": "SEXUAL_ORIENTATION", "old": "currently in a relationship with Bjørn Ironside", "new": null, "why": "B31 narrowed: partner gender only inferred from a name -> FAMILY_RELATION"}
+{"id": "X0820", "type": "CRIMINAL", "old": "gjentatte ganger importert dyr fra utlandet uten nødvendige helseattester og dokumentasjon", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0820", "type": "HEALTH", "old": "viste tegn på sykdom, inkludert Giardia og mistanke om rabies", "new": "tegn på sykdom, inkludert Giardia og mistanke om rabies", "why": "B36: evidential verb cut"}
+{"id": "X0838", "type": "CRIMINAL", "old": "tyder på skattesnyteri, med uriktige opplysninger om inntekt og kostnader for perioden 2020-2023", "new": "skattesnyteri, med uriktige opplysninger om inntekt og kostnader for perioden 2020-2023", "why": "B36: evidential verb cut"}
+{"id": "X0849", "type": "CRIMINAL", "old": "tyder på økonomisk kriminalitet, blant annet forfalskede skattedokumenter", "new": "økonomisk kriminalitet, blant annet forfalskede skattedokumenter", "why": "B36: evidential verb cut"}
+{"id": "X0866", "type": "HEALTH", "old": "tyder på underernæring, dehydrering og manglende veterinærpleie", "new": "underernæring, dehydrering og manglende veterinærpleie", "why": "B36: evidential verb cut"}
+{"id": "X0870", "type": "HEALTH", "old": "viste tegn på underernæring og sykdom", "new": "tegn på underernæring og sykdom", "why": "B36: evidential verb cut"}
+{"id": "X0870", "type": "SEXUAL_ORIENTATION", "old": "i et turbulent forhold med Bjørn Erik Olsen", "new": null, "why": "B31 narrowed: partner gender only inferred from a name -> FAMILY_RELATION"}
+{"id": "X0873", "type": "HEALTH", "old": "tyder på at sauene ikke får den stell og omsorg de trenger", "new": "at sauene ikke får den stell og omsorg de trenger", "why": "B36: evidential verb cut"}
+{"id": "X0876", "type": "HEALTH", "old": "viste tegn på sykdom, inkludert oppkast, diaré og sløvhet", "new": "tegn på sykdom, inkludert oppkast, diaré og sløvhet", "why": "B36: evidential verb cut"}
+{"id": "X0879", "type": "CRIMINAL", "old": "avdekket import og salg av kosmetikkprodukter inneholdende hydrokinon og kvikksølv, stoffer forbudt i kosmetikk i henhold til EU-forordning 1223/2009", "new": "import og salg av kosmetikkprodukter inneholdende hydrokinon og kvikksølv, stoffer forbudt i kosmetikk i henhold til EU-forordning 1223/2009", "why": "B36: evidential verb cut"}
+{"id": "X0879", "type": "SEXUAL_ORIENTATION", "old": "hun nå lever i et partnerskap med Lise Hansen", "new": null, "why": "B31 narrowed: partner gender only inferred from a name -> MARITAL_STATUS"}
+{"id": "X0885", "type": "HEALTH", "old": "viste tydelige tegn på luftveisinfeksjon, med symptomer forenelig med equine influenza", "new": "tydelige tegn på luftveisinfeksjon, med symptomer forenelig med equine influenza", "why": "B36: evidential verb cut"}
+{"id": "X0885", "type": "CRIMINAL", "old": "avdekket forsøk på å skjule inntekter fra hestevirksomheten i skattemeldingen for 2022", "new": "forsøk på å skjule inntekter fra hestevirksomheten i skattemeldingen for 2022", "why": "B36: evidential verb cut"}
+{"id": "X0889", "type": "HEALTH", "old": "viser klare tegn på mistrivsel og sykdom", "new": "klare tegn på mistrivsel og sykdom", "why": "B36: evidential verb cut"}
+{"id": "X0890", "type": "HEALTH", "old": "viste klare symptomer på bluetongue", "new": "klare symptomer på bluetongue", "why": "B36: evidential verb cut"}
+{"id": "X0908", "type": "CRIMINAL", "old": "importerer prydplanter fra land utenfor EU/EØS uten nødvendig dokumentasjon og plantesanitærsertifikat", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0915", "type": "SEXUAL_ORIENTATION", "old": "i et forhold med Bjørn Hansen", "new": null, "why": "B31 narrowed: partner gender only inferred from a name -> FAMILY_RELATION"}
+{"id": "X0932", "type": "HEALTH", "old": "viser tydelige tegn på stress", "new": "tydelige tegn på stress", "why": "B36: evidential verb cut"}
+{"id": "X0943", "type": "HEALTH", "old": "viser også tegn på stress", "new": "også tegn på stress", "why": "B36: evidential verb cut"}
+{"id": "X0946", "type": "HEALTH", "old": "viste tegn på sykdom, inkludert oppkast, diaré og slapphet, symptomer forenelig med parvovirus og valpesyke", "new": "tegn på sykdom, inkludert oppkast, diaré og slapphet, symptomer forenelig med parvovirus og valpesyke", "why": "B36: evidential verb cut"}
+{"id": "X0951", "type": "SEXUAL_ORIENTATION", "old": "for tiden i et forhold med Bjørn Hansen", "new": null, "why": "B31 narrowed: partner gender only inferred from a name -> FAMILY_RELATION"}
+{"id": "X0954", "type": "HEALTH", "old": "viser tydelige tegn på overarbeid og feil bruk av utstyr", "new": "tydelige tegn på overarbeid og feil bruk av utstyr", "why": "B36: evidential verb cut"}
+{"id": "X0959", "type": "HEALTH", "old": "viser klare tegn på overanstrengelse og underernæring", "new": "klare tegn på overanstrengelse og underernæring", "why": "B36: evidential verb cut"}
+{"id": "X0964", "type": "HEALTH", "old": "viste tegn på halthet", "new": "tegn på halthet", "why": "B36: evidential verb cut"}
+{"id": "X0964", "type": "HEALTH", "old": "viste tegn på halthet, inkludert halting, unormal vektfordeling, og hovne ledd", "new": "tegn på halthet, inkludert halting, unormal vektfordeling, og hovne ledd", "why": "B36: evidential verb cut"}
+{"id": "X0964", "type": "HEALTH", "old": "viste symptomer forenlig med tuberkulose, som hoste og vekttap", "new": "symptomer forenlig med tuberkulose, som hoste og vekttap", "why": "B36: evidential verb cut"}
+{"id": "X0971", "type": "CRIMINAL", "old": "gjentatte brudd på støyregulativet", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0971", "type": "CRIMINAL", "old": "Grovt brudd på støyregulativet", "new": null, "why": "B34: regulatory breach, not framed as criminal"}
+{"id": "X0975", "type": "HEALTH", "old": "viser tegn på forgiftning eller annen sykdom", "new": "tegn på forgiftning eller annen sykdom", "why": "B36: evidential verb cut"}
+{"id": "X0976", "type": "HEALTH", "old": "viser tegn på underernæring og stress", "new": "tegn på underernæring og stress", "why": "B36: evidential verb cut"}
+{"id": "X0983", "type": "HEALTH", "old": "viser tydelige tegn på tannproblemer", "new": "tydelige tegn på tannproblemer", "why": "B36: evidential verb cut"}
+{"id": "X0994", "type": "HEALTH", "old": "viste tegn på alvorlig forsømmelse, inkludert underernæring, skader og manglende veterinærbehandling", "new": "tegn på alvorlig forsømmelse, inkludert underernæring, skader og manglende veterinærbehandling", "why": "B36: evidential verb cut"}
+{"id": "X0995", "type": "HEALTH", "old": "viser klare tegn på separasjonsangst, med mye bjeffing, klynking og engstelig atferd", "new": "klare tegn på separasjonsangst, med mye bjeffing, klynking og engstelig atferd", "why": "B36: evidential verb cut"}
+{"id": "X1000", "type": "HEALTH", "old": "viste symptomer på blåtunge", "new": "symptomer på blåtunge", "why": "B36: evidential verb cut"}
