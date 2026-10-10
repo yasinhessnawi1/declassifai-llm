@@ -409,8 +409,8 @@ _DEFAULT_CLAUSE_BANK = {
         {"text": "er mindreårig og krever særskilt oppfølging fra verge", "form": "nb", "subject": "vulnerability", "difficulty": "medium"},
     ],
     "BEHAVIORAL_PATTERN": [
-        {"text": "viser gjentatt aggressiv atferd overfor naboer", "form": "nb", "subject": "behaviour", "difficulty": "hard"},
-        {"text": "har vist teikn på isolasjon og tilbaketrekking den siste tida", "form": "nn", "subject": "behaviour", "difficulty": "hard"},
+        {"text": "gjentatt aggressiv atferd overfor naboer", "form": "nb", "subject": "behaviour", "difficulty": "hard"},
+        {"text": "teikn på isolasjon og tilbaketrekking den siste tida", "form": "nn", "subject": "behaviour", "difficulty": "hard"},
     ],
     "BIOMETRIC_DATA": [
         {"text": "fingeravtrykk registrert i forbindelse med saken", "form": "nb", "subject": "biometric", "difficulty": "medium"},
@@ -433,7 +433,7 @@ _DEFAULT_CLAUSE_BANK = {
         {"text": "har en årsinntekt godt over gjennomsnittet", "form": "nb", "subject": "financial", "difficulty": "medium"},
     ],
     "GENETIC_DATA": [
-        {"text": "har tatt en genetisk test som viser arvelig disposisjon for hjertesykdom", "form": "nb", "subject": "genetic", "difficulty": "hard"},
+        {"text": "arvelig disposisjon for hjertesykdom", "form": "nb", "subject": "genetic", "difficulty": "hard"},
     ],
     "HEALTH": [
         {"text": "lider av type 2 diabetes og kronisk depresjon", "form": "nb", "subject": "health", "difficulty": "hard"},

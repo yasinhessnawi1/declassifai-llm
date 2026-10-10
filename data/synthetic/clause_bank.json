@@ -1,5 +1,5 @@
 {
-  "version": 6,
+  "version": 7,
   "clause_bank": {
     "RELIGIOUS_BELIEF": [
       {
@@ -4824,28 +4824,6 @@
         ]
       },
       {
-        "text": "{SURNAME_ORG} Sjømat AS har systematisk feilmerket eksportprodukter",
-        "form": "nb",
-        "subject": "org",
-        "difficulty": "hard",
-        "note": "B16 worked-example style; B1 still drops the org subject in the actual tagged span, kept here to show source context",
-        "genres": [
-          "vet_inspection"
-        ],
-        "topic": "mislabeling"
-      },
-      {
-        "text": "systematisk feilmerket eksportprodukter",
-        "form": "nb",
-        "subject": "org",
-        "difficulty": "hard",
-        "note": "the B1-correct boundary of the B16 example above, subject dropped",
-        "genres": [
-          "vet_inspection"
-        ],
-        "topic": "mislabeling"
-      },
-      {
         "text": "vold i nære relasjoner",
         "form": "nb",
         "subject": "person",
@@ -5450,6 +5428,30 @@
         ],
         "topic": "illegal_slaughter",
         "origin": "multi_v6"
+      },
+      {
+        "text": "{SURNAME_ORG} Sjømat AS er politianmeldt for systematisk feilmerking av eksportprodukter",
+        "form": "nb",
+        "subject": "org",
+        "difficulty": "hard",
+        "note": "B34: a labelling breach is CRIMINAL only when the text frames it criminally; the earlier wording is now a negative",
+        "genres": [
+          "vet_inspection"
+        ],
+        "topic": "mislabeling",
+        "origin": "spec_v7"
+      },
+      {
+        "text": "politianmeldt for systematisk feilmerking av eksportprodukter",
+        "form": "nb",
+        "subject": "org",
+        "difficulty": "hard",
+        "note": "B34: a labelling breach is CRIMINAL only when the text frames it criminally; the earlier wording is now a negative",
+        "genres": [
+          "vet_inspection"
+        ],
+        "topic": "mislabeling",
+        "origin": "spec_v7"
       }
     ],
     "POLITICAL": [
@@ -6087,6 +6089,66 @@
           "gp_referral",
           "dismissal_letter"
         ]
+      },
+      {
+        "text": "tidligere forhold til en mann ved navn {PERSON_M}",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "B31: the text itself states the partner's gender, so the clause is SEXUAL_ORIENTATION",
+        "gender": "M",
+        "genres": [
+          "police_report",
+          "udi_decision",
+          "gp_referral",
+          "dismissal_letter"
+        ],
+        "origin": "spec_v7"
+      },
+      {
+        "text": "tidlegare forhold til ein mann ved namn {PERSON_M}",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "B31: the text itself states the partner's gender, so the clause is SEXUAL_ORIENTATION",
+        "gender": "M",
+        "genres": [
+          "police_report",
+          "udi_decision",
+          "gp_referral",
+          "dismissal_letter"
+        ],
+        "origin": "spec_v7"
+      },
+      {
+        "text": "forhold til en kvinne ved navn {PERSON_F}",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "B31: the text itself states the partner's gender, so the clause is SEXUAL_ORIENTATION",
+        "gender": "F",
+        "genres": [
+          "police_report",
+          "udi_decision",
+          "gp_referral",
+          "dismissal_letter"
+        ],
+        "origin": "spec_v7"
+      },
+      {
+        "text": "forhold til ei kvinne ved namn {PERSON_F}",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "B31: the text itself states the partner's gender, so the clause is SEXUAL_ORIENTATION",
+        "gender": "F",
+        "genres": [
+          "police_report",
+          "udi_decision",
+          "gp_referral",
+          "dismissal_letter"
+        ],
+        "origin": "spec_v7"
       }
     ],
     "FINANCIAL": [
@@ -7705,16 +7767,6 @@
         ]
       },
       {
-        "text": "genetisk test viste disposisjon for Huntingtons sykdom",
-        "form": "nb",
-        "subject": "person",
-        "difficulty": "medium",
-        "note": null,
-        "genres": [
-          "gp_referral"
-        ]
-      },
-      {
         "text": "gentest bekreftet bærer av en arvelig sykdom",
         "form": "nb",
         "subject": "person",
@@ -7732,16 +7784,6 @@
         "note": null,
         "genres": [
           "police_report"
-        ]
-      },
-      {
-        "text": "genetisk testing avdekket økt risiko for brystkreft",
-        "form": "nb",
-        "subject": "person",
-        "difficulty": "hard",
-        "note": null,
-        "genres": [
-          "gp_referral"
         ]
       },
       {
@@ -7768,30 +7810,10 @@
         ]
       },
       {
-        "text": "genetisk test synte disposisjon for Huntingtons sjukdom",
-        "form": "nn",
-        "subject": "person",
-        "difficulty": "medium",
-        "note": null,
-        "genres": [
-          "gp_referral"
-        ]
-      },
-      {
         "text": "gentest stadfesta berar av ein arveleg sjukdom",
         "form": "nn",
         "subject": "person",
         "difficulty": "medium",
-        "note": null,
-        "genres": [
-          "gp_referral"
-        ]
-      },
-      {
-        "text": "genetisk testing avdekte auka risiko for brystkreft",
-        "form": "nn",
-        "subject": "person",
-        "difficulty": "hard",
         "note": null,
         "genres": [
           "gp_referral"
@@ -7806,16 +7828,6 @@
         "genres": [
           "nav_decision",
           "udi_decision",
-          "gp_referral"
-        ]
-      },
-      {
-        "text": "genetisk screening avdekket bærerstatus for en arvelig sykdom",
-        "form": "nb",
-        "subject": "person",
-        "difficulty": "hard",
-        "note": null,
-        "genres": [
           "gp_referral"
         ]
       },
@@ -7839,6 +7851,61 @@
         "genres": [
           "police_report"
         ]
+      },
+      {
+        "text": "genetisk disposisjon for Huntingtons sykdom",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "gp_referral"
+        ],
+        "origin": "spec_v7"
+      },
+      {
+        "text": "økt genetisk risiko for brystkreft",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "gp_referral"
+        ],
+        "origin": "spec_v7"
+      },
+      {
+        "text": "genetisk disposisjon for Huntingtons sjukdom",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": null,
+        "genres": [
+          "gp_referral"
+        ],
+        "origin": "spec_v7"
+      },
+      {
+        "text": "auka genetisk risiko for brystkreft",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "gp_referral"
+        ],
+        "origin": "spec_v7"
+      },
+      {
+        "text": "genetisk bærerstatus for en arvelig sykdom",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": null,
+        "genres": [
+          "gp_referral"
+        ],
+        "origin": "spec_v7"
       }
     ],
     "IMMIGRATION_STATUS": [
@@ -9537,6 +9604,466 @@
           99
         ],
         "origin": "multi_v6"
+      },
+      {
+        "text": "gift med {PERSON_M}",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "B31: the partner's gender is never read from a first name, so this is not SEXUAL_ORIENTATION",
+        "gender": "M",
+        "topic": "spouse",
+        "group": "partner",
+        "age_range": [
+          20,
+          99
+        ],
+        "marital": "gift",
+        "as_type": "MARITAL_STATUS",
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "origin": "spec_v7"
+      },
+      {
+        "text": "gift med {PERSON_M}",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "B31: the partner's gender is never read from a first name, so this is not SEXUAL_ORIENTATION",
+        "gender": "M",
+        "topic": "spouse",
+        "group": "partner",
+        "age_range": [
+          20,
+          99
+        ],
+        "marital": "gift",
+        "as_type": "MARITAL_STATUS",
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "origin": "spec_v7"
+      },
+      {
+        "text": "nylig gift med {PERSON_F}",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "B31: the partner's gender is never read from a first name, so this is not SEXUAL_ORIENTATION",
+        "gender": "F",
+        "topic": "spouse",
+        "group": "partner",
+        "age_range": [
+          20,
+          99
+        ],
+        "marital": "gift",
+        "as_type": "MARITAL_STATUS",
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "origin": "spec_v7"
+      },
+      {
+        "text": "nyleg gift med {PERSON_F}",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "B31: the partner's gender is never read from a first name, so this is not SEXUAL_ORIENTATION",
+        "gender": "F",
+        "topic": "spouse",
+        "group": "partner",
+        "age_range": [
+          20,
+          99
+        ],
+        "marital": "gift",
+        "as_type": "MARITAL_STATUS",
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "origin": "spec_v7"
+      },
+      {
+        "text": "samboer med {PERSON_M}",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "B31: the partner's gender is never read from a first name, so this is not SEXUAL_ORIENTATION",
+        "gender": "M",
+        "topic": "cohabitant",
+        "group": "partner",
+        "age_range": [
+          20,
+          99
+        ],
+        "marital": "samboer",
+        "as_type": "MARITAL_STATUS",
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "origin": "spec_v7"
+      },
+      {
+        "text": "sambuar med {PERSON_M}",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "B31: the partner's gender is never read from a first name, so this is not SEXUAL_ORIENTATION",
+        "gender": "M",
+        "topic": "cohabitant",
+        "group": "partner",
+        "age_range": [
+          20,
+          99
+        ],
+        "marital": "samboer",
+        "as_type": "MARITAL_STATUS",
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "origin": "spec_v7"
+      },
+      {
+        "text": "samboer med {PERSON_F}",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "B31: the partner's gender is never read from a first name, so this is not SEXUAL_ORIENTATION",
+        "gender": "F",
+        "topic": "cohabitant",
+        "group": "partner",
+        "age_range": [
+          20,
+          99
+        ],
+        "marital": "samboer",
+        "as_type": "MARITAL_STATUS",
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "origin": "spec_v7"
+      },
+      {
+        "text": "sambuar med {PERSON_F}",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "B31: the partner's gender is never read from a first name, so this is not SEXUAL_ORIENTATION",
+        "gender": "F",
+        "topic": "cohabitant",
+        "group": "partner",
+        "age_range": [
+          20,
+          99
+        ],
+        "marital": "samboer",
+        "as_type": "MARITAL_STATUS",
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "origin": "spec_v7"
+      },
+      {
+        "text": "i et forhold med {PERSON_M}",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "B31: the partner's gender is never read from a first name, so this is not SEXUAL_ORIENTATION",
+        "gender": "M",
+        "topic": "partner_relation",
+        "group": "partner",
+        "age_range": [
+          20,
+          99
+        ],
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "origin": "spec_v7"
+      },
+      {
+        "text": "i eit forhold med {PERSON_M}",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "B31: the partner's gender is never read from a first name, so this is not SEXUAL_ORIENTATION",
+        "gender": "M",
+        "topic": "partner_relation",
+        "group": "partner",
+        "age_range": [
+          20,
+          99
+        ],
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "origin": "spec_v7"
+      },
+      {
+        "text": "i et fast forhold med {PERSON_F}",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "B31: the partner's gender is never read from a first name, so this is not SEXUAL_ORIENTATION",
+        "gender": "F",
+        "topic": "partner_relation",
+        "group": "partner",
+        "age_range": [
+          20,
+          99
+        ],
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "origin": "spec_v7"
+      },
+      {
+        "text": "i eit fast forhold med {PERSON_F}",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "B31: the partner's gender is never read from a first name, so this is not SEXUAL_ORIENTATION",
+        "gender": "F",
+        "topic": "partner_relation",
+        "group": "partner",
+        "age_range": [
+          20,
+          99
+        ],
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "origin": "spec_v7"
+      },
+      {
+        "text": "sin partner, {PERSON_M}",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "B31: the partner's gender is never read from a first name, so this is not SEXUAL_ORIENTATION",
+        "gender": "M",
+        "topic": "partner_relation",
+        "group": "partner",
+        "age_range": [
+          20,
+          99
+        ],
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "origin": "spec_v7"
+      },
+      {
+        "text": "sin partnar, {PERSON_M}",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "B31: the partner's gender is never read from a first name, so this is not SEXUAL_ORIENTATION",
+        "gender": "M",
+        "topic": "partner_relation",
+        "group": "partner",
+        "age_range": [
+          20,
+          99
+        ],
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "origin": "spec_v7"
+      },
+      {
+        "text": "partneren {PERSON_F}",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "B31: the partner's gender is never read from a first name, so this is not SEXUAL_ORIENTATION",
+        "gender": "F",
+        "topic": "partner_relation",
+        "group": "partner",
+        "age_range": [
+          20,
+          99
+        ],
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "origin": "spec_v7"
+      },
+      {
+        "text": "partnaren {PERSON_F}",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "hard",
+        "note": "B31: the partner's gender is never read from a first name, so this is not SEXUAL_ORIENTATION",
+        "gender": "F",
+        "topic": "partner_relation",
+        "group": "partner",
+        "age_range": [
+          20,
+          99
+        ],
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "origin": "spec_v7"
+      },
+      {
+        "text": "i et forhold med en mann",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": "B31: the stated partner gender is opposite to the subject's",
+        "gender": "F",
+        "topic": "partner_stated",
+        "group": "partner",
+        "age_range": [
+          20,
+          99
+        ],
+        "partner": "opposite",
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "origin": "spec_v7"
+      },
+      {
+        "text": "i eit forhold med ein mann",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": "B31: the stated partner gender is opposite to the subject's",
+        "gender": "F",
+        "topic": "partner_stated",
+        "group": "partner",
+        "age_range": [
+          20,
+          99
+        ],
+        "partner": "opposite",
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "origin": "spec_v7"
+      },
+      {
+        "text": "i et forhold med en kvinne",
+        "form": "nb",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": "B31: the stated partner gender is opposite to the subject's",
+        "gender": "M",
+        "topic": "partner_stated",
+        "group": "partner",
+        "age_range": [
+          20,
+          99
+        ],
+        "partner": "opposite",
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "origin": "spec_v7"
+      },
+      {
+        "text": "i eit forhold med ei kvinne",
+        "form": "nn",
+        "subject": "person",
+        "difficulty": "medium",
+        "note": "B31: the stated partner gender is opposite to the subject's",
+        "gender": "M",
+        "topic": "partner_stated",
+        "group": "partner",
+        "age_range": [
+          20,
+          99
+        ],
+        "partner": "opposite",
+        "genres": [
+          "gp_referral",
+          "police_report",
+          "nav_decision",
+          "dismissal_letter",
+          "udi_decision"
+        ],
+        "origin": "spec_v7"
       }
     ]
   },
@@ -11355,6 +11882,182 @@
         ],
         "kind": "third_party",
         "origin": "nearmiss_v5"
+      },
+      {
+        "text": "{PRON} brøt karanteneplikten da dyret kom hjem fra utlandet",
+        "form": "nb",
+        "why_not": "B34: a regulatory breach (quarantine) is not CRIMINAL; no police report, charge, fine or illegality is stated, so nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "vet_inspection"
+        ],
+        "kind": "regulatory",
+        "origin": "nearmiss_v7"
+      },
+      {
+        "text": "{PRON} braut karanteneplikta då dyret kom heim frå utlandet",
+        "form": "nn",
+        "why_not": "B34: a regulatory breach (quarantine) is not CRIMINAL; no police report, charge, fine or illegality is stated, so nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "vet_inspection"
+        ],
+        "kind": "regulatory",
+        "origin": "nearmiss_v7"
+      },
+      {
+        "text": "driften mangler gyldig importtillatelse for fôrtilskuddet",
+        "form": "nb",
+        "why_not": "B34: a regulatory breach (import permit) is not CRIMINAL; no police report, charge, fine or illegality is stated, so nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "vet_inspection"
+        ],
+        "kind": "regulatory",
+        "origin": "nearmiss_v7"
+      },
+      {
+        "text": "drifta manglar gyldig importløyve for fôrtilskotet",
+        "form": "nn",
+        "why_not": "B34: a regulatory breach (import permit) is not CRIMINAL; no police report, charge, fine or illegality is stated, so nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "vet_inspection"
+        ],
+        "kind": "regulatory",
+        "origin": "nearmiss_v7"
+      },
+      {
+        "text": "brudd på hygienereglene ved lagring av råvarer",
+        "form": "nb",
+        "why_not": "B34: a regulatory breach (hygiene) is not CRIMINAL; no police report, charge, fine or illegality is stated, so nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "vet_inspection"
+        ],
+        "kind": "regulatory",
+        "origin": "nearmiss_v7"
+      },
+      {
+        "text": "brot på hygienereglane ved lagring av råvarer",
+        "form": "nn",
+        "why_not": "B34: a regulatory breach (hygiene) is not CRIMINAL; no police report, charge, fine or illegality is stated, so nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "vet_inspection"
+        ],
+        "kind": "regulatory",
+        "origin": "nearmiss_v7"
+      },
+      {
+        "text": "{PRON} oppbevarte medisinene til dyrene i strid med lagringsreglene",
+        "form": "nb",
+        "why_not": "B34: a regulatory breach (storage) is not CRIMINAL; no police report, charge, fine or illegality is stated, so nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "vet_inspection"
+        ],
+        "kind": "regulatory",
+        "origin": "nearmiss_v7"
+      },
+      {
+        "text": "{PRON} lagra medisinane til dyra i strid med lagringsreglane",
+        "form": "nn",
+        "why_not": "B34: a regulatory breach (storage) is not CRIMINAL; no police report, charge, fine or illegality is stated, so nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "vet_inspection"
+        ],
+        "kind": "regulatory",
+        "origin": "nearmiss_v7"
+      },
+      {
+        "text": "merkingen av produktene avviker fra merkereglene",
+        "form": "nb",
+        "why_not": "B34: a regulatory breach (labelling) is not CRIMINAL; no police report, charge, fine or illegality is stated, so nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "vet_inspection"
+        ],
+        "kind": "regulatory",
+        "origin": "nearmiss_v7"
+      },
+      {
+        "text": "merkinga av produkta avvik frå merkereglane",
+        "form": "nn",
+        "why_not": "B34: a regulatory breach (labelling) is not CRIMINAL; no police report, charge, fine or illegality is stated, so nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "vet_inspection"
+        ],
+        "kind": "regulatory",
+        "origin": "nearmiss_v7"
+      },
+      {
+        "text": "{PRON} drev dyrehold med utløpt godkjenning",
+        "form": "nb",
+        "why_not": "B34: a regulatory breach (expired licence) is not CRIMINAL; no police report, charge, fine or illegality is stated, so nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "vet_inspection"
+        ],
+        "kind": "regulatory",
+        "origin": "nearmiss_v7"
+      },
+      {
+        "text": "{PRON} dreiv dyrehald med utgått godkjenning",
+        "form": "nn",
+        "why_not": "B34: a regulatory breach (expired licence) is not CRIMINAL; no police report, charge, fine or illegality is stated, so nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "vet_inspection"
+        ],
+        "kind": "regulatory",
+        "origin": "nearmiss_v7"
+      },
+      {
+        "text": "{PRON} hadde ikke meldt fra om flytting av dyr innen fristen",
+        "form": "nb",
+        "why_not": "B34: a regulatory breach (notification duty) is not CRIMINAL; no police report, charge, fine or illegality is stated, so nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "vet_inspection"
+        ],
+        "kind": "regulatory",
+        "origin": "nearmiss_v7"
+      },
+      {
+        "text": "{PRON} hadde ikkje meldt frå om flytting av dyr innan fristen",
+        "form": "nn",
+        "why_not": "B34: a regulatory breach (notification duty) is not CRIMINAL; no police report, charge, fine or illegality is stated, so nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "vet_inspection"
+        ],
+        "kind": "regulatory",
+        "origin": "nearmiss_v7"
+      },
+      {
+        "text": "eksportproduktene var feilmerket",
+        "form": "nb",
+        "why_not": "B34: a regulatory breach (labelling; the earlier CRIMINAL clause on this wording) is not CRIMINAL; no police report, charge, fine or illegality is stated, so nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "vet_inspection"
+        ],
+        "kind": "regulatory",
+        "origin": "nearmiss_v7"
+      },
+      {
+        "text": "eksportprodukta var feilmerkte",
+        "form": "nn",
+        "why_not": "B34: a regulatory breach (labelling; the earlier CRIMINAL clause on this wording) is not CRIMINAL; no police report, charge, fine or illegality is stated, so nothing is tagged.",
+        "plantable": true,
+        "genres": [
+          "vet_inspection"
+        ],
+        "kind": "regulatory",
+        "origin": "nearmiss_v7"
       }
     ],
     "POLITICAL": [
@@ -12696,5 +13399,5 @@
       }
     ]
   },
-  "schema_note": "Entry fields: text, form (nb/nn/en), subject (person/animal/org), difficulty, note, genres (genre ids the clause is plausible in; [] = never sampled), and optional constraints on the record's subject: gender (M/F), age_range [min,max], origin (native/foreign), nationalities (list of nationality adjectives the subject must have), status (employed/unemployed/retired/uforetrygd), partner (opposite: implies an opposite-sex partner), marital (the MARITAL_STATUS value the clause implies). Negatives (version 4; version 5 adds the `nearmiss_v5` batch): `plantable` marks near-miss texts that are null under every type, so a benchmark run may plant them verbatim and leave them unlabelled; `genres` restricts them like a clause, `gender` (M/F) restricts the subject, and `also_labelled` maps a TYPE to a substring of the text that is a real value of that other type and is labelled as such (the near-miss is only for the type the negative is filed under). Negatives may carry `age_range` like a clause; without one a negative is for adult subjects only. `as_type` relabels an entry as another type when sampled (a civil-status clause with no kinship noun filed under FAMILY_RELATION is MARITAL_STATUS). Version 5: a negative's `text` may hold `{PRON}` (han/hun, han/ho), `{POSS}` (hans/hennes, hans/hennar) and `{OBJ}` (ham/henne, han/henne), filled from the document subject's gender and the document's form when the negative is planted; the planted text, and what G2 searches for, is the filled one. A near-miss that needs a subject carries its own (`og {PRON} svarte ...`) and starts with a coordinating word so it cannot open a sentence and be capitalised. `why_not` begins with the ANNOTATION_SPEC rule that makes the text a null; `kind` is one of refusal (B7), absence (B15), generic, ordinary, third_party, institution, id_shaped (B20), lawful, physical; `origin` names the batch so `gendoc_dataset.py extend-negatives` can partition it without moving earlier entries. Version 6 (`origin: multi_v6`) adds the entries several instances of one type are drawn from, and these optional fields on the multi-instance types (CRIMINAL, HEALTH, MEDICATION, BEHAVIORAL_PATTERN, FINANCIAL, ECONOMIC_STATUS, FAMILY_RELATION): `topic` (what the clause is about; no two clauses of one type in one document share a topic), `also` (further topics an entry occupies, e.g. a threat clause that mentions a weapon), `group` (at most one topic of a group per document across all types: one psychiatric condition, one general financial condition, one infection, the partner and the children of FAMILY_RELATION), `polarity` (poor or rich, which the means a clause implies; one per document across FINANCIAL and ECONOMIC_STATUS), and for FINANCIAL `kind` (debt, headline, asset, income, unspecified) with a numeric `amount` in NOK, so that the debts listed beside a headline total never exceed it. `subject: animal` entries are drawn only by the genres that list the type in `animal_types` (a veterinary record's HEALTH findings). Genre ids added for particular kinds of document: `crime` (police, prosecution, court, restraining-order, forensics and clearance documents), `forensics`, `bank`, `debt` (debt counselling, inkasso, bank AML), `barnevern`, `school` and, for the veterinary documents, `vet_clinical` and `vet_inspection`; a genre draws them through `clause_genres`."
+  "schema_note": "Entry fields: text, form (nb/nn/en), subject (person/animal/org), difficulty, note, genres (genre ids the clause is plausible in; [] = never sampled), and optional constraints on the record's subject: gender (M/F), age_range [min,max], origin (native/foreign), nationalities (list of nationality adjectives the subject must have), status (employed/unemployed/retired/uforetrygd), partner (opposite: implies an opposite-sex partner), marital (the MARITAL_STATUS value the clause implies). Negatives (version 4; version 5 adds the `nearmiss_v5` batch): `plantable` marks near-miss texts that are null under every type, so a benchmark run may plant them verbatim and leave them unlabelled; `genres` restricts them like a clause, `gender` (M/F) restricts the subject, and `also_labelled` maps a TYPE to a substring of the text that is a real value of that other type and is labelled as such (the near-miss is only for the type the negative is filed under). Negatives may carry `age_range` like a clause; without one a negative is for adult subjects only. `as_type` relabels an entry as another type when sampled (a civil-status clause with no kinship noun filed under FAMILY_RELATION is MARITAL_STATUS). Version 5: a negative's `text` may hold `{PRON}` (han/hun, han/ho), `{POSS}` (hans/hennes, hans/hennar) and `{OBJ}` (ham/henne, han/henne), filled from the document subject's gender and the document's form when the negative is planted; the planted text, and what G2 searches for, is the filled one. A near-miss that needs a subject carries its own (`og {PRON} svarte ...`) and starts with a coordinating word so it cannot open a sentence and be capitalised. `why_not` begins with the ANNOTATION_SPEC rule that makes the text a null; `kind` is one of refusal (B7), absence (B15), generic, ordinary, third_party, institution, id_shaped (B20), lawful, physical; `origin` names the batch so `gendoc_dataset.py extend-negatives` can partition it without moving earlier entries. Version 6 (`origin: multi_v6`) adds the entries several instances of one type are drawn from, and these optional fields on the multi-instance types (CRIMINAL, HEALTH, MEDICATION, BEHAVIORAL_PATTERN, FINANCIAL, ECONOMIC_STATUS, FAMILY_RELATION): `topic` (what the clause is about; no two clauses of one type in one document share a topic), `also` (further topics an entry occupies, e.g. a threat clause that mentions a weapon), `group` (at most one topic of a group per document across all types: one psychiatric condition, one general financial condition, one infection, the partner and the children of FAMILY_RELATION), `polarity` (poor or rich, which the means a clause implies; one per document across FINANCIAL and ECONOMIC_STATUS), and for FINANCIAL `kind` (debt, headline, asset, income, unspecified) with a numeric `amount` in NOK, so that the debts listed beside a headline total never exceed it. `subject: animal` entries are drawn only by the genres that list the type in `animal_types` (a veterinary record's HEALTH findings). Genre ids added for particular kinds of document: `crime` (police, prosecution, court, restraining-order, forensics and clearance documents), `forensics`, `bank`, `debt` (debt counselling, inkasso, bank AML), `barnevern`, `school` and, for the veterinary documents, `vet_clinical` and `vet_inspection`; a genre draws them through `clause_genres`. Version 7 (`origin: spec_v7` for clauses, `origin: nearmiss_v7` for negatives) follows the 2026-10-10 spec changes B31, B34 and B36: a SEXUAL_ORIENTATION entry that names a partner states the partner's gender or the orientation in its own text, name-only same-gender pairings are FAMILY_RELATION or (`as_type`) MARITAL_STATUS and carry no `partner` constraint, so they can sit beside an orientation clause; a regulatory breach is a CRIMINAL negative (`kind: regulatory`) unless the clause frames it criminally; no clause opens with an evidential verb."
 }

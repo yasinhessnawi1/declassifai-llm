@@ -1579,7 +1579,8 @@ def negative_checks(taxonomy_index, clause_bank, partition, out_dir: str, types_
     # The bank and the partition.
     added = [(t, e) for t, v in clause_bank["negatives"].items() for e in v if e.get("origin") == "nearmiss_v5"]
     bench_side = {s for v in partition["negatives"].values() for s in v}
-    train_listed = {s for v in partition.get("negatives_train", {}).items() for s in v[1]}
+    train_listed = {s for v in partition.get("negatives_train", {}).items() for s in v[1]} & {
+        e["text"] for _t, e in added}
     nn_share = sum(1 for _t, e in added if e["form"] == "nn") / max(1, len(added))
     texts = [e["text"] for _t, e in added]
     types_covered = {t for t, _e in added}
@@ -1860,8 +1861,8 @@ def record_checks(taxonomy_index, clause_bank: dict, partition: dict, out_dir: s
     no_topic = [e["text"] for t, e in new if not e.get("topic")]
     batch = partition.get("clause_batches", {}).get("multi_v6", {})
     bench_new = {t for v in partition["clauses"].values() for t in v} & {e["text"] for _t, e in new}
-    train_new = {t for v in partition.get("clauses_train", {}).values() for t in v}
     batch_texts = {e["text"] for _t, e in new}
+    train_new = {t for v in partition.get("clauses_train", {}).values() for t in v} & batch_texts
     old_texts = {e["text"] for t, entries in clause_bank.items() if t != "negatives"
                  for e in entries if e.get("origin") != "multi_v6"}
     report("new_clauses_cover_types_and_nynorsk", nn_share >= 0.35 and not no_topic
@@ -3547,6 +3548,273 @@ class MockBackendBoilerplate:
         return list(backends._BOILERPLATE_NN) + list(backends._SECTION_FILLER_NN)
 
 
+# ---------------------------------------------------------------------------
+# The 2026-10-10 annotation-spec changes B31, B34, B36, B37 and B38
+# ---------------------------------------------------------------------------
+
+# What a SEXUAL_ORIENTATION clause must say for itself when it pairs the subject with a named
+# partner (B31): an orientation word, a stated partner gender, or an open relationship.
+_ORIENTATION_STATED = re.compile(
+    r"homofil|lesbisk|homoseksuell|biseksuell|\b(?:en|ein) mann\b|\b(?:en|ei|ein) kvinne\b|"
+    r"åpent forhold|ope forhold|polyamor", re.IGNORECASE)
+# A regulatory breach of the kind B34 leaves untagged, and the words that frame a breach criminally.
+_REGULATORY_BREACH = re.compile(
+    r"karantene|importtillat|importløyve|hygiene|lagringsregl|lagra\b|merkeregl|feilmerk|utløpt godkjenning|"
+    r"utgått godkjenning", re.IGNORECASE)
+_CRIMINAL_FRAMING = re.compile(
+    r"politi|anmeld|sikta|siktet|tiltalt|dømt|dømd|domfell|bot\b|bøter|ulovl|forfalsk|våpen|toll|regnskap|"
+    r"bedrageri|svindel|straff", re.IGNORECASE)
+# A verb that only reports how a fact came to light (B36), anywhere in a clause text.
+_EVIDENTIAL_VERB = re.compile(
+    r"\b(?:viste|viser|avdekket|avdekte|avdekker|oppviser|oppviste|synte|fremsto|framstod|virket|verka)\b",
+    re.IGNORECASE)
+
+
+class _ClockMock(MockBackend):
+    """Writes a clock time after the planned dates of each document's first generation, once.
+
+    `kind` is "clock" (every occurrence of the first planned date gets ` kl. 14:35`), "mixed"
+    (only the first does, and a later sentence repeats the bare date) or "unplanned" (a sentence
+    with an unplanned `3. mai 2024 kl. 09:15` is appended).
+    """
+
+    def __init__(self, kind: str, documents: int) -> None:
+        self.kind = kind
+        self.documents = documents
+        self.calls = 0
+        self.dates: Dict[int, str] = {}
+
+    def generate(self, prompts, **kwargs):
+        outputs = super().generate(prompts, **kwargs)
+        for i, prompt in enumerate(prompts):
+            if any(tag in prompt for tag in ("\nAUDIT|1", "\nAUDIT_REPAIR|1", "\nREPAIR|", "\nSECTION|")):
+                continue
+            # The first generation of each document is the first `documents` plain prompts; a
+            # fresh attempt gets a new seed, so the seed cannot tell a first attempt from a retry.
+            self.calls += 1
+            if self.calls > self.documents:
+                continue
+            seed = int(re.search(r"SEED\|(\d+)", prompt).group(1))
+            dates = [line.split("|", 2)[2] for line in _manifest(prompt).splitlines()
+                     if line.startswith("VALUE|DATE_TIME|")]
+            if self.kind == "unplanned":
+                outputs[i] = outputs[i].rstrip() + " Meldingen kom inn 3. mai 2024 kl. 09:15."
+            elif dates and dates[0] in outputs[i]:
+                self.dates[seed] = dates[0]
+                if self.kind == "clock":
+                    outputs[i] = outputs[i].replace(dates[0], dates[0] + " kl. 14:35")
+                else:
+                    outputs[i] = outputs[i].replace(dates[0], dates[0] + " kl. 14:35", 1)
+                    outputs[i] = outputs[i].rstrip() + f" Saken ble senere omtalt som saken fra {dates[0]}."
+        return outputs
+
+
+def spec_change_checks(taxonomy_index, clause_bank: dict, partition: dict) -> bool:
+    """The 2026-10-10 spec changes B31, B34, B36, B37 and B38 reach the bank, the partition and the pipeline.
+
+    B31: no SEXUAL_ORIENTATION clause names a partner without stating the orientation or the
+    partner's gender, name-only pairings of the subject's own gender are MARITAL_STATUS or
+    FAMILY_RELATION, and nothing the cast or marital planning writes is SEXUAL_ORIENTATION. B34: a
+    regulatory breach is a CRIMINAL negative, not a CRIMINAL clause. B36: no clause opens with (or is
+    built around) an evidential verb. B37: a parenthetical outcome is not absorbed into a clause label.
+    B38: a date followed by `kl. HH:MM` is one DATE_TIME span, in the extension, in the G7 sweep and
+    through the pipeline. The partition lists no retired text and the two spec batches rebuild identically.
+    """
+    import random
+    ok = True
+
+    def report(name: str, passed: bool, detail: str) -> None:
+        nonlocal ok
+        ok &= bool(passed)
+        print(f"{'PASS' if passed else 'FAIL'} spec   {name:<44} {detail}")
+
+    bank = {t: v for t, v in clause_bank.items() if t != "negatives"}
+    entries = [(t, e) for t, v in bank.items() for e in v]
+
+    # -- B31 ---------------------------------------------------------------------------------
+    so = [e for e in bank["SEXUAL_ORIENTATION"]]
+    named = [e for e in so if "{PERSON" in e["text"]]
+    silent = [e["text"] for e in named if not _ORIENTATION_STATED.search(e["text"])]
+    report("b31_orientation_with_partner_states_it", len(named) >= 6 and not silent and len(so) >= 25,
+           f"orientation_entries={len(so)} naming_a_partner={len(named)} silent={silent}")
+    name_only = [(t, e) for t, e in entries if re.search(r"\{PERSON_[MF]\}$", e["text"]) and e.get("gender")
+                 and e["text"].endswith("{PERSON_" + e["gender"] + "}") and t != "SEXUAL_ORIENTATION"
+                 and re.search(r"gift|samboer|sambuar|forhold|partner", e["text"])]
+    typed = collections.Counter(e.get("as_type", t) for t, e in name_only)
+    wrong = [e["text"] for t, e in name_only if e.get("as_type", t) not in ("MARITAL_STATUS", "FAMILY_RELATION")
+             or (e["text"].startswith(("gift", "nylig gift", "nyleg gift", "samboer", "sambuar"))
+                 and e.get("as_type") != "MARITAL_STATUS")
+             or (e["text"].startswith(("i et forhold", "i eit forhold", "i et fast", "i eit fast", "sin partner",
+                                                       "partne"))
+                 and e.get("as_type", t) != "FAMILY_RELATION")]
+    report("b31_name_only_same_gender_is_not_orientation", typed["MARITAL_STATUS"] >= 6 and typed["FAMILY_RELATION"] >= 6
+           and not wrong and not any(e.get("partner") for t, e in name_only
+                                     if e["text"].startswith(("gift med {PERSON_M}", "i et forhold med {PERSON"))),
+           f"same_gender_name_only={dict(typed)} mistyped={wrong[:3]}")
+    stated_opposite = [e["text"] for e in bank["FAMILY_RELATION"] if re.search(r"forhold med e[ni]+ (?:mann|kvinne)|forhold med ei kvinne", e["text"])]
+    report("b31_stated_opposite_sex_is_family_relation", len(stated_opposite) >= 4, f"entries={stated_opposite[:2]}")
+
+    seeded_types = collections.Counter()
+    bad_planned: List[str] = []
+    same_gender_cast = 0
+    for seed in range(120):
+        form = "nn" if seed % 3 == 0 else "nb"
+        plan = gen.DocPlan(idx=seed, genre="gp_referral", variant="prose_letter", form=form,
+                           length_band=(1600, 2800), forced_types=["SEXUAL_ORIENTATION", "MARITAL_STATUS", "FAMILY_RELATION"],
+                           profile="dense", type_target=12, art9_cap=2)
+        rec = gen.sample_record(random.Random(seed), seed, plan, "seeded", taxonomy_index, bank, set(data.PUBLIC_FIGURES))
+        spouse = next((q for q in rec.parties if q.role == "spouse"), None)
+        for pv in rec.planned:
+            seeded_types[pv.type] += 1
+            if pv.type == "SEXUAL_ORIENTATION" and pv.value and not _ORIENTATION_STATED.search(pv.value):
+                if re.search(r"\b[A-ZÆØÅ][a-zæøå]+ [A-ZÆØÅ]", pv.value):
+                    bad_planned.append(pv.value)
+            if pv.type == "MARITAL_STATUS" and " med " in (pv.value or "") and spouse is not None:
+                same_gender_cast += spouse.person.gender == rec.person.gender
+    report("b31_planning_never_writes_name_only_orientation", not bad_planned and seeded_types["MARITAL_STATUS"] > 0
+           and seeded_types["SEXUAL_ORIENTATION"] > 0,
+           f"planned={dict(seeded_types)} name_only_orientation={bad_planned[:2]} "
+           f"cast_marital_phrases_with_same_gender_partner={same_gender_cast} (all MARITAL_STATUS)")
+
+    # -- B34 ---------------------------------------------------------------------------------
+    unframed = [e["text"] for e in bank["CRIMINAL"]
+                if _REGULATORY_BREACH.search(e["text"]) and not _CRIMINAL_FRAMING.search(e["text"])]
+    regulatory = [e for e in clause_bank["negatives"]["CRIMINAL"] if e.get("kind") == "regulatory"]
+    bench = {t for v in partition["negatives"].values() for t in v}
+    sides = {e["text"] in bench for e in regulatory}
+    leaked = [e["text"] for e in regulatory if _CRIMINAL_FRAMING.search(e["text"]) and not re.search(r"strid med", e["text"])]
+    report("b34_regulatory_breach_is_a_negative_not_a_clause",
+           not unframed and len(regulatory) >= 14 and sides == {True, False} and not leaked
+           and all(e.get("plantable") and e["genres"] == ["vet_inspection"] for e in regulatory),
+           f"unframed_criminal_clauses={unframed} regulatory_negatives={len(regulatory)} on_both_sides={sides == {True, False}}")
+
+    # -- B36 ---------------------------------------------------------------------------------
+    evidential = [(t, e["text"]) for t, e in entries if _EVIDENTIAL_VERB.search(e["text"])]
+    fallback = [e["text"] for t, v in data._DEFAULT_CLAUSE_BANK.items() if t != "negatives" for e in v
+                if _EVIDENTIAL_VERB.search(e["text"])]
+    report("b36_no_clause_holds_an_evidential_verb", not evidential and not fallback,
+           f"clauses={evidential[:3]} embedded_fallback={fallback[:3]}")
+
+    # -- B37 ---------------------------------------------------------------------------------
+    outcome = re.compile(r"\((?:[^)]*\b)?(?:henlagt|frifunnet|frikjent|ikke tiltalt|ingen tiltale)", re.IGNORECASE)
+    absorbed = [e["text"] for t, e in entries if outcome.search(e["text"])]
+    text37 = "Han er anmeldt for trusler (henlagt) og dømt for vold (frifunnet i ankesaken)."
+    ext37, _n = gates.extend_seeded_clause_spans(text37, ["anmeldt for trusler", "dømt for vold"])
+    rec37 = gen.sample_record(random.Random(5), 5, gen.DocPlan(
+        idx=5, genre="police_report", variant="prose_letter", form="nb", length_band=(1600, 2800),
+        forced_types=["CRIMINAL"], profile="typical", type_target=8, art9_cap=1),
+        "seeded", taxonomy_index, bank, set(data.PUBLIC_FIGURES))
+    report("b37_parenthetical_outcome_is_not_absorbed",
+           not absorbed and not ext37 and "«(henlagt)»" in model_visible(gen.build_prompt(rec37)),
+           f"clauses_with_outcome_in_parentheses={absorbed} extended={ext37} prompt_rule_present=True")
+
+    # -- B38: the closed shape --------------------------------------------------------------
+    def ext(text: str, *dates: str):
+        return gates.extend_date_time_spans(text, list(dates))
+
+    cases = {
+        "dot": ("Hendelsen var 27.10.2024 kl. 14:35 i butikken.", "27.10.2024", {"27.10.2024": ["27.10.2024 kl. 14:35"]}),
+        "no_dot": ("Hendelsen var 27.10.2024 kl 14:35 i butikken.", "27.10.2024", {"27.10.2024": ["27.10.2024 kl 14:35"]}),
+        "klokka": ("Møtet var 27.10.2024 klokka 14.35.", "27.10.2024", {"27.10.2024": ["27.10.2024 klokka 14.35"]}),
+        "month_name": ("Møtet var 27. oktober 2024 kl. 08:05, og så videre.", "27. oktober 2024",
+                       {"27. oktober 2024": ["27. oktober 2024 kl. 08:05"]}),
+        "two_times": ("Først 27.10.2024 kl. 08:05, så 27.10.2024 kl. 14:35.", "27.10.2024",
+                      {"27.10.2024": ["27.10.2024 kl. 08:05", "27.10.2024 kl. 14:35"]}),
+    }
+    got = {name: ext(text, date)[0] == want and not ext(text, date)[1] for name, (text, date, want) in cases.items()}
+    untouched = {
+        "hour_only": "Møtet var 27.10.2024 kl. 14 i butikken.",
+        "range": "Møtet var 27.10.2024 kl. 14:35-15:10.",
+        "seconds": "Møtet var 27.10.2024 kl. 14:35:10.",
+        "comma": "Møtet var 27.10.2024, kl. 14:35.",
+        "no_time": "Møtet var 27.10.2024 og senere.",
+        "invalid_hour": "Møtet var 27.10.2024 kl. 25:35.",
+        "word_kl": "Møtet var 27.10.2024 klar for oppstart 14:35.",
+    }
+    left = {name: ext(text, "27.10.2024") == ({}, []) for name, text in untouched.items()}
+    mixed_text = "Først 27.10.2024 kl. 14:35, senere igjen 27.10.2024."
+    year_only = ext("I 2024 kl. 14:35 skjedde det.", "2024")
+    report("b38_date_time_extension_is_a_closed_shape", all(got.values()) and all(left.values())
+           and ext(mixed_text, "27.10.2024") == ({}, ["27.10.2024"]) and year_only == ({}, []),
+           f"extended={got} left_alone={left} mixed={ext(mixed_text, '27.10.2024')[1]}")
+
+    sweep_text = "Mottatt 27.10.2024 kl. 14:35. Kl. 16:00 var det over."
+    swept = gates.sweep_dates(sweep_text, [])
+    swept_covered = gates.sweep_dates(sweep_text, [(8, 8 + len("27.10.2024 kl. 14:35"))])
+    swept_mixed = gates.sweep_dates("Mottatt 27.10.2024 kl. 14:35 og igjen 27.10.2024.", [])
+    report("b38_g7_sweep_keeps_the_time_in_one_span",
+           [f["match"] for f in swept] == ["27.10.2024 kl. 14:35"] and swept[0]["action"] == "label"
+           and not swept_covered and {f["action"] for f in swept_mixed} == {"reject"} and len(swept_mixed) == 2,
+           f"unplanned={[f['match'] for f in swept]} covered_by_long_planned={swept_covered} "
+           f"mixed={[(f['match'], f['action']) for f in swept_mixed]}")
+
+    # -- B38: through the pipeline ----------------------------------------------------------
+    public_figures = set(data.PUBLIC_FIGURES)
+    place_names = {p for _c, p in data.POSTAL_PAIRS}
+    agency_names = set(data.AGENCY_NAMES)
+    bench_bank = dataset_mod.select_clause_bank(clause_bank, partition, "benchmark")
+    negative_bank = bench_bank.pop("negatives")
+
+    def run(kind: str):
+        mock_ = _ClockMock(kind, 2)
+        plans = [gen.DocPlan(idx=800 + i, genre=g, variant="prose_letter", form="nb", length_band=(1600, 2800),
+                             forced_types=["DATE_TIME"], profile="typical", type_target=8, art9_cap=1)
+                 for i, g in enumerate(["police_report", "nav_decision"])]
+        cfg = gen.GenerationConfig(
+            strategy="seeded", invalid_checksum_rate=0.0, retries=3, near_dup_threshold=0.7, g7_policy="reject",
+            batch_size=4, audit=True, max_audit_repairs=1, dataset="benchmark", negative_bank=negative_bank,
+            sectioning="off")
+        sts, _stats = gen.run_generation(plans, BASE_SEED, taxonomy_index, bench_bank, public_figures,
+                                         place_names, agency_names, mock_, cfg)
+        return mock_, sts
+
+    mock_, sts = run("clock")
+    rows = []
+    for st in sts:
+        spans = st.result.get("output", {}).get("DATE_TIME", [])
+        rows.append((st.result.get("accepted"), st.attempt, [sp for sp in spans if "kl." in sp],
+                     [sp for sp in spans if re.fullmatch(r"[\d.]+", sp) and any(sp + " kl." in q for q in spans)]))
+    report("b38_planned_date_with_time_is_one_label",
+           all(acc and attempt == 1 and long and not short for acc, attempt, long, short in rows) and bool(rows),
+           f"accepted/attempt/long_forms/short_forms_left={rows}")
+    mock_, sts = run("mixed")
+    firsts = [next((e["stage"] for e in st.gate_log if not e.get("ok")), None) for st in sts]
+    report("b38_date_both_with_and_without_time_is_rewritten",
+           all(f == "B38_date_time_mixed" for f in firsts) and all(st.result.get("accepted") for st in sts),
+           f"first_failures={firsts} accepted={[st.result.get('accepted') for st in sts]}")
+    mock_, sts = run("unplanned")
+    unplanned = [[sp for sp in st.result.get("output", {}).get("DATE_TIME", []) if "09:15" in sp or sp.startswith("kl")]
+                 for st in sts]
+    report("b38_unplanned_date_with_time_is_one_label",
+           all(u == ["3. mai 2024 kl. 09:15"] for u in unplanned) and all(st.result.get("accepted") for st in sts),
+           f"labels={unplanned}")
+
+    # -- the partition --------------------------------------------------------------------------
+    live = {t: {e["text"] for e in v} for t, v in clause_bank.items() if t != "negatives"}
+    live_neg = {t: {e["text"] for e in v} for t, v in clause_bank["negatives"].items()}
+    stale = [(key, t, x) for key, per in (("clauses", live), ("clauses_train", live), ("negatives", live_neg),
+                                          ("negatives_train", live_neg))
+             for t, v in partition.get(key, {}).items() for x in v if x not in per.get(t, set())]
+    pruned, dropped = dataset_mod.prune_partition(partition, clause_bank)
+    report("partition_lists_no_retired_text", not stale and pruned == partition and not dropped,
+           f"stale={stale[:3]} prune_is_a_no_op={pruned == partition}")
+    for batch, kind in (("spec_v7", "clauses"), ("nearmiss_v7", "negatives")):
+        rebuild = dataset_mod.rebuild_clauses if kind == "clauses" else dataset_mod.rebuild_negatives
+        rebuilt = rebuild(partition, clause_bank, batch)
+        again = rebuild(rebuilt, clause_bank, batch)
+        record = partition[("clause_batches" if kind == "clauses" else "negative_batches")][batch]
+        texts = {e["text"] for t, v in (bank.items() if kind == "clauses" else clause_bank["negatives"].items())
+                 for e in v if e.get("origin") == batch}
+        benchmark = {x for v in partition["clauses" if kind == "clauses" else "negatives"].values() for x in v}
+        train = {x for v in partition["clauses_train" if kind == "clauses" else "negatives_train"].values() for x in v}
+        report(f"{batch}_partition_rebuilds_identically",
+               rebuilt == partition and again == rebuilt and (record["benchmark"], record["train"])
+               == (len(texts & benchmark), len(texts & train)) and not (benchmark & train),
+               f"texts={len(texts)} benchmark={record['benchmark']} train={record['train']} "
+               f"share={record['benchmark'] / record['texts']:.2f}")
+    return ok
+
+
 def main() -> int:
     """Run every injected-failure case and report. Returns a process exit code."""
     parser = argparse.ArgumentParser(description=__doc__,
@@ -3636,6 +3904,7 @@ def main() -> int:
     all_passed &= role_word_checks(taxonomy_index, clause_bank, partition)
     all_passed &= document_date_checks(taxonomy_index, clause_bank)
     all_passed &= prose_cast_checks(taxonomy_index, clause_bank, partition, args.gold_v2_glob)
+    all_passed &= spec_change_checks(taxonomy_index, clause_bank, partition)
     all_passed &= resume_checks(out_dir)
 
     clause_literals = ([pv.value for pv in states[16].record.planned if pv.value_kind == "clause" and pv.value]

@@ -663,16 +663,80 @@ def sweep_ages(text: str, covered: List[Tuple[int, int]]) -> List[dict]:
     return findings
 
 
+# `27.10.2024 kl. 14:35` is one DATE_TIME span as printed (B38; gold does it 99 times and never
+# splits it). Only this closed shape is joined: `kl.`, `kl` or `klokka`/`klokken`, then hours and
+# minutes with a colon or a point. A bare `kl. 14`, a range (`14:35-15:10`) and a time with seconds
+# are left alone, because where such a time ends is not settled and guessing it is the failure mode
+# the clause extension above also avoids.
+_CLOCK_AFTER_DATE_RE = re.compile(
+    r"[ \t]+(?:kl\.?|klokka|klokken)[ \t]*(?:[01]?\d|2[0-3])[:.][0-5]\d(?![\d:])(?![.,]\d)(?![\u2013\-]\d)",
+    re.IGNORECASE)
+
+
+def clock_after(text: str, end: int) -> str:
+    """Return the ` kl. HH:MM` that immediately follows position `end`, or the empty string."""
+    match = _CLOCK_AFTER_DATE_RE.match(text, end)
+    return match.group(0) if match else ""
+
+
+def extend_date_time_spans(text: str, dates: Sequence[str]) -> Tuple[Dict[str, List[str]], List[str]]:
+    """Join each planned date to the `kl. HH:MM` that follows it (B38).
+
+    A date is extended only when *every* occurrence of it in the text is followed by a clock
+    time, so the document never carries both the short and the long form (`validate_labels.py`
+    reports that as a redundant nested span). A date that occurs both with and without a time
+    cannot be labelled consistently by exact strings and is returned as mixed.
+
+    Args:
+        text: The document text.
+        dates: The DATE_TIME spans of the output.
+
+    Returns:
+        Tuple of (date -> the distinct long forms that replace it, dates that occur both
+        with and without a time). Dates that never carry a time are in neither.
+    """
+    extended: Dict[str, List[str]] = {}
+    mixed: List[str] = []
+    for date in dates:
+        if not date or not any(p.fullmatch(date) for p in DATE_PATTERNS):
+            continue
+        forms = []
+        for m in re.finditer(r"(?<![\d.])" + re.escape(date) + r"(?![\d]|\.\d)", text):
+            forms.append(date + clock_after(text, m.end()))
+        longer = sorted({f for f in forms if f != date})
+        if not longer:
+            continue
+        if date in forms:
+            mixed.append(date)
+        else:
+            extended[date] = longer
+    return extended, mixed
+
+
 def sweep_dates(text: str, covered: List[Tuple[int, int]]) -> List[dict]:
-    """Find date strings not covered by a planned span; these are labelled, not rejected."""
+    """Find date strings not covered by a planned span; these are labelled, not rejected.
+
+    A date followed by `kl. HH:MM` is one finding covering both (B38). If the same date also
+    occurs without a time, the short and the long finding cannot both be labelled, so both
+    reject.
+    """
     findings, seen = [], []
     for pattern in DATE_PATTERNS:
         for m in pattern.finditer(text):
             if _is_covered(m.start(), m.end(), covered) or _overlaps(m.start(), m.end(), seen):
                 continue
-            seen.append((m.start(), m.end()))
-            findings.append({"pattern": "date_like", "match": m.group(0), "start": m.start(),
-                             "end": m.end(), "action": "label", "label_type": "DATE_TIME"})
+            clock = clock_after(text, m.end())
+            seen.append((m.start(), m.end() + len(clock)))
+            findings.append({"pattern": "date_like", "match": m.group(0) + clock, "start": m.start(),
+                             "end": m.end() + len(clock), "action": "label", "label_type": "DATE_TIME",
+                             "date": m.group(0)})
+    with_clock = {f["date"] for f in findings if f["match"] != f["date"]}
+    without = {f["date"] for f in findings if f["match"] == f["date"]}
+    for f in findings:
+        if f["date"] in with_clock & without:
+            f["action"], f["pattern"] = "reject", "date_time_mixed"
+    for f in findings:
+        del f["date"]
     return findings
 
 

@@ -63,11 +63,20 @@ about a quarter of each (type, form, kind of document) stratum of the batch goes
 benchmark, ranked by hash, every earlier assignment stays exactly where it was, the training share is
 listed in `clauses_train` and the batch recorded in `clause_batches`.
 
+A clause or negative that a spec change made wrong is retired rather than edited in place: the
+corrected wording goes into the bank under a new `origin`, so its batch is partitioned by
+`extend-clauses` / `extend-negatives` and no earlier assignment moves, and `prune` drops the
+retired texts from the partition lists, which would otherwise keep counting a text the bank no
+longer holds. `rebuild-clauses` is `rebuild-negatives` for a clause batch whose texts were
+corrected before anything was generated from it.
+
 Usage:
     python3 tools/gendoc_dataset.py build                         # write the partition file once
     python3 tools/gendoc_dataset.py extend-negatives nearmiss_v5  # partition a later batch of negatives
     python3 tools/gendoc_dataset.py rebuild-negatives nearmiss_v5 # partition it again after its texts changed
     python3 tools/gendoc_dataset.py extend-clauses multi_v6       # partition a later batch of clauses
+    python3 tools/gendoc_dataset.py rebuild-clauses multi_v6      # partition a clause batch again after its texts changed
+    python3 tools/gendoc_dataset.py prune                         # drop partition entries whose text left the bank
     python3 tools/gendoc_dataset.py summary                       # print its sizes
 """
 
@@ -593,6 +602,75 @@ def extend_clauses(partition: dict, clause_bank: dict, batch: str,
     return out
 
 
+def rebuild_clauses(partition: dict, clause_bank: dict, batch: str,
+                    ratio: float = CLAUSE_BATCH_BENCHMARK_RATIO) -> dict:
+    """Partition a clause batch again after its texts were corrected.
+
+    The counterpart of `rebuild_negatives`: every text of the batch is dropped from both
+    lists, the batch is forgotten and `extend_clauses` assigns the corrected bank afresh. A
+    text shared with an earlier clause keeps that clause's side.
+
+    Args:
+        partition: The loaded partition, holding the batch as it was first partitioned.
+        clause_bank: The flat bank from `gendoc_data.load_clause_bank`, with the corrected
+            texts under the same `origin`.
+        batch: Batch name, e.g. "multi_v6"; it must already be recorded.
+        ratio: Benchmark share of the batch.
+
+    Returns:
+        A new partition dict; the argument is not modified.
+
+    Raises:
+        ValueError: The batch was never partitioned, or `extend_clauses` refuses the
+            corrected texts.
+    """
+    if batch not in partition.get("clause_batches", {}):
+        raise ValueError(f"clause batch {batch!r} is not in the partition; use extend-clauses")
+    types = [t for t in clause_bank if t != "negatives"]
+    earlier = {e["text"] for t in types for e in clause_bank[t] if e.get("origin") != batch}
+    out = json.loads(json.dumps(partition))
+    for key in ("clauses", "clauses_train"):
+        out[key] = {t: [x for x in v if x in earlier] for t, v in out.get(key, {}).items()}
+        out[key] = {t: v for t, v in out[key].items() if v}
+    del out["clause_batches"][batch]
+    return extend_clauses(out, clause_bank, batch, ratio)
+
+
+def prune_partition(partition: dict, clause_bank: dict) -> Tuple[dict, Dict[str, List[str]]]:
+    """Drop the partition entries whose text is no longer in the bank.
+
+    A text the bank retired stays listed on its side of the split with nothing to match it, and
+    the counts and the leakage check would go on counting it. Batch records are left as they
+    were: they describe the batch as it was partitioned.
+
+    Args:
+        partition: The loaded partition.
+        clause_bank: The flat bank from `gendoc_data.load_clause_bank`.
+
+    Returns:
+        `(partition, dropped)`: a new partition with the stale texts removed and its counts
+        recomputed, and the dropped texts keyed `"<list>:<TYPE>"`.
+    """
+    negatives = clause_bank.get("negatives", {})
+    live = {"clauses": {t: {e["text"] for e in v} for t, v in clause_bank.items() if t != "negatives"},
+            "negatives": {t: {e["text"] for e in v} for t, v in negatives.items()}}
+    live["clauses_train"], live["negatives_train"] = live["clauses"], live["negatives"]
+    out = json.loads(json.dumps(partition))
+    dropped: Dict[str, List[str]] = {}
+    for key, per_type in live.items():
+        kept: Dict[str, List[str]] = {}
+        for etype, texts in out.get(key, {}).items():
+            kept[etype] = [x for x in texts if x in per_type.get(etype, set())]
+            if len(kept[etype]) != len(texts):
+                dropped[f"{key}:{etype}"] = [x for x in texts if x not in kept[etype]]
+        if key in out:
+            out[key] = {t: v for t, v in kept.items() if v}
+    pool_strata = _pool_strata(data.full_pools())
+    out["counts"] = _counts(clause_bank, {t: set(v) for t, v in out["clauses"].items()},
+                            {t: set(v) for t, v in out["negatives"].items()}, pool_strata, out["names"])
+    return out, dropped
+
+
 def load_partition(path: str = PARTITION_PATH) -> dict:
     """Load the partition file, failing loudly if it is missing.
 
@@ -663,7 +741,8 @@ def main() -> int:
     """CLI: build or summarise the partition file."""
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("command", choices=["build", "extend-negatives", "rebuild-negatives", "extend-clauses", "summary"])
+    parser.add_argument("command", choices=["build", "extend-negatives", "rebuild-negatives", "extend-clauses",
+                                            "rebuild-clauses", "prune", "summary"])
     parser.add_argument("batch", nargs="?", help="batch name for extend-negatives / extend-clauses")
     parser.add_argument("--clause-bank", default="data/synthetic/clause_bank.json")
     parser.add_argument("--partition", default=PARTITION_PATH)
@@ -697,6 +776,22 @@ def main() -> int:
         with open(args.partition, "w", encoding="utf-8") as handle:
             json.dump(partition, handle, ensure_ascii=False, indent=1)
             handle.write("\n")
+    elif args.command == "rebuild-clauses":
+        if not args.batch:
+            print("rebuild-clauses needs a batch name", file=sys.stderr)
+            return 2
+        partition = rebuild_clauses(load_partition(args.partition),
+                                    data.load_clause_bank(args.clause_bank), args.batch)
+        with open(args.partition, "w", encoding="utf-8") as handle:
+            json.dump(partition, handle, ensure_ascii=False, indent=1)
+            handle.write("\n")
+    elif args.command == "prune":
+        partition, dropped = prune_partition(load_partition(args.partition),
+                                             data.load_clause_bank(args.clause_bank))
+        with open(args.partition, "w", encoding="utf-8") as handle:
+            json.dump(partition, handle, ensure_ascii=False, indent=1)
+            handle.write("\n")
+        print(json.dumps(dropped, ensure_ascii=False, indent=1))
     elif args.command == "extend-clauses":
         if not args.batch:
             print("extend-clauses needs a batch name", file=sys.stderr)

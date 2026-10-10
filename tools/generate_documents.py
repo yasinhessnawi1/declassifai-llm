@@ -2289,7 +2289,9 @@ def _prompt_rules(record: Record, planned_types: Set[str], marked: bool, *,
         "opprinnelse eller seksualitet som ikke står i listen. Saksbehandlingstekst, "
         "lovhenvisninger, frister, klageadgang og nøytral administrativ tekst er derimot fritt.",
         "Opplysningene i listen skal gjengis ordrett og IKKE utvides: ikke føy til et årstall, en "
-        "dato, en årsak, en følge eller en presisering på slutten av en oppgitt opplysning.",
+        "dato, en årsak, en følge eller en presisering på slutten av en oppgitt opplysning. Det gjelder også "
+        "et utfall i parentes, som «(henlagt)» eller «(frifunnet)»: det er en egen opplysning om straffbare "
+        "forhold (B37), og den står ikke i listen.",
         # Pilot v4 wrote "Vi ser at du er aktiv i Senterpartiet ..., noe som kan være relevant for
         # helhetsvurderingen" in a money-laundering letter. The rule covers every special category.
         "En opplysning om etnisitet, religion, nasjonalitet, seksualitet, oppholdsstatus, politisk "
@@ -3178,6 +3180,16 @@ def evaluate_candidate(
                 spans = output[pv.type]
                 output[pv.type] = [extensions.get(sp, sp) if sp == pv.value else sp for sp in spans]
 
+    # B38: `27.10.2024 kl. 14:35` is one DATE_TIME span, so a planned date that the model followed
+    # with a clock time is labelled with it. A date that also occurs without a time cannot be
+    # labelled by exact strings, so the document is written again.
+    date_extensions, mixed_dates = gates.extend_date_time_spans(clean_text, output.get("DATE_TIME", []))
+    if mixed_dates:
+        return fail("B38_date_time_mixed", mixed_dates)
+    if date_extensions:
+        output["DATE_TIME"] = list(dict.fromkeys(
+            form for span in output["DATE_TIME"] for form in date_extensions.get(span, [span])))
+
     for neg in record.planted_negatives:
         for etype, sub in neg.also_labelled.items():
             if sub in clean_text and sub not in output.get(etype, []):
@@ -3243,6 +3255,7 @@ def evaluate_candidate(
         "accepted": True, "record": record, "text": clean_text, "output": output,
         "ngrams": ngrams, "tier_a_findings": tier_a_findings, "g7_labelled": labelled,
         "clause_extensions": extensions, "clause_extensions_count": n_extended,
+        "date_time_extensions": date_extensions,
         "tabular": tabular,
     }
     return "accepted", None
@@ -4870,6 +4883,7 @@ def accepted_lines(st: DocState, mode: dataset_mod.DatasetMode, strategy: str) -
         "prose": {"meta_statements_removed": [h for _k, hits in sorted(st.meta_removed.items()) for h in hits],
                   "nynorsk": st.nynorsk if rec.form == "nn" else None},
         "clause_extensions": result.get("clause_extensions", {}),
+        "date_time_extensions": result.get("date_time_extensions", {}),
         "g7_labelled": result["g7_labelled"],
         "gate_log": st.gate_log, "tier_a_findings": result["tier_a_findings"],
         "seeded_clause_literals": _seeded_clause_literals(rec),
@@ -4947,7 +4961,8 @@ def stored_accepted(batch_line: dict, meta: dict, plan: DocPlan) -> dict:
         "id": batch_line["id"], "record": record, "text": batch_line["text_input"],
         "output": batch_line["output"], "gate_log": meta["gate_log"],
         "tier_a_findings": meta["tier_a_findings"], "g7_labelled": meta["g7_labelled"],
-        "clause_extensions": meta["clause_extensions"], "tabular": meta["tabular"],
+        "clause_extensions": meta["clause_extensions"],
+        "date_time_extensions": meta.get("date_time_extensions", {}), "tabular": meta["tabular"],
         "clause_literals": meta["seeded_clause_literals"], "prose": meta.get("prose"),
         "state": _stored_state(plan, meta, True, None),
     }

@@ -68,7 +68,8 @@
    "sikta for grov vald mot ein ukjend person utanfor eit utestad i 2021",
    "siktet for datainnbrudd i arbeidsgiverens system",
    "tiltalt for grov skatteunndraging for inntektsåra 2020 og 2021",
-   "tiltalt for innbrot i ein bustad i 2021"
+   "tiltalt for innbrot i ein bustad i 2021",
+   "{SURNAME_ORG} Sjømat AS er politianmeldt for systematisk feilmerking av eksportprodukter"
   ],
   "DISABILITY": [
    "fødd med cerebral parese",
@@ -108,8 +109,12 @@
    "dotter frå eit tidlegare forhold, {PERSON_F}",
    "ektefellen {PERSON_F}",
    "far til tre born",
+   "i et fast forhold med {PERSON_F}",
    "mor til tre barn",
+   "nyleg gift med {PERSON_F}",
+   "nylig gift med {PERSON_F}",
    "onkel til {PERSON_M}",
+   "sambuar med {PERSON_F}",
    "skild frå sin tidlegare ektefelle",
    "søster til {PERSON_F}",
    "tante til {PERSON_F}",
@@ -130,8 +135,8 @@
   ],
   "GENETIC_DATA": [
    "DNA-test stadfesta farskap",
-   "genetisk screening avdekket bærerstatus for en arvelig sykdom",
-   "genetisk test viste disposisjon for Huntingtons sykdom",
+   "auka genetisk risiko for brystkreft",
+   "genetisk disposisjon for Huntingtons sykdom",
    "gentest stadfesta berar av ein arveleg sjukdom"
   ],
   "HEALTH": [
@@ -197,8 +202,10 @@
   ],
   "SEXUAL_ORIENTATION": [
    "biseksuell",
+   "forhold til ei kvinne ved namn {PERSON_F}",
    "mistenkes å skjule sin biseksualitet for familien",
    "polyamorøst forhold med to partnere",
+   "tidligere forhold til en mann ved navn {PERSON_M}",
    "transperson og har vore det sidan ungdomsåra"
   ],
   "TRADE_UNION": [
@@ -249,16 +256,28 @@
   ],
   "CRIMINAL": [
    "aggressiv atferd overfor dyr og kolleger",
+   "brot på hygienereglane ved lagring av råvarer",
+   "drifta manglar gyldig importløyve for fôrtilskotet",
+   "driften mangler gyldig importtillatelse for fôrtilskuddet",
    "eier en registrert rifle",
    "eig ei registrert rifle",
+   "eksportprodukta var feilmerkte",
+   "eksportproduktene var feilmerket",
+   "merkingen av produktene avviker fra merkereglene",
    "naboen fortalte at politiet har satt opp fartskontroll i gata",
    "serienummeret KM48213 er prega på jaktrifla",
    "tidlegare leverte {PRON} inn eit funne nøkkelknippe på politistasjonen",
    "ved ankomst gikk {PRON} gjennom sikkerhetskontrollen uten merknader",
+   "{PRON} brøt karanteneplikten da dyret kom hjem fra utlandet",
+   "{PRON} dreiv dyrehald med utgått godkjenning",
+   "{PRON} drev dyrehold med utløpt godkjenning",
    "{PRON} er ikke registrert med noen tidligere straffesaker",
    "{PRON} er ikkje registrert med nokon tidlegare straffesaker",
+   "{PRON} hadde ikke meldt fra om flytting av dyr innen fristen",
+   "{PRON} hadde ikkje meldt frå om flytting av dyr innan fristen",
    "{PRON} har hatt gyldig førerkort hele tiden",
    "{PRON} kjøpte jaktvåpenet lovlig hos en forhandler",
+   "{PRON} lagra medisinane til dyra i strid med lagringsreglane",
    "{PRON} oppbevarar jaktvåpenet i godkjent våpenskåp, slik regelverket krev",
    "{PRON} oppbevarer jaktvåpenet i godkjent våpenskap, slik regelverket krever"
   ],
@@ -663,18 +682,18 @@
  },
  "counts": {
   "clause_texts": {
-   "total": 643,
-   "benchmark": 167,
-   "share": 0.26
+   "total": 666,
+   "benchmark": 174,
+   "share": 0.261
   },
   "negative_texts": {
-   "total": 280,
-   "benchmark": 165
+   "total": 296,
+   "benchmark": 177
   },
   "plantable_negative_texts": {
-   "total": 206,
-   "benchmark": 143,
-   "train": 63
+   "total": 222,
+   "benchmark": 155,
+   "train": 67
   },
   "name_pools": {
    "first_male": {
@@ -833,10 +852,14 @@
    "{PRON} ble beskrevet som slank og middels høy"
   ],
   "CRIMINAL": [
+   "brudd på hygienereglene ved lagring av råvarer",
+   "merkinga av produkta avvik frå merkereglane",
    "naboen fortalde at politiet har sett opp fartskontroll i gata",
    "serienummer AB12345 er preget på jaktriflen",
    "tidligere leverte {PRON} inn et funnet nøkkelknippe på politistasjonen",
-   "{PRON} har hatt gyldig førarkort heile tida"
+   "{PRON} braut karanteneplikta då dyret kom heim frå utlandet",
+   "{PRON} har hatt gyldig førarkort heile tida",
+   "{PRON} oppbevarte medisinene til dyrene i strid med lagringsreglene"
   ],
   "DISABILITY": [
    "feltet om tilrettelagt arbeidsplass i søknadsskjemaet er ikke fylt ut",
@@ -908,6 +931,14 @@
    "benchmark": 129,
    "train": 47,
    "digest": "e0f0ae5ee82476a8"
+  },
+  "nearmiss_v7": {
+   "salt": "gendoc-negatives-batch-v1",
+   "ratio": 0.7,
+   "texts": 16,
+   "benchmark": 12,
+   "train": 4,
+   "digest": "82510f54d351c8e6"
   }
  },
  "clauses_train": {
@@ -979,6 +1010,7 @@
    "meldt til politiet for skadeverk på ein parkert bil",
    "mistenkt for bedrageri ved salg av en bruktbil",
    "mistenkt for uberettiget tilgang til en annens e-postkonto",
+   "politianmeldt for systematisk feilmerking av eksportprodukter",
    "sikta for aktlaus kroppsskade etter ei trafikkulukke i 2022",
    "sikta for datainnbrot i systemet til arbeidsgjevaren",
    "sikta for grovt tjuveri frå ein butikk i 2019",
@@ -1018,9 +1050,24 @@
    "enslig forsørger for to barn",
    "far til tre barn",
    "fosterforelder for {PERSON_F}",
+   "gift med {PERSON_M}",
+   "i eit fast forhold med {PERSON_F}",
+   "i eit forhold med ei kvinne",
+   "i eit forhold med ein mann",
+   "i eit forhold med {PERSON_M}",
+   "i et forhold med en kvinne",
+   "i et forhold med en mann",
+   "i et forhold med {PERSON_M}",
    "mor til tre born",
    "mora {PERSON_F}",
    "moren {PERSON_F}",
+   "partnaren {PERSON_F}",
+   "partneren {PERSON_F}",
+   "samboer med {PERSON_F}",
+   "samboer med {PERSON_M}",
+   "sambuar med {PERSON_M}",
+   "sin partnar, {PERSON_M}",
+   "sin partner, {PERSON_M}",
    "svigerfar til {PERSON_M}",
    "svoger til {PERSON_M}",
    "syster til {PERSON_F}"
@@ -1043,6 +1090,11 @@
    "ubetalt fostringstilskot på 54 000 NOK",
    "ubetalt husleie på 28 000 NOK",
    "ubetalt husleige på 28 000 NOK"
+  ],
+  "GENETIC_DATA": [
+   "genetisk bærerstatus for en arvelig sykdom",
+   "genetisk disposisjon for Huntingtons sjukdom",
+   "økt genetisk risiko for brystkreft"
   ],
   "HEALTH": [
    "alvorleg overvekt",
@@ -1095,6 +1147,10 @@
    "tar kolesterolsenkende tabletter",
    "tek blodtrykksmedisin kvar morgon",
    "tek kolesterolsenkande tablettar"
+  ],
+  "SEXUAL_ORIENTATION": [
+   "forhold til en kvinne ved navn {PERSON_F}",
+   "tidlegare forhold til ein mann ved namn {PERSON_M}"
   ]
  },
  "clause_batches": {
@@ -1104,6 +1160,13 @@
    "texts": 232,
    "benchmark": 61,
    "train": 171
+  },
+  "spec_v7": {
+   "salt": "gendoc-clauses-batch-v1",
+   "ratio": 0.25,
+   "texts": 30,
+   "benchmark": 9,
+   "train": 21
   }
  }
 }
