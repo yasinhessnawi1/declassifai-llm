@@ -47,6 +47,15 @@ G7 sweep when every occurrence of the string is that person's and rejects the do
 not; a near-miss-only document has an empty target and keeps its negatives verbatim, and an invented
 date in one is rejected.
 
+The prose and cast cases (`prose_cast_checks`) cover the fix round that followed the 20-document
+benchmark check on Qwen3.5-9B: a planted negative turned into the ground for a decision is flagged by the
+audit and by its mock even when no word of the negative is repeated (the exact SYB-000003 text), and every
+prompt of a document that plants a negative carries the influence rule; G16 deletes (or, beside a planted
+value, rejects) a sentence about which persons the document holds, fires on none of the 400 `gold_v2`
+documents, and is recorded in the metadata; each cast member comes with a reason to be in the document
+and no two parties share a surname; G17 counts Bokmål-only forms in a Nynorsk document, sends the sentences
+back for a rewrite above its threshold and records the count either way.
+
 It also carries the checks that need no generation: the benchmark/training
 partition is disjoint, the leakage checker fires on an injected leak, and G13's
 thresholds reject the table dumps they were calibrated on while passing the gold
@@ -82,6 +91,7 @@ import gendoc_coherence as coherence  # noqa: E402
 import gendoc_data as data  # noqa: E402
 import gendoc_dataset as dataset_mod  # noqa: E402
 import gendoc_gates as gates  # noqa: E402
+import gendoc_prose as prose  # noqa: E402
 import gendoc_genres as genres_mod  # noqa: E402
 import gendoc_sections as sections_mod  # noqa: E402
 import generate_documents as gen  # noqa: E402
@@ -2961,6 +2971,390 @@ def _strip_report(report: dict) -> dict:
     return out
 
 
+# The exact text of SYB-000003 (housing_application, nb, fp16): the planted negative sits in the
+# assessment and the decision turns it into the ground for the refusal.
+_SYB3_NEGATIVE = "på spørsmål om valget svarte hun at politiske spørsmål ikke var aktuelle for saken"
+_SYB3_TEXT = (
+    "Bakgrunn\n\nCamilla Husby, født 14127400875, bor på Strandveien 116B, 0750 Oslo. Saken gjelder hennes søknad "
+    "om kommunal bolig. Det er registrert ubetalte skatter på 520 000 NOK til hennes ansvar. Hun opplyser om en "
+    "månedsinntekt på 24 500 NOK etter skatt. Saksbehandler Daniel Vik har vurdert opplysningene.\n\n"
+    "Vurdering\n\nSaksbehandler Daniel Vik har vurdert opplysningene. Camilla Husby opplyser om at hun lever på "
+    "minstesatsene og har ikke økonomisk rom for uforutsette utgifter. På spørsmål om valget svarte hun at "
+    "politiske spørsmål ikke var aktuelle for saken.\n\n"
+    "Vedtak\n\nSaken blir avslått. Saksbehandler Daniel Vik har vurdert saken, og den politiske begrunnelsen "
+    "blir ikke akseptert. Hun kan klage til kommunestyret innen tre uker.")
+
+# A sentence that leans on the topic of a planted negative, per negative type; the cases inject it into
+# the first generation of a document that planted one of these types.
+_REASON_SENTENCES = {
+    "POLITICAL": "Avslaget bygger på de politiske forholdene.",
+    "RELIGIOUS_BELIEF": "Saken avgjøres på grunn av hennes livssyn.",
+    "TRADE_UNION": "Vedtaket tar hensyn til fagforeningsforholdet.",
+    "HEALTH": "Avslaget skyldes helseforholdene.",
+    "CRIMINAL": "Avslaget bygger på de straffbare forholdene.",
+}
+
+_META_NB = [
+    "Ingen ytterligere personopplysninger foreligger.",
+    "Ingen andre personer enn de nevnte er inkludert i denne meldingen.",
+    "Jostein Andersen er den eneste personen som nevnes i dette dokumentet.",
+    "Det er ikke opplyst om andre personer enn de nevnte i denne saken.",
+    "Ingen ytterligere personopplysninger ble ført inn i rapporten utover det som allerede var dokumentert.",
+    "Alle nevnte personer er knyttet til saken uten at ytterligere opplysninger foreligger.",
+    "Dokumentet inneholder ingen andre personopplysninger.",
+    "Det foreligger ingen andre personopplysninger enn de som er nevnt i denne beskrivelsen.",
+    "Opplysningene er registrerte fakta som inngår i den administrative prosessen.",
+]
+_META_NN = [
+    "Det er ikkje opplyst om andre personar enn dei nemnde i denne saksbehandlingsrekka.",
+    "Ingen andre personar enn dei nemnde er inkluderte i denne meldinga.",
+    "Jostein Andersen er den einaste personen som er nemnd i dokumentet.",
+    "Det er ingen andre opplysningar om hennar livssituasjon tilgjengeleg.",
+    "Ingen ytterlegare personopplysningar føreligg.",
+    "Alle dei nemnde personane er knytte til saka utan at ytterlegare opplysningar føreligg.",
+    "Dokumentet inneheld inga anna personopplysning.",
+    "Det er ikkje oppgjeve fleire personar i saka.",
+]
+# Sentences about an event that happen to contain the same words.
+_META_LEGIT = [
+    "Ingen andre personer var til stede under møtet.",
+    "Det foreligger ingen nye opplysninger som krever omvurdering.",
+    "Hun har ingen andre barn enn Ola.",
+    "Det er ikke registrert noen andre gjenstander i boet.",
+    "De nevnte tiltakene er gjennomført.",
+    "Vi ber om ytterligere dokumentasjon innen tre uker.",
+    "Politiet har ikke opplyst om andre mistenkte enn de to som er pågrepet.",
+]
+
+
+class _ReasonInjectingMock(MockBackend):
+    """Appends, to the first whole-document generation of each document, a sentence that gives the
+    topic of one of its planted negatives as the ground for the decision."""
+
+    def __init__(self) -> None:
+        self.fired: Dict[int, str] = {}
+
+    def generate(self, prompts, **kwargs):
+        outputs = super().generate(prompts, **kwargs)
+        for i, prompt in enumerate(prompts):
+            if any(tag in prompt for tag in ("\nAUDIT|1", "\nAUDIT_REPAIR|1", "\nREPAIR|", "\nSECTION|")):
+                continue
+            seed = int(re.search(r"SEED\|(\d+)", prompt).group(1))
+            if seed in self.fired or divmod(seed - BASE_SEED * 100003, 97)[1] != 1:
+                continue
+            types = [m.group(1) for m in re.finditer(r"^NEGATIVE\|([A-Z_]+)\|", prompt, re.M)]
+            sentence = next((_REASON_SENTENCES[t] for t in types if t in _REASON_SENTENCES), None)
+            if sentence:
+                self.fired[seed] = sentence
+                outputs[i] = outputs[i].rstrip() + " " + sentence
+        return outputs
+
+
+class _ProseInjectingMock(MockBackend):
+    """Corrupts the first generation of each document with one kind of prose defect, once.
+
+    `kind` is "meta" (a sentence about which persons the document holds), "meta_with_value" (the same
+    sentence but holding a planted value, which cannot be deleted) or "bokmal" (a Bokmål sentence in
+    a Nynorsk document). A sectioned document is corrupted in its first section.
+    """
+
+    META = {"nb": "Ingen ytterligere personopplysninger foreligger.",
+            "nn": "Det er ikkje opplyst om andre personar enn dei nemnde i denne saksbehandlingsrekka."}
+    BOKMAL = "Det ble ikke gjort noe hvis hun ikke hadde vært der uten tillatelse fra arbeidsgiver."
+
+    def __init__(self, kind: str) -> None:
+        self.kind = kind
+        self.fired: set = set()
+
+    def generate(self, prompts, **kwargs):
+        outputs = super().generate(prompts, **kwargs)
+        for i, prompt in enumerate(prompts):
+            if any(tag in prompt for tag in ("\nAUDIT|1", "\nAUDIT_REPAIR|1", "\nREPAIR|")):
+                continue
+            if "\nSECTION|" in prompt and not re.search(r"SECTION\|0\|", prompt):
+                continue
+            seed = int(re.search(r"SEED\|(\d+)", prompt).group(1))
+            if seed in self.fired or divmod(seed - BASE_SEED * 100003, 97)[1] != 1:
+                continue
+            self.fired.add(seed)
+            form = "nn" if "META|form=nn" in prompt else "nb"
+            if self.kind == "meta":
+                outputs[i] = outputs[i].rstrip() + " " + self.META[form]
+            elif self.kind == "meta_with_value":
+                value = _values(prompt)[0]
+                outputs[i] = outputs[i].rstrip() + f" Ingen andre personer enn de nevnte er inkludert, se {value}."
+            elif self.kind == "bokmal":
+                outputs[i] = outputs[i].rstrip() + " " + self.BOKMAL
+        return outputs
+
+
+def prose_cast_checks(taxonomy_index, clause_bank: dict, partition: dict, gold_v2_glob: str) -> bool:
+    """The negative-as-reason, meta-statement, cast and Nynorsk fixes, at the level of prompt, gate and pipeline."""
+    import random
+    ok = True
+
+    def report(name: str, passed: bool, detail: str) -> None:
+        nonlocal ok
+        ok &= bool(passed)
+        print(f"{'PASS' if passed else 'FAIL'} prose  {name:<44} {detail}")
+
+    public_figures = set(data.PUBLIC_FIGURES)
+    place_names = {p for _c, p in data.POSTAL_PAIRS}
+    agency_names = set(data.AGENCY_NAMES)
+    bank = dataset_mod.select_clause_bank(clause_bank, partition, "benchmark")
+    negative_bank = bank.pop("negatives")
+    backend = MockBackend()
+
+    # -- 1. a planted negative is never the reason for a decision -----------------------------
+    plan = gen.DocPlan(idx=1, genre="police_report", variant="prose_letter", form="nb",
+                       length_band=(2800, 4000), forced_types=[], profile="dense", type_target=16,
+                       art9_cap=2, n_negatives=2)
+    rec = gen.sample_record(random.Random(1), 1, plan, "seeded", taxonomy_index, bank, public_figures,
+                            negative_bank=negative_bank, dataset="benchmark")
+    sp = sections_mod.build_plan(rec, random.Random(1))
+    without = [k for k, sec in enumerate(sp.sections) if not sec.negatives]
+    prompts = {"whole": model_visible(gen.build_prompt(rec))}
+    for k in range(len(sp.sections)):
+        prompts[f"section{k}"] = model_visible(gen.build_section_prompt(
+            rec, sp, k, [sec.text for sec in sp.sections[:k]]))
+    plan0 = dataclasses_replace_negatives(plan)
+    rec0 = gen.sample_record(random.Random(1), 1, plan0, "seeded", taxonomy_index, bank, public_figures,
+                             negative_bank=negative_bank, dataset="benchmark")
+    plain = model_visible(gen.build_prompt(rec0))
+    in_all = all(gen._NEGATIVE_INFLUENCE_RULE in text for text in prompts.values())
+    report("influence_rule_in_every_prompt_of_the_document",
+           bool(rec.planted_negatives) and bool(without) and in_all and not rec0.planted_negatives
+           and gen._NEGATIVE_INFLUENCE_RULE not in plain,
+           f"sections={len(sp.sections)} without_negative_of_their_own={without} rule_in_all={in_all} "
+           f"absent_without_negatives={gen._NEGATIVE_INFLUENCE_RULE not in plain}")
+
+    def flagged(document: str, etype: str, negative: str) -> list:
+        prompt = audit.build_audit_prompt(document, [], 7, negatives=[(etype, negative)])
+        return audit.parse_audit_reply(backend.generate([prompt])[0])
+
+    pairs = flagged(_SYB3_TEXT, "POLITICAL", _SYB3_NEGATIVE)
+    exempt = ["P" + _SYB3_NEGATIVE[1:]]
+    findings = audit.filter_audit_findings(_SYB3_TEXT, [], pairs, exempt_spans=exempt)
+    clean = _SYB3_TEXT.replace(", og den politiske begrunnelsen blir ikke akseptert", "")
+    livssyn = _SYB3_TEXT.replace("og den politiske begrunnelsen blir ikke akseptert",
+                                 "og på grunn av hennes livssyn blir søknaden avslått")
+    report("audit_catches_negative_turned_into_a_reason",
+           len(pairs) == 1 and pairs[0][0] == "RAMME" and "den politiske begrunnelsen" in pairs[0][1]
+           and len(findings) == 1 and findings[0]["reason"] == "sensitive_framing"
+           and not flagged(clean, "POLITICAL", _SYB3_NEGATIVE)
+           and flagged(livssyn, "RELIGIOUS_BELIEF", "hun ville ikke svare på spørsmål om livssynet sitt"),
+           f"syb3_pairs={pairs} kept={len(findings)} clean_text_findings={len(flagged(clean, 'POLITICAL', _SYB3_NEGATIVE))} "
+           f"livssyn_flagged={bool(flagged(livssyn, 'RELIGIOUS_BELIEF', 'hun ville ikke svare på spørsmål om livssynet sitt'))}")
+    shown = model_visible(audit.build_audit_prompt(_SYB3_TEXT, [], 7, negatives=[("POLITICAL", _SYB3_NEGATIVE)]))
+    report("audit_prompt_names_the_back_reference",
+           "EMNET den" in shown and "den politiske begrunnelsen blir ikke akseptert" in shown
+           and "på grunn av hennes livssyn" in shown and _SYB3_NEGATIVE in shown,
+           f"topic_wording={'EMNET den' in shown}")
+    repair = audit.build_audit_repair_prompt(_SYB3_TEXT, findings, ["Daniel Vik", "Camilla Husby"], "nb", 7)
+    repaired = backend.generate([repair])[0]
+    report("repair_removes_the_reason_and_keeps_the_values",
+           "den politiske begrunnelsen" not in repaired and "Daniel Vik" in repaired
+           and "Camilla Husby" in repaired and not flagged(repaired, "POLITICAL", _SYB3_NEGATIVE),
+           f"reason_gone={'den politiske begrunnelsen' not in repaired}")
+
+    reason_mock = _ReasonInjectingMock()
+    config = gen.GenerationConfig(
+        strategy="seeded", invalid_checksum_rate=0.0, retries=3, near_dup_threshold=0.7, g7_policy="reject",
+        batch_size=4, audit=True, max_audit_repairs=1, dataset="benchmark", negative_bank=negative_bank,
+        sectioning="off")
+    plans = [_plan_for(i, g, "typical", "nb", (1400, 2200), n_negatives=3, type_target=7)
+             for i, g in enumerate(["police_report", "housing_application", "gp_referral", "udi_decision",
+                                    "bank_aml", "school_incident", "court_judgment", "nav_decision"], start=500)]
+    states, _stats = gen.run_generation(plans, BASE_SEED, taxonomy_index, bank, public_figures, place_names,
+                                        agency_names, reason_mock, config)
+    handled = [st for st in states if st.result.get("accepted") and st.audit_log and any(
+        f["reason"] == "sensitive_framing" for e in st.audit_log for f in e["findings"])]
+    leftover = [st for st in handled if any(s_ in st.result["text"] for s_ in _REASON_SENTENCES.values())]
+    report("pipeline_repairs_a_reason_built_on_a_negative",
+           len(reason_mock.fired) >= 1 and len(handled) >= 1 and not leftover
+           and all(st.audit_repairs_total >= 1 for st in handled),
+           f"injected={len(reason_mock.fired)} flagged_and_repaired={len(handled)} sentence_left={len(leftover)}")
+
+    # -- 2. G16: a statement about the document's own persons ----------------------------------
+    missed = [t for t in _META_NB + _META_NN if not prose.meta_statements(t)]
+    wrongly = [t for t in _META_LEGIT if prose.meta_statements(t)]
+    report("g16_fires_on_known_phrasings_nb_and_nn", not missed and not wrongly,
+           f"nb={len(_META_NB)} nn={len(_META_NN)} missed={missed} legit_flagged={wrongly}")
+    gold = []
+    for path in sorted(glob.glob(gold_v2_glob)):
+        gold += _load_jsonl([path])
+    fired_on = [d["id"] for d in gold if prose.meta_statements(d["text_input"])]
+    report("g16_fires_on_none_of_gold_v2", len(gold) >= 400 and not fired_on,
+           f"documents={len(gold)} fired={len(fired_on)} {fired_on[:5]}")
+    text, removed, stuck = prose.strip_meta_statements(
+        "Saken er avklart. Ingen ytterligere personopplysninger foreligger. Ola Nordmann er nevnt. "
+        "Ingen andre personer enn Ola Nordmann er nevnt i meldingen.", ["Ola Nordmann"])
+    report("g16_deletes_or_refuses_beside_a_planted_value",
+           text == "Saken er avklart. Ola Nordmann er nevnt. Ingen andre personer enn Ola Nordmann er nevnt i meldingen."
+           and len(removed) == 1 and len(stuck) == 1,
+           f"text={text!r} removed={len(removed)} unremovable={len(stuck)}")
+
+    def run_prose(kind: str, plans_, sectioning: str, **config_kwargs):
+        mock_ = _ProseInjectingMock(kind)
+        cfg = gen.GenerationConfig(
+            strategy="seeded", invalid_checksum_rate=0.0, retries=3, near_dup_threshold=0.7,
+            g7_policy="reject", batch_size=4, audit=True, max_audit_repairs=1, dataset="benchmark",
+            negative_bank=negative_bank, sectioning=sectioning, **config_kwargs)
+        sts, stats_ = gen.run_generation(plans_, BASE_SEED, taxonomy_index, bank, public_figures, place_names,
+                                         agency_names, mock_, cfg)
+        return mock_, sts, stats_
+
+    mode = dataset_mod.MODES["benchmark"]
+    meta_plans = ([_plan_for(600 + i, g, "typical", form, (1400, 2200), n_negatives=1, type_target=7)
+                   for i, (g, form) in enumerate([("police_report", "nb"), ("gp_referral", "nn")])]
+                  + [_plan_for(610 + i, g, "dense", form, (2800, 4000), n_negatives=2, type_target=14)
+                     for i, (g, form) in enumerate([("police_report", "nb"), ("udi_decision", "nn")])])
+    _m, sts, _s = run_prose("meta", meta_plans, "auto")
+    lines = {st.plan.idx: gen.accepted_lines(st, mode, "seeded") for st in sts if st.result.get("accepted")}
+    gone = all(not prose.meta_statements(lines[i][0]["text_input"]) for i in lines)
+    recorded = all(lines[i][1]["prose"]["meta_statements_removed"] for i in lines)
+    report("g16_deletes_the_sentence_and_records_it",
+           len(lines) == len(meta_plans) and gone and recorded
+           and all(sts_.attempt == 1 for sts_ in sts) and any(st.section_plan for st in sts),
+           f"accepted={len(lines)}/{len(meta_plans)} sentence_gone={gone} recorded_in_meta={recorded} "
+           f"sectioned={sum(1 for st in sts if st.section_plan)} first_attempt={[st.attempt for st in sts]}")
+    _m, sts, _s = run_prose("meta", meta_plans[:2], "off")
+    whole = [gen.accepted_lines(st, mode, "seeded") for st in sts if st.result.get("accepted")]
+    report("g16_deletes_in_a_whole_document_too",
+           len(whole) == 2 and all(st.section_plan is None for st in sts)
+           and all(not prose.meta_statements(b["text_input"]) and m["prose"]["meta_statements_removed"]
+                   for b, m in whole),
+           f"accepted={len(whole)}/2 unsectioned={all(st.section_plan is None for st in sts)}")
+    _m, sts, _s = run_prose("meta_with_value", [meta_plans[0]], "off")
+    st = sts[0]
+    first_fail = next((e["stage"] for e in st.gate_log if not e.get("ok")), None)
+    report("g16_rejects_a_sentence_it_cannot_delete", first_fail == "G16_meta_statement" and st.result.get("accepted")
+           and st.attempt == 2, f"first_failure={first_fail} accepted={st.result.get('accepted')} attempts={st.attempt}")
+
+    # -- 3. every cast member comes with a reason; no two parties share a surname ---------------
+    genres = genres_mod.genre_names()
+    checked = clashes = introduced = listed = 0
+    missing: List[str] = []
+    clashing: List[str] = []
+    for i, genre in enumerate(genres):
+        for form in ("nb", "nn"):
+            pl = _plan_for(700 + i, genre, "case_file", form, (3600, 4600), n_negatives=1, type_target=18)
+            r = gen.sample_record(random.Random(900 + i), 900 + i, pl, "seeded", taxonomy_index, bank,
+                                  public_figures, negative_bank=negative_bank, dataset="benchmark")
+            names = [p.person.last_name.lower() for p in r.parties]
+            checked += 1
+            if len(names) != len(set(names)):
+                clashes += 1
+                clashing.append(f"{genre}/{form}")
+            line = gen._subject_line(r)
+            role_word = {pv.party: pv.value for pv in r.planned if pv.anchor}
+            for p in r.parties:
+                if p.is_subject or p.role == "author":
+                    continue
+                listed += 1
+                reason = genres_mod.cast_reason(p.role, p.person.gender, form, p.role in role_word)
+                if f"{p.person.full_name} (" in line and reason in line:
+                    introduced += 1
+                else:
+                    missing.append(f"{genre}/{p.role}")
+    report("every_cast_member_has_a_reason_in_the_prompt", listed > 0 and introduced == listed,
+           f"cast_members={listed} with_reason={introduced} missing={missing[:4]}")
+    report("no_two_parties_share_a_surname", checked > 0 and clashes == 0,
+           f"records={checked} with_shared_surname={clashes} {clashing[:4]}")
+    sample = gen._with_surname(gen.Person("Per", "Brekke", "M", datetime_date(1980, 1, 1)),
+                               {"brekke", "olsen"}, public_figures)
+    kept = gen._with_surname(gen.Person("Per", "Hansen", "M", datetime_date(1980, 1, 1)), {"brekke"}, public_figures)
+    report("surname_swap_keeps_the_rest_of_the_person",
+           sample.last_name.lower() not in {"brekke", "olsen"} and sample.first_name == "Per" and kept.last_name == "Hansen"
+           and sample == gen._with_surname(gen.Person("Per", "Brekke", "M", datetime_date(1980, 1, 1)),
+                                           {"brekke", "olsen"}, public_figures),
+           f"swapped={sample.full_name} unchanged={kept.full_name} deterministic=True")
+
+    # -- 4. G17: Bokmål in a Nynorsk document -----------------------------------------------
+    sample_nn = ("Denne referatet frå møtet vart avholdt på bustaden til Einar. Vi gav alle samtykke. "
+                 "Han bodd der lenge.")
+    forms = prose.bokmal_forms(sample_nn)
+    report("g17_counts_the_unmistakable_forms",
+           [f["form"] for f in forms] == ["denne referatet", "avholdt", "bodd"],
+           f"forms={[f['form'] for f in forms]}")
+    nn_texts = [e["text"].replace("{PRON}", "ho").replace("{POSS}", "hennar").replace("{OBJ}", "henne")
+                for v in negative_bank.values() for e in v if e["form"] == "nn"]
+    nn_clauses = [e["text"] for et, v in clause_bank.items() if et != "negatives" and isinstance(v, list)
+                  for e in v if isinstance(e, dict) and e.get("form") == "nn"]
+    mock_nn = list(MockBackendBoilerplate.nn())
+    stray = [t for t in nn_texts + nn_clauses + mock_nn if prose.bokmal_forms(t)]
+    report("g17_is_silent_on_the_generators_own_nynorsk", not stray and len(nn_texts) > 20,
+           f"nynorsk_negatives={len(nn_texts)} clauses={len(nn_clauses)} mock_sentences={len(mock_nn)} flagged={stray[:2]}")
+    two_long = "Ho kom. " * 250 + "Det ble ikke slik."
+    three = "Det ble ikke slik, og hun ville ikke."
+    two_short = "Det ble ikke slik. " + "Ho kom. " * 40
+    gold_nb = [d["text_input"] for d in gold[:30]]
+    mean_nb = sum(prose.nynorsk_check(t)["count"] for t in gold_nb) / max(1, len(gold_nb))
+    report("g17_threshold_rule",
+           not prose.nynorsk_check(two_long)["over_threshold"] and prose.nynorsk_check(three)["over_threshold"]
+           and prose.nynorsk_check(two_short)["over_threshold"] and not prose.nynorsk_check("Ho kom.")["over_threshold"]
+           and mean_nb > 10,
+           f"2_in_2000_words={prose.nynorsk_check(two_long)['count']} over={prose.nynorsk_check(two_long)['over_threshold']} "
+           f"3_forms_over={prose.nynorsk_check(three)['over_threshold']} "
+           f"2_in_{len(two_short.split())}_words_over={prose.nynorsk_check(two_short)['over_threshold']} "
+           f"bokmal_gold_mean_forms={mean_nb:.1f}")
+
+    nn_plans = [_plan_for(800 + i, g, "typical", "nn", (1400, 2200), n_negatives=1, type_target=7)
+                for i, g in enumerate(["police_report", "gp_referral"])]
+    nn_plans += [_plan_for(810 + i, g, "dense", "nn", (2800, 4000), n_negatives=2, type_target=14)
+                 for i, g in enumerate(["udi_decision", "bank_aml"])]
+    _m, sts, stats_ = run_prose("bokmal", nn_plans, "auto")
+    metas = {st.plan.idx: gen.accepted_lines(st, mode, "seeded")[1]["prose"]["nynorsk"]
+             for st in sts if st.result.get("accepted")}
+    report("g17_rewrites_a_bokmal_sentence_and_records_the_count",
+           len(metas) == len(nn_plans) and all(m["count_before_rewrite"] >= prose.NYNORSK_MIN_FORMS
+                                               and m["count"] < prose.NYNORSK_MIN_FORMS and m["rewrites"] == 1
+                                               for m in metas.values())
+           and all(st.attempt == 1 for st in sts) and any(st.section_plan for st in sts)
+           and all(_ProseInjectingMock.BOKMAL not in st.result["text"] for st in sts),
+           f"accepted={len(metas)}/{len(nn_plans)} counts={[(m['count_before_rewrite'], m['count']) for m in metas.values()]} "
+           f"rewrites_run={stats_.get('nynorsk_rewrites')} sectioned={sum(1 for st in sts if st.section_plan)}")
+    _m, sts, stats_ = run_prose("bokmal", nn_plans[:2], "off")
+    whole_meta = [gen.accepted_lines(st, mode, "seeded")[1]["prose"]["nynorsk"] for st in sts if st.result.get("accepted")]
+    report("g17_rewrites_a_whole_document_too",
+           len(whole_meta) == 2 and all(m["rewrites"] == 1 and m["count"] < prose.NYNORSK_MIN_FORMS
+                                        and m["count_before_rewrite"] >= prose.NYNORSK_MIN_FORMS for m in whole_meta)
+           and all(st.section_plan is None for st in sts),
+           f"counts={[(m['count_before_rewrite'], m['count']) for m in whole_meta]}")
+    _m, sts, stats_ = run_prose("bokmal", [nn_plans[0]], "off", max_nynorsk_repairs=0)
+    report("g17_regenerates_when_no_rewrite_is_allowed",
+           sts[0].result.get("accepted") and sts[0].attempt == 2 and stats_.get("nynorsk_regenerations") == 1,
+           f"attempts={sts[0].attempt} regenerations={stats_.get('nynorsk_regenerations')}")
+    _m, sts, stats_ = run_prose("bokmal", [nn_plans[0]], "off", nynorsk_gate=False)
+    kept_meta = gen.accepted_lines(sts[0], mode, "seeded")[1]["prose"]["nynorsk"]
+    report("g17_counts_but_does_not_act_when_switched_off",
+           sts[0].result.get("accepted") and sts[0].attempt == 1 and kept_meta["over_threshold"]
+           and kept_meta["count"] >= prose.NYNORSK_MIN_FORMS and not stats_.get("nynorsk_rewrites"),
+           f"count={kept_meta['count']} over={kept_meta['over_threshold']} rewrites={stats_.get('nynorsk_rewrites')}")
+    return ok
+
+
+def dataclasses_replace_negatives(plan: "gen.DocPlan") -> "gen.DocPlan":
+    """The same plan with no planted negatives."""
+    import dataclasses
+    return dataclasses.replace(plan, n_negatives=0)
+
+
+def datetime_date(year: int, month: int, day: int):
+    """A birth date for the surname unit case."""
+    import datetime
+    return datetime.date(year, month, day)
+
+
+class MockBackendBoilerplate:
+    """The mock backend's own Nynorsk sentences, which G17 must not flag."""
+
+    @staticmethod
+    def nn() -> List[str]:
+        import gendoc_backends as backends
+        return list(backends._BOILERPLATE_NN) + list(backends._SECTION_FILLER_NN)
+
+
 def main() -> int:
     """Run every injected-failure case and report. Returns a process exit code."""
     parser = argparse.ArgumentParser(description=__doc__,
@@ -3048,6 +3442,7 @@ def main() -> int:
     all_passed &= negative_wording_checks(taxonomy_index, clause_bank, partition)
     all_passed &= record_checks(taxonomy_index, clause_bank, partition, out_dir)
     all_passed &= role_word_checks(taxonomy_index, clause_bank, partition)
+    all_passed &= prose_cast_checks(taxonomy_index, clause_bank, partition, args.gold_v2_glob)
     all_passed &= resume_checks(out_dir)
 
     clause_literals = ([pv.value for pv in states[16].record.planned if pv.value_kind == "clause" and pv.value]

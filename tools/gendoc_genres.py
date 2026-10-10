@@ -215,6 +215,93 @@ CAST_ROLES: Dict[str, dict] = {
                          "values": ["PHONE", "EMAIL", "ORGANIZATION", "ORG_NUMBER", "BANK_ACCOUNT"]},
 }
 
+# Why each cast member is in the document, as `(noun phrase for a man, for a woman, clause)` per
+# form. The prompt used to list a cast member by the bare role label ("Torstein Olsen (barn, mann,
+# 17 år)"), and a model that is told only "barn" writes "Torstein Olsen, ein 17 år gammal gut, var til
+# stades under møtet" with no word on whose son he is or why he was there. The noun phrase is the
+# introduction the model is asked to give on the first mention; the clause is used instead when the
+# person has a planted role word ("overlege Are Hovden, som har behandla hovudpersonen"), because the
+# noun phrase of a professional ("legen") would hand the model a second, generic use of a word the
+# role-word rule forbids anywhere but beside the planted name.
+CAST_REASONS: Dict[str, Dict[str, Tuple[str, str, str]]] = {
+    "spouse": {"nb": ("ektefellen til hovedpersonen", "ektefellen til hovedpersonen",
+                      "som er gift med hovedpersonen"),
+               "nn": ("ektefellen til hovudpersonen", "ektefellen til hovudpersonen",
+                      "som er gift med hovudpersonen")},
+    "child": {"nb": ("sønnen til hovedpersonen", "datteren til hovedpersonen", "som er barn av hovedpersonen"),
+              "nn": ("sonen til hovudpersonen", "dottera til hovudpersonen", "som er barn av hovudpersonen")},
+    "parent": {"nb": ("faren til hovedpersonen", "moren til hovedpersonen", "som er forelder til hovedpersonen"),
+               "nn": ("faren til hovudpersonen", "mora til hovudpersonen", "som er forelder til hovudpersonen")},
+    "guardian": {"nb": ("verge for hovedpersonen", "verge for hovedpersonen", "som er verge for hovedpersonen"),
+                 "nn": ("verje for hovudpersonen", "verje for hovudpersonen", "som er verje for hovudpersonen")},
+    "counterparty": {"nb": ("motparten i saken", "motparten i saken", "som er motpart i saken"),
+                     "nn": ("motparten i saka", "motparten i saka", "som er motpart i saka")},
+    "witness": {"nb": ("vitne til hendelsen", "vitne til hendelsen", "som var vitne til hendelsen"),
+                "nn": ("vitne til hendinga", "vitne til hendinga", "som var vitne til hendinga")},
+    "co_suspect": {"nb": ("medmistenkt i saken", "medmistenkt i saken", "som er medmistenkt i saken"),
+                   "nn": ("medmistenkt i saka", "medmistenkt i saka", "som er medmistenkt i saka")},
+    "physician": {"nb": ("legen som har behandlet hovedpersonen", "legen som har behandlet hovedpersonen",
+                         "som har behandlet hovedpersonen"),
+                  "nn": ("legen som har behandla hovudpersonen", "legen som har behandla hovudpersonen",
+                         "som har behandla hovudpersonen")},
+    "psychologist": {"nb": ("psykologen som har vurdert hovedpersonen", "psykologen som har vurdert hovedpersonen",
+                            "som har vurdert hovedpersonen"),
+                     "nn": ("psykologen som har vurdert hovudpersonen", "psykologen som har vurdert hovudpersonen",
+                            "som har vurdert hovudpersonen")},
+    "veterinarian": {"nb": ("veterinæren som har undersøkt dyret", "veterinæren som har undersøkt dyret",
+                            "som har undersøkt dyret"),
+                     "nn": ("veterinæren som har undersøkt dyret", "veterinæren som har undersøkt dyret",
+                            "som har undersøkt dyret")},
+    "caseworker": {"nb": ("saksbehandleren som har fått saken", "saksbehandleren som har fått saken",
+                          "som har fått saken til behandling"),
+                   "nn": ("sakshandsamaren som har fått saka", "sakshandsamaren som har fått saka",
+                          "som har fått saka til handsaming")},
+    "lawyer": {"nb": ("advokaten som representerer hovedpersonen", "advokaten som representerer hovedpersonen",
+                      "som representerer hovedpersonen"),
+               "nn": ("advokaten som representerer hovudpersonen", "advokaten som representerer hovudpersonen",
+                      "som representerer hovudpersonen")},
+    "employer_contact": {"nb": ("kontaktpersonen hos hovedpersonens arbeidsgiver",
+                                "kontaktpersonen hos hovedpersonens arbeidsgiver",
+                                "som er kontaktperson hos hovedpersonens arbeidsgiver"),
+                         "nn": ("kontaktpersonen hos arbeidsgjevaren til hovudpersonen",
+                                "kontaktpersonen hos arbeidsgjevaren til hovudpersonen",
+                                "som er kontaktperson hos arbeidsgjevaren til hovudpersonen")},
+    "landlord": {"nb": ("utleieren til hovedpersonen", "utleieren til hovedpersonen",
+                        "som leier ut til hovedpersonen"),
+                 "nn": ("utleigaren til hovudpersonen", "utleigaren til hovudpersonen",
+                        "som leiger ut til hovudpersonen")},
+    "teacher": {"nb": ("læreren som kjenner hovedpersonen fra skolen", "læreren som kjenner hovedpersonen fra skolen",
+                       "som kjenner hovedpersonen fra skolen"),
+                "nn": ("læraren som kjenner hovudpersonen frå skulen", "læraren som kjenner hovudpersonen frå skulen",
+                       "som kjenner hovudpersonen frå skulen")},
+    "officer": {"nb": ("tjenestemannen som har behandlet saken", "tjenestemannen som har behandlet saken",
+                       "som har behandlet saken"),
+                "nn": ("tenestemannen som har handsama saka", "tenestemannen som har handsama saka",
+                       "som har handsama saka")},
+    "creditor_contact": {"nb": ("kontaktpersonen hos kreditor", "kontaktpersonen hos kreditor",
+                                "som er kontaktperson hos kreditor"),
+                         "nn": ("kontaktpersonen hos kreditor", "kontaktpersonen hos kreditor",
+                                "som er kontaktperson hos kreditor")},
+}
+
+
+def cast_reason(role: str, gender: str, form: str, with_role_word: bool = False) -> str:
+    """Return the one-phrase reason a cast member is in the document.
+
+    Args:
+        role: A cast role id from `CAST_ROLES`.
+        gender: "M" or "F", which picks "sønnen"/"datteren" and "faren"/"moren".
+        form: "nb" or "nn".
+        with_role_word: True when the person has a planted role word, so the clause form (no role
+            noun) is returned instead of the noun phrase.
+
+    Returns:
+        The phrase, e.g. "sønnen til hovedpersonen" or "som har behandlet hovedpersonen".
+    """
+    man, woman, clause = CAST_REASONS[role][form]
+    return clause if with_role_word else (man if gender == "M" else woman)
+
+
 # Concrete role words for the professionals in a cast, as (Bokmål, Nynorsk, weight). The annotation
 # owner's ruling makes the role word of a specific individual EMPLOYMENT, and the output format is
 # one string per type, so a planted word labels every occurrence of its string. The words are

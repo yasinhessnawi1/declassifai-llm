@@ -51,6 +51,17 @@ to flag any sentence that presents one as relevant, suspicious, striking or sign
 exemption below protects the negative's own words, never the framing around it: a quote that
 reaches beyond the negative is kept and the sentence is repaired or regenerated.
 
+A planted negative can also be turned into a reason. The check run on Qwen3.5-9B planted "politiske
+spørsmål ikke var aktuelle for saken" in an assessment, and the decision section wrote "Saken blir
+avslått. Saksbehandler Daniel Vik har vurdert saken, og den politiske begrunnelsen blir ikke akseptert":
+the neutral clause had become the ground for a refusal. The sentence repeats none of the negative's
+words, so the check for a negative that is presented as relevant could not see it, and the audit
+took it for ordinary decision text. Task B now asks the model for every sentence of an assessment or a
+decision that refers back to the *topic* of a planted negative ("den politiske begrunnelsen", "på
+grunn av hennes livssyn") as a reason, a consideration or a premise, repeating its words or not.
+`MockBackend` stands in for that reading with a topic table per negative type
+(`gendoc_backends._MOCK_NEGATIVE_TOPICS`) and a list of reason words.
+
 Two rules make this safe to act on:
 
 * **Audit findings never become labels.** They are model-guessed spans, and
@@ -83,7 +94,11 @@ AUDIT_OPEN = "<<<DOKUMENT>>>"
 AUDIT_CLOSE = "<<<SLUTT PÅ DOKUMENT>>>"
 
 REASON_CODES = {"SENSITIV": "unlabelled_sensitive", "RAMME": "sensitive_framing",
-                "MOTSIGELSE": "contradiction"}
+                "MOTSIGELSE": "contradiction", "NYNORSK": "bokmal_in_nynorsk"}
+
+# NYNORSK is not a code the auditor model is asked for: it is set by the deterministic G17 count
+# (`gendoc_prose.nynorsk_check`) on a finding that carries the sentence to rewrite, so it is absent
+# from `_FINDING_RE` and a model that writes it is ignored.
 
 _FINDING_RE = re.compile(r"^\s*(?:[-*\d.)\s]*)FUNN\s*\|\s*(SENSITIV|RAMME|MOTSIGELSE)\s*\|\s*(.+?)\s*$")
 
@@ -121,6 +136,13 @@ presenterer en av dem som relevant, viktig, påfallende, mistenkelig eller av be
 vurderingen, risikoen eller personens troverdighet. Sitér leddet som gir formuleringen den \
 betydningen, ikke selve formuleringen. De nøytrale formuleringene er ikke funn under oppgave A og C.
 
+Oppgave B gjelder også når en vurdering eller et vedtak bruker en nøytral formulering, eller EMNET den \
+gjelder, som grunn, begrunnelse, hensyn eller premiss. Setningen trenger ikke gjenta formuleringens \
+egne ord: «den politiske begrunnelsen blir ikke akseptert» og «på grunn av hennes livssyn» er \
+RAMME-funn når en nøytral formulering handler om politikk eller livssyn, også når en annen setning \
+sier at saken avslås. Les hver setning i en vurdering, en konklusjon eller et vedtak og spør: viser den \
+tilbake til emnet for en av formuleringene som noe som veier i saken? Sitér leddet som viser tilbake.
+
 Dette skal IKKE regnes med, og er den vanligste feilen:
 - navn, alder, kjønn, adresse, postnummer, telefonnummer, e-post, saksnummer, datoer, \
   stillingstittel, signatur og hilsen
@@ -151,6 +173,8 @@ FUNN|SENSITIV|har hatt kontakter med personer som er kjent for å drive med ille
 FUNN|RAMME|hun har romani bakgrunn, hvilket har vært relevant for etterforskningen
 FUNN|RAMME|du er aktiv i Senterpartiet, noe som kan være relevant for helhetsvurderingen av mistanken
 FUNN|RAMME|noe som er relevant for saken, siden han bor i nærheten av en bankfilial
+FUNN|RAMME|og den politiske begrunnelsen blir ikke akseptert
+FUNN|RAMME|på grunn av hennes livssyn blir søknaden avslått
 FUNN|RAMME|hun bruker antidepressiva, noe som øker risikoen for at hun kan presses
 FUNN|MOTSIGELSE|Det foreligger ingen registrerte straffedommer mot henne
 FUNN|MOTSIGELSE|men denne finst ikkje i oppgjeve register
@@ -163,6 +187,7 @@ Eksempler på setninger som IKKE skal med:
 - «Vennlig hilsen, allmennlege.»
 - «Hun bruker antidepressiva, og legen har vurdert behandlingen som tilstrekkelig.»
 - «Han er medlem av Fellesforbundet.»
+- «Saken blir avslått fordi inntekten overstiger grensen.» (en grunn som ikke handler om en nøytral formulering)
 
 Svar bare med linjer på dette formatet, én linje per funn:
 FUNN|SENSITIV|<ordrett sitat fra dokumentet>
@@ -367,7 +392,8 @@ def build_audit_repair_prompt(
 
     Args:
         text: The document to repair.
-        findings: Surviving audit findings.
+        findings: Surviving audit findings. One with `kind == "NYNORSK"` (from G17) is not removed
+            but rewritten in Nynorsk, its values kept.
         keep_verbatim: Planned values and clauses that must survive unchanged.
         form: "nb" or "nn", so the repaired document stays in its own form.
         doc_seed: Seed echoed into the mock manifest.
@@ -376,19 +402,31 @@ def build_audit_repair_prompt(
         The repair prompt, with a manifest after `MANIFEST_SENTINEL`.
     """
     form_name = "bokmål" if form == "nb" else "nynorsk"
-    quoted = "\n".join(f"- «{f['quote']}»" for f in findings)
+    rewrite = [f for f in findings if f.get("kind") == "NYNORSK"]
+    remove = [f for f in findings if f.get("kind") != "NYNORSK"]
     keep = "\n".join(f"- «{v}»" for v in sorted(set(keep_verbatim), key=len, reverse=True))
+    intro, task = [], []
+    if remove:
+        quoted = "\n".join(f"- «{f['quote']}»" for f in remove)
+        intro.append("Følgende formuleringer skal fjernes helt, eller erstattes med nøytral saksbehandlingstekst "
+                     f"som ikke sier noe om personens forhold:\n{quoted}")
+        task.append("de nevnte formuleringene er fjernet eller gjort nøytrale")
+    if rewrite:
+        quoted = "\n".join(f"- «{f['quote']}»" for f in rewrite)
+        intro.append("Følgende setninger inneholder bokmålsformer og skal skrives om til korrekt nynorsk, med "
+                     f"samme innhold og uten å fjerne noe:\n{quoted}")
+        task.append("de nevnte setningene er skrevet om til nynorsk")
     body = (
-        f"Nedenfor er et dokument på {form_name}. Følgende formuleringer skal fjernes helt, "
-        f"eller erstattes med nøytral saksbehandlingstekst som ikke sier noe om personens "
-        f"forhold:\n{quoted}\n\n{AUDIT_OPEN}\n{text}\n{AUDIT_CLOSE}\n\n"
-        "Oppgave: Skriv dokumentet ut på nytt, likt ord for ord bortsett fra at de nevnte "
-        "formuleringene er fjernet eller gjort nøytrale. Følgende skal fortsatt stå ORDRETT, "
+        f"Nedenfor er et dokument på {form_name}. " + " ".join(intro)
+        + f"\n\n{AUDIT_OPEN}\n{text}\n{AUDIT_CLOSE}\n\n"
+        "Oppgave: Skriv dokumentet ut på nytt, likt ord for ord bortsett fra at " + " og at ".join(task)
+        + ". Følgende skal fortsatt stå ORDRETT, "
         f"tegn for tegn:\n{keep}\n"
         "Ikke legg til nye opplysninger om noen person, og ikke skriv nye navn, datoer eller "
         "tall. Svar bare med hele dokumentet."
     )
     manifest = ([f"SEED|{doc_seed}", "AUDIT_REPAIR|1"]
-                + [f"REMOVE|{f['quote']}" for f in findings]
+                + [f"REMOVE|{f['quote']}" for f in remove]
+                + [f"REWRITE|{f['quote']}" for f in rewrite]
                 + [f"KEEP|{v}" for v in sorted(set(keep_verbatim), key=len, reverse=True)])
     return body + "\n" + MANIFEST_SENTINEL + "\n" + "\n".join(manifest)

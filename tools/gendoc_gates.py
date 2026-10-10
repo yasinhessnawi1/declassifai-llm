@@ -26,6 +26,9 @@ guarantee automatically:
 * G15 -- a planted negative sits alone in its sentence: not beside another negative, not
   coordinated with a seeded clause by "og"/"men"/"samt", not repeated.
 
+* G16 and G17 (a sentence about which persons the document holds; Bokmål in a Nynorsk document) are
+  prose checks and live in `gendoc_prose`, which imports this module for its sentence splitter.
+
 G1 (schema validation via `tools/validate_labels.py`), G5 (distribution vs
 plan) and G8 (sample dump) are orchestrated directly in
 `tools/generate_documents.py` since they operate over the whole batch rather

@@ -103,7 +103,7 @@ class GenerationBackend(abc.ABC):
 
 
 _MANIFEST_LINE_RE = re.compile(
-    r"^(VALUE|CLAUSE_SEEDED|CLAUSE_MARKED|NEGATIVE|SEED|META|REPAIR|MISSING|AUDIT|AUDIT_REPAIR|REMOVE|KEEP"
+    r"^(VALUE|CLAUSE_SEEDED|CLAUSE_MARKED|NEGATIVE|SEED|META|REPAIR|MISSING|AUDIT|AUDIT_REPAIR|REMOVE|REWRITE|KEEP"
     r"|SECTION|HEADING|LAST|CLAUSE|ROLE|AVOID)\|(.*)$"
 )
 
@@ -174,6 +174,41 @@ _MOCK_NEGATIVE_FRAMING_RE = re.compile(
     r"\b(?:relevant\w*|viktig\w*|betydning|avgjørende|avgjerande|sentral\w*|mistenk\w*|mistenkjeleg|"
     r"påfallende|påfallande|tydeleg\w* bilde|tydelig\w* bilde|gir grunn|tyder på|indikerer|kan gjelde for|"
     r"vektlegg\w*|bekymr\w*|særleg|spesielt)\b", re.IGNORECASE)
+
+# The mock's stand-in for the auditor reading a decision or assessment sentence that refers back to
+# the TOPIC of a planted negative. "Saken blir avslått, og den politiske begrunnelsen blir ikke
+# akseptert" repeats none of the negative's words ("politiske spørsmål ikke var aktuelle for saken"
+# shares only the stem "politisk"), so the topic is looked up by the negative's type, and a sentence
+# that names it and also gives a reason, a consideration or a verdict is a framing finding. The
+# negative's own sentence is never one. A reason word is deliberately not "vedtak" or "behandling",
+# which every neutral filler sentence of a decision holds.
+_MOCK_NEGATIVE_TOPICS = {
+    "POLITICAL": r"politisk\w*|parti\w*|valg\w*|valet|røyst\w*|ideologi\w*",
+    "RELIGIOUS_BELIEF": r"livssyn\w*|religi\w*|trus\w*|tro\b|troen|kirke\w*|menighet\w*|bedehus\w*|kristen\w*",
+    "TRADE_UNION": r"fagforen\w*|fagorganis\w*|tillitsvald\w*|tillitsvalgt\w*|fagbevegelse\w*",
+    "ETHNICITY": r"etnisk\w*|etnisitet\w*|opphav\w*|opprinnelse\w*|statsborger\w*|nasjonalitet\w*",
+    "HEALTH": r"helse\w*|sjukdom\w*|sykdom\w*|diagnos\w*|dyrehelse\w*",
+    "DISABILITY": r"funksjons\w*|tilrettelegg\w*|tilrettelagt\w*|uføre\w*",
+    "MEDICATION": r"medisin\w*|medikament\w*|legemiddel\w*",
+    "BEHAVIORAL_PATTERN": r"atferd\w*|åtferd\w*|oppførsel\w*",
+    "CRIMINAL": r"straff\w*|dømt\w*|dømd\w*|våpen\w*|lovbrudd\w*|kriminell\w*",
+    "SEXUAL_ORIENTATION": r"seksuell\w*|legning\w*|samboer\w*|sambuar\w*|kjæreste\w*",
+    "FINANCIAL": r"økonomi\w*|gjeld\w*|inntekt\w*|skatt\w*|lån\w*",
+    "ECONOMIC_STATUS": r"økonomi\w*|gjeld\w*|inntekt\w*|levestandard\w*",
+    "BIOMETRIC_DATA": r"utseende\w*|kroppsbygning\w*|mørkhår\w*",
+    "GENETIC_DATA": r"arvelig\w*|arveleg\w*|dna\b",
+    "IMMIGRATION_STATUS": r"oppholds\w*|opphalds\w*|innvandr\w*|visum\w*|asyl\w*",
+    "AGE_INFO": r"alder\w*",
+    "ACADEMIC_RECORD": r"studie\w*|eksamen\w*|karakter\w*|utdanning\w*",
+    "EMPLOYMENT": r"arbeidsforhold\w*|hobby\w*|hagelag\w*",
+    "FAMILY_RELATION": r"familie\w*",
+}
+_MOCK_NEGATIVE_TOPIC_RES = {k: re.compile(r"\b(?:" + v + r")", re.IGNORECASE)
+                            for k, v in _MOCK_NEGATIVE_TOPICS.items()}
+_MOCK_REASON_RE = re.compile(
+    r"\b(?:begrunn\w*|på grunn av|på bakgrunn av|grunnen|årsak\w*|fordi|som følge av|vektlegg\w*|(?:legg|lagt)\w* vekt|"
+    r"hensyn\w*|avslå\w*|avslag\w*|avvis\w*|akseptert|aksepteres|ikke aksept\w*|derfor|dermed|skyldes|"
+    r"medfører|tilsier|tyder på|tatt i betraktning|tatt med i vurderingen)\b", re.IGNORECASE)
 
 MOCK_HEADER_FIELDS = 4
 
@@ -269,6 +304,46 @@ _SECTION_FILLER_NN = [
 ]
 
 
+# What `MockBackend` rewrites a sentence with when the repair prompt lists it under REWRITE: the
+# Bokmål-only forms of `gendoc_prose` and their Nynorsk equivalents. Values the prompt lists under
+# KEEP are shielded first, so a rewrite never touches a planted string.
+_MOCK_NYNORSK_WORDS = {
+    "ikke": "ikkje", "hennes": "hennar", "hvordan": "korleis", "hvis": "viss", "mye": "mykje",
+    "noen": "nokon", "noe": "noko", "uten": "utan", "fra": "frå", "sammen": "saman", "disse": "desse",
+    "vært": "vore", "gjøre": "gjere", "gjør": "gjer", "ble": "vart", "skrev": "skreiv",
+    "avholdt": "halde", "avholde": "halde", "bodd": "budd", "bodde": "budde", "innen": "innan",
+    "siden": "sidan", "hva": "kva", "hvem": "kven", "hvor": "kor", "hvorfor": "kvifor",
+    "hvilken": "kva for ein", "hvilke": "kva for", "hvert": "kvart", "hun": "ho", "jeg": "eg",
+    "foreligger": "føreligg", "foreliggende": "føreliggande", "fremgår": "framgår",
+    "fremgikk": "framgjekk", "fremkom": "framkom", "fremlagt": "framlagt", "oppholdt": "opphaldt",
+    "tillatelse": "løyve", "tillatelsen": "løyvet", "uke": "veke", "uker": "veker", "ukene": "vekene",
+    "arbeidsgiver": "arbeidsgjevar", "arbeidsgivere": "arbeidsgjevarar",
+    "arbeidsgiveren": "arbeidsgjevaren", "arbeidsgivers": "arbeidsgjevars",
+}
+_MOCK_NYNORSK_WORD_RE = re.compile(r"\b(" + "|".join(_MOCK_NYNORSK_WORDS) + r")\b", re.IGNORECASE)
+
+
+def _mock_nynorsk(sentence: str, keeps: List[str]) -> str:
+    """Rewrite the Bokmål-only forms of one sentence in Nynorsk, leaving every kept value alone."""
+    shielded, slots = sentence, []
+    for value in sorted({k for k in keeps if k and k in sentence}, key=len, reverse=True):
+        slots.append(value)
+        shielded = shielded.replace(value, f"\x00{len(slots) - 1}\x00")
+
+    def word(match: "re.Match") -> str:
+        new = _MOCK_NYNORSK_WORDS[match.group(1).lower()]
+        return new[:1].upper() + new[1:] if match.group(1)[:1].isupper() else new
+
+    shielded = _MOCK_NYNORSK_WORD_RE.sub(word, shielded)
+    shielded = re.sub(r"\b(?!ingen\b)(\w{3,})ingen\b", r"\1inga", shielded)
+    shielded = re.sub(r"\b(\w{3,})lig(e|ere)?\b", lambda m: m.group(1) + "leg" + ("e" if m.group(2) else ""), shielded)
+    shielded = re.sub(r"\b(\w{2,})het(en|ene|er)?\b", lambda m: m.group(1) + "heit" + {"en": "a", "ene": "ene", "er": "er"}.get(m.group(2) or "", ""), shielded)
+    shielded = re.sub(r"\b([Dd])enne(\s+\w{3,}et)\b", lambda m: m.group(1) + "ette" + m.group(2), shielded)
+    for i, value in enumerate(slots):
+        shielded = shielded.replace(f"\x00{i}\x00", value)
+    return shielded
+
+
 class MockBackend(GenerationBackend):
     """Deterministic template filler used to exercise the pipeline without a model.
 
@@ -320,6 +395,8 @@ class MockBackend(GenerationBackend):
         clauses = [tuple(line.split("|", 2)[1:]) for line in manifest.splitlines() if line.startswith("CLAUSE|")]
         negatives = [line.split("|", 2)[2].lower() for line in manifest.splitlines()
                      if line.startswith("NEGATIVE|") and line.count("|") >= 2]
+        negative_types = [line.split("|", 2)[1] for line in manifest.splitlines()
+                          if line.startswith("NEGATIVE|") and line.count("|") >= 2]
         findings = []
         for sentence in re.split(r"(?<=[.!?])\s+|\n+", document):
             stripped = sentence.strip().rstrip(".")
@@ -335,6 +412,8 @@ class MockBackend(GenerationBackend):
                           for m in _MOCK_RELEVANCE_RE.finditer(stripped))):
                 findings.append(f"FUNN|RAMME|{stripped}")
             elif self._frames_negative(lowered, negatives):
+                findings.append(f"FUNN|RAMME|{stripped}")
+            elif self._refers_back_to_negative(lowered, negative_types, negatives):
                 findings.append(f"FUNN|RAMME|{stripped}")
             elif self._contradicts(lowered, clauses):
                 findings.append(f"FUNN|MOTSIGELSE|{stripped}")
@@ -356,6 +435,20 @@ class MockBackend(GenerationBackend):
                 if not _MOCK_NEGATED_RE.search(rest[max(0, match.start() - 25):match.start()]):
                     return True
         return False
+
+    @staticmethod
+    def _refers_back_to_negative(sentence: str, types, negatives) -> bool:
+        """Whether a (lower-cased) sentence names the topic of a planted negative as a reason.
+
+        A sentence that holds a negative's own text is that negative's sentence and is never a
+        finding here. Any other sentence is one when it names the topic of some planted negative
+        (by the negative's type) and carries a reason, consideration or verdict word.
+        """
+        if any(n and n in sentence for n in negatives):
+            return False
+        if not _MOCK_REASON_RE.search(sentence):
+            return False
+        return any(_MOCK_NEGATIVE_TOPIC_RES[t].search(sentence) for t in set(types) if t in _MOCK_NEGATIVE_TOPIC_RES)
 
     @staticmethod
     def _contradicts(sentence: str, clauses) -> bool:
@@ -386,10 +479,13 @@ class MockBackend(GenerationBackend):
         document = self._audited_document(prompt)
         manifest = prompt.split(MANIFEST_SENTINEL, 1)[1]
         removes = [l.split("|", 1)[1] for l in manifest.splitlines() if l.startswith("REMOVE|")]
+        rewrites = [l.split("|", 1)[1] for l in manifest.splitlines() if l.startswith("REWRITE|")]
         keeps = [l.split("|", 1)[1] for l in manifest.splitlines() if l.startswith("KEEP|")]
         for quote in removes:
             kept = [k for k in keeps if k and k in quote]
             document = document.replace(quote, "; ".join(kept))
+        for quote in rewrites:
+            document = document.replace(quote, _mock_nynorsk(quote, keeps))
         document = re.sub(r"[ \t]{2,}", " ", document)
         document = re.sub(r" +([.,;:])", r"\1", document)
         document = re.sub(r"(?<=[.;:])\s*\.", "", document)

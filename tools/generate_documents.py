@@ -17,13 +17,17 @@ Pipeline per document (a whole-document call; dense and case-file documents, and
 any plan of more than about ten items, are written in sections instead, see below):
 
     plan_batch -> sample_record -> build_prompt -> backend.generate (batched)
-        -> marker check, truncation, G0 placeholders, length
+        -> marker check, truncation, G0 placeholders, G16 meta-statements (a sentence about
+           which persons or data the document holds is deleted, or rejected when it holds a planted
+           string), length
         -> G2 verbatim (1-2 missing values: targeted repair of the draft)
         -> G15 negative placement (one planted negative per sentence, none chained to a
            seeded clause with "og"/"men", none repeated), G9 slot labels, G13 tabular
            dumps, G3 names, G4 checksums, G6
            near-duplicate, seeded-clause boundary extension, G7 (unplanned names
            and dates labelled, other unplanned PII rejected)
+        -> G17 Bokmål-only forms in a Nynorsk document (counted into the metadata; above the
+           threshold the sentences holding them are rewritten once, then the document is regenerated)
         -> G11 content audit (a second, temperature-0 pass of the same model:
            any unlabelled sensitive statement or any sentence framing origin,
            belief or sexuality as relevant to suspicion triggers one targeted
@@ -179,6 +183,7 @@ import subprocess
 import sys
 import time
 import unicodedata
+import zlib
 from dataclasses import dataclass, field
 from types import SimpleNamespace
 from datetime import date, timedelta
@@ -193,6 +198,7 @@ import gendoc_dataset as dataset_mod
 import gendoc_gates as gates
 import gendoc_genres as genres_mod
 import gendoc_identifiers as ident
+import gendoc_prose as prose
 import gendoc_sections as sections_mod
 import gendoc_store as store_mod
 from gendoc_backends import DRAFT_CLOSE, DRAFT_OPEN, MANIFEST_SENTINEL, build_backend
@@ -368,6 +374,36 @@ def _resample_until_no_collision(rng: random.Random, public_figures: Set[str], *
         if person.full_name not in public_figures:
             return person
     raise RuntimeError("could not sample a non-colliding person after 50 attempts")
+
+
+def _with_surname(person: Person, taken: Set[str], public_figures: Set[str]) -> Person:
+    """Return `person` with a surname no one in `taken` has, or unchanged when theirs is free.
+
+    The check run drew two unrelated staff who shared a surname -- an author "Espen Brekke" and a
+    caseworker "Trond Brekke" -- and the document made them one person, or two authors. Every
+    non-family party of a record gets a surname of their own. The replacement is drawn from an RNG
+    seeded by the two names, so the sampler's own stream, and with it every record that never
+    collides, is untouched.
+
+    Args:
+        person: The party whose surname may collide.
+        taken: Surnames already in use in the record, lower-cased.
+        public_figures: Embedded public-figure set (G3), so the new name is not a collision either.
+
+    Returns:
+        The same person (first name, sex, birth date, nationality) with a free surname.
+    """
+    if person.last_name.lower() not in taken:
+        return person
+    pools = data.active_pools()
+    surnames = (pools.foreign_names[person.nationality][2] if person.nationality in pools.foreign_names
+                else pools.surnames)
+    rng = random.Random(zlib.crc32(f"{person.full_name}|{sorted(taken)}".encode("utf-8")))
+    for _ in range(100):
+        last = rng.choice(surnames)
+        if last.lower() not in taken and f"{person.first_name} {last}" not in public_figures:
+            return Person(person.first_name, last, person.gender, person.birth_date, person.nationality)
+    return person
 
 
 def _format_date(rng: random.Random, d: date) -> str:
@@ -1598,13 +1634,18 @@ def sample_record(
         if author_fixed is not None and author_fixed.age != signatory.age():
             signatory = _with_age(signatory, author_fixed.age, rng)
     parties: List[Party] = [Party(person, None, "hovedpersonen", is_subject=True)]
+    surnames_in_use = {person.last_name.lower()}
     if signatory:
+        signatory = _with_surname(signatory, surnames_in_use, public_figures)
+        surnames_in_use.add(signatory.last_name.lower())
         parties.append(Party(signatory, "author", signatory_role or "saksbehandler", staff=True))
     for (role, member), fixed in zip(cast, repaired):
         if fixed is None:
             continue
         if fixed.age != member.age():
             member = _with_age(member, fixed.age, rng)
+        member = _with_surname(member, surnames_in_use, public_figures)
+        surnames_in_use.add(member.last_name.lower())
         parties.append(Party(member, fixed.role, genres_mod.CAST_ROLES[fixed.role][form],
                              staff=fixed.role in _STAFF_ROLES))
 
@@ -1619,7 +1660,7 @@ def sample_record(
             for party in parties:
                 hint = ("hovedpersonen" if party.is_subject
                         else (f"{party.label}, som skriver dokumentet" if party.role == "author"
-                              else f"{party.label} i saken"))
+                              else _cast_reason(party, form, False)))
                 planned.append(PlannedValue("PERSON", tier(etype), "value", party.person.full_name,
                                             None, label(etype), hint=hint,
                                             party=None if party.is_subject else party.role))
@@ -1959,6 +2000,19 @@ _NEGATIVE_PLACEMENT_RULE = (
     "mistenkelig eller av betydning for saken, vurderingen eller personens troverdighet: den står som en "
     "vanlig, uviktig opplysning.")
 
+# The check run (SYB-000003, housing application) planted "politiske spørsmål ikke var aktuelle for
+# saken" in the assessment section and the decision section wrote "Saken blir avslått ... og den
+# politiske begrunnelsen blir ikke akseptert": the neutral clause had become the ground for a
+# refusal, and no sentence repeated its words, so nothing lexical caught it. The decision section
+# listed no negative of its own and so carried none of the negative rules; this one is given to every
+# prompt of a document that plants a negative, whichever section it belongs to.
+_NEGATIVE_INFLUENCE_RULE = (
+    "En nøytral formulering påvirker, begrunner eller motiverer aldri en vurdering, en konklusjon eller et "
+    "vedtak, verken i delen den står i eller i en annen del. Hverken formuleringen eller emnet den gjelder "
+    "(politikk, tro, helse, fagforening og så videre) nevnes som grunn, hensyn eller premiss: skriv ikke «den "
+    "politiske begrunnelsen», «på grunn av hennes livssyn» eller lignende. Vurderingen og vedtaket skrives "
+    "som om formuleringen ikke fantes.")
+
 
 # A near-miss-only document has no subject: the planted sentences are about "søkeren" or
 # "vedkommende", an unspecified person in an example, a summary or a guidance note, and the
@@ -1978,7 +2032,13 @@ _NEAR_MISS_PLACEMENT_RULE = (
     "setning med «og», «men» eller «samt», og gjenta ingen formulering. Skriv aldri at en nøytral formulering "
     "er relevant, viktig, påfallende, mistenkelig eller av betydning: den står som en vanlig, uviktig "
     "opplysning. Skriv ellers ingen opplysning om hva «søkeren» eller «vedkommende» har sagt, gjort eller "
-    "er, utover formuleringene.")
+    "er, utover formuleringene. Formuleringene og emnene de gjelder påvirker, begrunner eller motiverer "
+    "aldri en vurdering eller et vedtak.")
+
+
+def _cast_reason(party: Party, form: str, with_role_word: bool) -> str:
+    """The phrase that says why a cast member is in the document (`gendoc_genres.CAST_REASONS`)."""
+    return genres_mod.cast_reason(party.role, party.person.gender, form, with_role_word)
 
 
 def _subject_line(record: Record) -> str:
@@ -2007,12 +2067,17 @@ def _subject_line(record: Record) -> str:
         # A person with a planted role word is introduced by that word, so the prompt's own
         # label ("behandlende lege") does not hand the model a second, different title to use.
         role_word = {pv.party: pv.value for pv in record.planned if pv.anchor}
+        # Each person comes with the one phrase that says why they are in the document. A bare "barn"
+        # let the model write a 17-year-old who "var til stades under møtet" with no word on whose son
+        # he is. A person with a planted role word keeps the role word and gets the clause form.
         listed = "; ".join(
-            f"{p.person.full_name} ({role_word.get(p.role, p.label)}, "
+            f"{p.person.full_name} ({role_word[p.role] + ', ' if p.role in role_word else ''}"
+            f"{_cast_reason(p, record.form, p.role in role_word)}; "
             f"{'kvinne' if p.person.gender == 'F' else 'mann'}, {p.person.age()} år)" for p in cast
         )
         subject_line += (f" Andre personer som er nevnt i saken: {listed}. "
-                         "Bruk bare disse navnene, og bare om disse personene.")
+                         "Bruk bare disse navnene, og bare om disse personene. Første gang en av dem nevnes, "
+                         "sier teksten hvorfor personen er med, med relasjonen eller rollen oppgitt i parentesen.")
     return subject_line
 
 
@@ -2068,6 +2133,15 @@ def _item_blocks(record: Record, planned: Sequence[PlannedValue],
         negative_lines.append(f"- «{neg.text}» – {hint}")
         manifest.append(f"NEGATIVE|{neg.type}|{neg.text}")
     return value_lines, clause_lines, negative_lines, manifest, marked
+
+
+# G16 (`gendoc_prose`) deletes these sentences when a model writes them anyway; the prompt still says so
+# first, with the phrasings the check run actually produced, in both written forms.
+_NO_META_RULE = (
+    "Skriv aldri setninger som sier noe om hvilke personer eller opplysninger teksten inneholder eller ikke "
+    "inneholder: ikke «ingen ytterligere personopplysninger foreligger», «ingen andre personer enn de nevnte», "
+    "«det er ikke opplyst om andre personer», «X er den eneste personen som nevnes» og ikke «ingen andre "
+    "personar enn dei nemnde» eller «det er ikkje opplyst om andre» på nynorsk.")
 
 
 def _prompt_rules(record: Record, planned_types: Set[str], marked: bool, *,
@@ -2168,6 +2242,8 @@ def _prompt_rules(record: Record, planned_types: Set[str], marked: bool, *,
     ]
     if negatives:
         rules.append(_NEGATIVE_PLACEMENT_RULE)
+    if record.planted_negatives:
+        rules.append(_NEGATIVE_INFLUENCE_RULE)
     if role_words:
         rules.append(
             "Et rolleord i listen (" + ", ".join(f"«{w}»" for w in role_words) + ") hører til én bestemt person "
@@ -2214,14 +2290,12 @@ def _prompt_rules(record: Record, planned_types: Set[str], marked: bool, *,
                      "uten andre ⟦ ⟧ tegn i teksten for øvrig.")
     if not section:
         rules.append("Skriv dokumentet slik en saksbehandler ville skrevet det. Kommenter aldri "
-                     "instruksjonene, og skriv ikke setninger som «ingen ytterligere "
-                     "personopplysninger foreligger» eller «X er den eneste personen som nevnes».")
+                     "instruksjonene. " + _NO_META_RULE)
         rules.append("Ikke gjenta verdiene i en liste eller et felt til slutt i dokumentet.")
         rules.append("Svar bare med selve dokumentet, uten kommentarer før eller etter.")
     else:
         rules.append("Skriv delen slik en saksbehandler ville skrevet den. Kommenter aldri "
-                     "instruksjonene, og skriv ikke setninger som «ingen ytterligere "
-                     "personopplysninger foreligger» eller «X er den eneste personen som nevnes».")
+                     "instruksjonene. " + _NO_META_RULE)
         rules.append("Ikke gjenta verdiene i en liste eller et felt til slutt i delen.")
         rules.append("Svar bare med selve delen, uten kommentarer før eller etter.")
     return rules
@@ -2635,6 +2709,8 @@ class GenerationConfig:
     audit: bool = True
     max_audit_repairs: int = 1
     audit_max_new_tokens: int = 512
+    nynorsk_gate: bool = True  # act on G17 (repair, then reject); the count is recorded either way
+    max_nynorsk_repairs: int = 1
     dataset: str = "train"
     difficulty_weights: Optional[Dict[str, float]] = None
     negative_bank: Dict[str, List[dict]] = field(default_factory=dict)
@@ -2693,6 +2769,9 @@ class DocState:
     audit_calls: int = 0
     audit_seconds: float = 0.0
     audit_log: List[dict] = field(default_factory=list)
+    nynorsk_repairs: int = 0  # G17 rewrite passes used in the current attempt
+    nynorsk: Optional[dict] = None  # G17 count of the current attempt, before and after the rewrite
+    meta_removed: Dict[int, List[dict]] = field(default_factory=dict)  # G16: section index (-1: whole text) -> sentences deleted
     result: Optional[dict] = None
     section_plan: Optional["sections_mod.SectionPlan"] = None
     queued: Set[int] = field(default_factory=set)  # sections with a job queued or in flight
@@ -2731,6 +2810,9 @@ def new_attempt_record(state: DocState, base_seed: int, taxonomy_index: Dict[str
     state.attempt += 1
     state.repairs = 0
     state.audit_repairs = 0
+    state.nynorsk_repairs = 0
+    state.nynorsk = None
+    state.meta_removed = {}
     state.section_plan = None
     state.queued = set()
     plan = state.plan
@@ -2938,6 +3020,13 @@ def evaluate_candidate(
     placeholders_ok, placeholder_hits = gates.gate_placeholders(clean_text)
     if not placeholders_ok:
         return fail("G0_placeholder", placeholder_hits)
+    clean_text, meta_ok, meta_hits = _drop_meta_statements(
+        state, -1, clean_text,
+        _document_literals(record) + [span for spans in marked_spans.values() for span in spans],
+        delete=state.section_plan is None)
+    if not meta_ok:
+        return fail("G16_meta_statement", meta_hits)
+    state.last_text = clean_text
     length_ok, length = gates.gate_length(clean_text, config.hard_max_chars)
     if not length_ok:
         return fail("G10_length", {"length": length, "band_max": record.length_band[1],
@@ -3096,6 +3185,33 @@ def evaluate_candidate(
     return "accepted", None
 
 
+def _drop_meta_statements(state: DocState, key: int, text: str, protected: Sequence[str],
+                          delete: bool = True) -> Tuple[str, bool, List[dict]]:
+    """G16: delete the sentences that comment on which persons or data a text holds.
+
+    A sentence that also carries a planted string cannot be deleted without losing a label, and
+    with `delete=False` (the joined text of a sectioned document, whose sections were already
+    cleaned one by one) nothing is deleted: either way the hits are returned as a failure.
+
+    Args:
+        state: The document's state; the deleted sentences are recorded in `state.meta_removed[key]`.
+        key: The section index, or -1 for a whole-document text.
+        text: The generated text.
+        protected: Every planted string the text must keep.
+        delete: Whether removable sentences are deleted, as opposed to rejected.
+
+    Returns:
+        `(text, passed, hits)`: the text without the deleted sentences, False when something was
+        left that could not be deleted, and those sentences.
+    """
+    if not delete:
+        hits = prose.meta_statements(text)
+        return text, not hits, hits
+    cleaned, removed, stuck = prose.strip_meta_statements(text, protected)
+    state.meta_removed[key] = [{"pattern": h["pattern"], "sentence": h["sentence"]} for h in removed]
+    return cleaned, not stuck, stuck
+
+
 def _realise_negatives(negatives: Sequence[PlantedNegative], text: str) -> List[str]:
     """Record on each planted negative the form it takes in `text`, and return those forms.
 
@@ -3162,6 +3278,7 @@ def evaluate_section(
         return "retry", None
 
     text, heading_problems = sections_mod.normalise_section(raw_text, section.heading)
+    text, meta_ok, meta_hits = _drop_meta_statements(state, k, text, _document_literals(record))
     section.draft = text
     if not finished:
         return fail("G10_truncated", "generation hit the token budget before end of sequence")
@@ -3176,6 +3293,8 @@ def evaluate_section(
     if heading_problems:
         return fail("G9_slot", [{"kind": "category_heading", "clause": None, "line": p["heading"]}
                                 for p in heading_problems])
+    if not meta_ok:
+        return fail("G16_meta_statement", meta_hits)
     placeholders_ok, placeholder_hits = gates.gate_placeholders(clean)
     if not placeholders_ok:
         return fail("G0_placeholder", placeholder_hits)
@@ -3360,6 +3479,52 @@ def run_generation(
         if progress:
             progress(st)
 
+    def _queue_repairs(st: DocState, findings: List[dict]) -> None:
+        """Queue the repair of an accepted text: the whole text, or each section holding a finding."""
+        if st.section_plan is None:
+            queue.appendleft((st, "audit_repair", findings))
+            return
+        spans = sections_mod.section_spans([s_.text for s_ in st.section_plan.sections])
+        by_section: Dict[int, List[dict]] = collections.defaultdict(list)
+        for f in findings:
+            idx = sections_mod.section_at(spans, f["start"])
+            by_section[idx if idx is not None else len(spans) - 1].append(f)
+        for idx, fs in sorted(by_section.items()):
+            st.queued.add(idx)
+            st.section_plan.sections[idx].audit_repairs += 1
+            queue.appendleft((st, "section_audit_repair", (idx, fs, st.attempt)))
+
+    def _after_accept(st: DocState) -> None:
+        """An otherwise-accepted text: G17 on a Nynorsk one, then the G11 audit, then done.
+
+        The Bokmål-only forms are counted and written to the metadata whatever happens. Above the
+        threshold the sentences holding them go back to the model once, to be rewritten in Nynorsk
+        with every listed value verbatim; the rewrite passes every gate again and returns here, and
+        a text still over the threshold is regenerated.
+        """
+        if st.record.form == "nn":
+            check = prose.nynorsk_check(st.result["text"], exempt=_document_literals(st.record))
+            first = st.nynorsk["count_before_rewrite"] if st.nynorsk else check["count"]
+            st.nynorsk = {"count": check["count"], "per_100_words": check["per_100_words"],
+                          "forms": check["forms"], "over_threshold": check["over_threshold"],
+                          "count_before_rewrite": first, "rewrites": st.nynorsk_repairs}
+            if config.nynorsk_gate and check["over_threshold"]:
+                if st.nynorsk_repairs < config.max_nynorsk_repairs:
+                    st.nynorsk_repairs += 1
+                    stats["nynorsk_rewrites"] += 1
+                    _queue_repairs(st, [
+                        {"reason": audit.REASON_CODES["NYNORSK"], "kind": "NYNORSK", "quote": sent["quote"],
+                         "residue": sent["quote"], "start": sent["start"], "end": sent["end"],
+                         "raw_quote": None, "forms": sent["forms"]} for sent in check["sentences"]])
+                else:
+                    stats["nynorsk_regenerations"] += 1
+                    _retry_or_give_up(st, "nynorsk_bokmal")
+                return
+        if config.audit:
+            queue.appendleft((st, "audit", None))
+        else:
+            _finalize(st)
+
     def _retry_or_give_up(st: DocState, reason: str) -> None:
         if st.attempt < config.retries:
             _begin(st)
@@ -3399,10 +3564,7 @@ def run_generation(
             place_names=place_names, agency_names=agency_names, config=config,
             accepted_ngrams=accepted_ngrams)
         if outcome == "accepted":
-            if config.audit:
-                queue.appendleft((st, "audit", None))
-            else:
-                _finalize(st)
+            _after_accept(st)
             return
         k = _attribute_failure(st)
         if (k is not None and plan.redos_after_join < config.section_join_redos
@@ -3426,6 +3588,8 @@ def run_generation(
         def containing(needle: str) -> Optional[int]:
             return next((i for i, t in enumerate(texts) if needle and needle in t), None)
 
+        if stage == "G16_meta_statement" and isinstance(detail, list) and detail:
+            return containing(detail[0]["sentence"][:60])
         if stage == "G12_repetition":
             return sections_mod.repeated_section(texts)
         if stage == "G10_length":
@@ -3559,19 +3723,7 @@ def run_generation(
                 if st.audit_repairs < config.max_audit_repairs:
                     st.audit_repairs += 1
                     st.audit_repairs_total += 1
-                    if st.section_plan is None:
-                        queue.appendleft((st, "audit_repair", findings))
-                        continue
-                    texts_now = [s.text for s in st.section_plan.sections]
-                    spans = sections_mod.section_spans(texts_now)
-                    by_section: Dict[int, List[dict]] = collections.defaultdict(list)
-                    for f in findings:
-                        idx = sections_mod.section_at(spans, f["start"])
-                        by_section[idx if idx is not None else len(spans) - 1].append(f)
-                    for idx, fs in sorted(by_section.items()):
-                        st.queued.add(idx)
-                        st.section_plan.sections[idx].audit_repairs += 1
-                        queue.appendleft((st, "section_audit_repair", (idx, fs, st.attempt)))
+                    _queue_repairs(st, findings)
                 else:
                     stats["audit_regenerations"] += 1
                     _retry_or_give_up(st, "audit_findings_remain")
@@ -3616,10 +3768,7 @@ def run_generation(
                 stats["audit_repairs_gated_ok" if outcome == "accepted"
                       else "audit_repairs_gated_fail"] += 1
             if outcome == "accepted":
-                if config.audit:
-                    queue.appendleft((st, "audit", None))
-                else:
-                    _finalize(st)
+                _after_accept(st)
             elif outcome == "repair":
                 st.repairs += 1
                 st.repairs_total += 1
@@ -4531,6 +4680,34 @@ def audit_report(states: List[DocState], accepted: List[dict], wall_seconds: flo
     }
 
 
+def prose_report(accepted: List[dict]) -> dict:
+    """Report G16 and G17 over the accepted documents: what was deleted and how Nynorsk it is.
+
+    Args:
+        accepted: Accepted document dicts, each with the `prose` block of its metadata (None for a
+            document written before the block existed).
+
+    Returns:
+        Counts of deleted meta-statements by pattern and, for the Nynorsk documents, the distribution
+        of Bokmål-only forms per document before and after the rewrite, and how many were rewritten.
+    """
+    blocks = [r.get("prose") for r in accepted if r.get("prose")]
+    patterns = collections.Counter(h["pattern"] for b in blocks for h in b["meta_statements_removed"])
+    nn = [b["nynorsk"] for b in blocks if b.get("nynorsk")]
+    return {
+        "G16_meta_statements": {
+            "documents_with_a_deleted_sentence": sum(1 for b in blocks if b["meta_statements_removed"]),
+            "sentences_deleted": sum(patterns.values()), "by_pattern": dict(patterns)},
+        "G17_nynorsk": {
+            "documents": len(nn), "threshold_forms": prose.NYNORSK_MIN_FORMS,
+            "short_text_rule": [prose.NYNORSK_SHORT_MIN_FORMS, prose.NYNORSK_SHORT_RATE],
+            "forms_per_document_before_rewrite": dict(sorted(collections.Counter(
+                n["count_before_rewrite"] for n in nn).items())),
+            "forms_per_document_accepted": dict(sorted(collections.Counter(n["count"] for n in nn).items())),
+            "documents_rewritten": sum(1 for n in nn if n["rewrites"])},
+    }
+
+
 def _make_natural_probe(run_seed: int, taxonomy_index: Dict[str, dict], clause_bank: dict,
                         public_figures: Set[str]) -> Callable[[DocPlan, int], Set[str]]:
     """Build the sampler-backed probe `plan_batch` uses to estimate natural coverage."""
@@ -4627,6 +4804,8 @@ def accepted_lines(st: DocState, mode: dataset_mod.DatasetMode, strategy: str) -
         "generate_calls": st.generate_calls, "gen_seconds": round(st.gen_seconds, 1),
         "audit_calls": st.audit_calls, "audit_seconds": round(st.audit_seconds, 1),
         "audit_log": st.audit_log,
+        "prose": {"meta_statements_removed": [h for _k, hits in sorted(st.meta_removed.items()) for h in hits],
+                  "nynorsk": st.nynorsk if rec.form == "nn" else None},
         "clause_extensions": result.get("clause_extensions", {}),
         "g7_labelled": result["g7_labelled"],
         "gate_log": st.gate_log, "tier_a_findings": result["tier_a_findings"],
@@ -4703,7 +4882,7 @@ def stored_accepted(batch_line: dict, meta: dict, plan: DocPlan) -> dict:
         "output": batch_line["output"], "gate_log": meta["gate_log"],
         "tier_a_findings": meta["tier_a_findings"], "g7_labelled": meta["g7_labelled"],
         "clause_extensions": meta["clause_extensions"], "tabular": meta["tabular"],
-        "clause_literals": meta["seeded_clause_literals"],
+        "clause_literals": meta["seeded_clause_literals"], "prose": meta.get("prose"),
         "state": _stored_state(plan, meta, True, None),
     }
 
@@ -4825,6 +5004,8 @@ def build_parser() -> argparse.ArgumentParser:
                         help="most times one negative text may be planted in the run")
     parser.add_argument("--no-audit", dest="audit", action="store_false",
                         help="skip the G11 content audit (a second model pass per document)")
+    parser.add_argument("--no-nynorsk-check", dest="nynorsk_gate", action="store_false",
+                        help="count the Bokmål-only forms of Nynorsk documents (G17) but do not rewrite or reject")
     parser.add_argument("--max-audit-repairs", type=int, default=1,
                         help="targeted repair passes per attempt when G11 finds unlabelled "
                              "sensitive content")
@@ -4919,7 +5100,7 @@ def make_config(args: argparse.Namespace, ctx: RunContext) -> GenerationConfig:
         strategy=args.strategy, invalid_checksum_rate=args.invalid_checksum_rate,
         retries=args.retries, near_dup_threshold=args.near_dup_threshold,
         g7_policy=args.g7_policy, batch_size=args.batch_size, max_repairs=args.max_repairs,
-        audit=args.audit, max_audit_repairs=args.max_audit_repairs,
+        audit=args.audit, max_audit_repairs=args.max_audit_repairs, nynorsk_gate=args.nynorsk_gate,
         dataset=args.dataset, difficulty_weights=ctx.mode.difficulty_weights,
         negative_bank=ctx.negative_bank, negative_cap=args.negative_cap, sectioning=args.sectioning,
         section_retries=args.section_retries,
@@ -5109,6 +5290,7 @@ def build_report(args: argparse.Namespace, ctx: RunContext, plans: List[DocPlan]
         "G7_unplanned_pii_on_accepted": {"policy": args.g7_policy, "residual_findings": g7_mock_findings},
         "G7_false_positive_measurement_on_gold": g7_fp_report,
         "G11_content_audit": audit_report(states, accepted, wall_seconds),
+        "G16_G17_prose": prose_report(accepted),
         "coverage": coverage_report(accepted_meta_for_g5, ctx.schedulable, args.coverage_target, plan_report),
         "density": density_report(accepted, plans),
         "sectioning": sectioning_report(accepted, states, plans),
