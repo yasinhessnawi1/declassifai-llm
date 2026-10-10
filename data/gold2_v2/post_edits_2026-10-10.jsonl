@@ -44,3 +44,6 @@
 {"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B111", "type": "CRIMINAL", "old": "importert flere reptiler og fugler fra Indonesia uten nødvendig dokumentasjon og CITES-tillatelser", "new": null, "rule": "B34"}
 {"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B114", "type": "SEXUAL_ORIENTATION", "old": "gift med Kjell Magne Olsen", "new": "MARITAL_STATUS", "rule": "B31 retype"}
 {"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B120", "type": "SEXUAL_ORIENTATION", "old": "Halvorsens samboer, Kjell Magnusson", "new": "MARITAL_STATUS", "rule": "B31 retype"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B043", "type": "SEXUAL_ORIENTATION", "old": "registrert partnerskap med Thomas Hansen", "new": "MARITAL_STATUS", "rule": "B31 registrert partner(skap)"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B086", "type": "SEXUAL_ORIENTATION", "old": "registrert partner med Kari Olsen", "new": "FAMILY_RELATION", "rule": "B31 registrert partner(skap)"}
+{"file": "data/gold2_v2/batch_g2b_gold.jsonl", "id": "G2B103", "type": "SEXUAL_ORIENTATION", "old": "registrert partner med Kjell Olsen", "new": "FAMILY_RELATION", "rule": "B31 registrert partner(skap)"}

@@ -52,3 +52,12 @@
 {"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B398", "type": "SEXUAL_ORIENTATION", "old": "gift med Per Arne Hansen", "new": "MARITAL_STATUS", "rule": "B31 retype"}
 {"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B403", "type": "SEXUAL_ORIENTATION", "old": "gift med Per Arne Olsen", "new": "MARITAL_STATUS", "rule": "B31 retype"}
 {"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B432", "type": "SEXUAL_ORIENTATION", "old": "Lies nåværende partner er Bjørn Hansen", "new": "FAMILY_RELATION", "rule": "B31 retype"}
+{"file": "data/slice2_v2/batch_s2a_annotator1.jsonl", "id": "S2A014", "type": "SEXUAL_ORIENTATION", "old": "registrert partnerskap med Erik Hansen", "new": "MARITAL_STATUS", "rule": "B31 registrert partner(skap)"}
+{"file": "data/slice2_v2/batch_s2a_annotator1.jsonl", "id": "S2A024", "type": "SEXUAL_ORIENTATION", "old": "registrert partner med Lars Jensen", "new": "FAMILY_RELATION", "rule": "B31 registrert partner(skap)"}
+{"file": "data/slice2_v2/batch_s2a_annotator1.jsonl", "id": "S2A029", "type": "SEXUAL_ORIENTATION", "old": "registrert partner med Siv Jensen", "new": "FAMILY_RELATION", "rule": "B31 registrert partner(skap)"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B004", "type": "SEXUAL_ORIENTATION", "old": "i et registrert partnerskap med Per Anders Hansen", "new": "MARITAL_STATUS", "rule": "B31 registrert partner(skap)"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B029", "type": "SEXUAL_ORIENTATION", "old": "registrert partner med Ingrid Marie Hansen", "new": "FAMILY_RELATION", "rule": "B31 registrert partner(skap)"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B034", "type": "SEXUAL_ORIENTATION", "old": "registrert partnerskap med Per Gunnar Hansen", "new": "MARITAL_STATUS", "rule": "B31 registrert partner(skap)"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B062", "type": "SEXUAL_ORIENTATION", "old": "lever i et registrert partnerskap med Lars Olsen", "new": "MARITAL_STATUS", "rule": "B31 registrert partner(skap)"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B068", "type": "SEXUAL_ORIENTATION", "old": "registrert partner med Karianne Olsen", "new": "FAMILY_RELATION", "rule": "B31 registrert partner(skap)"}
+{"file": "data/slice2_v2/batch_s2b_annotator1.jsonl", "id": "S2B088", "type": "MARITAL_STATUS", "old": "samboerforhold med Kari Olsen", "new": "FAMILY_RELATION", "rule": "samboerforhold is a relationship noun (gold 9:0)"}

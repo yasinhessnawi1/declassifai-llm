@@ -348,28 +348,34 @@ only reports how the fact came to light — `viste`, `viser`, `avdekket`, `tyder
 import av planter` → `ulovlig import av planter`. Gold had split on this (`avdekket` cut 33 times,
 kept 8; `viste` cut 23, kept 24); this follows the majority and B1's "start at the fact". A main
 verb that is itself the fact stays: `holdes i overfylte bur`, `mangler tilgang til vann`.
+- A subject-first evidential frame goes with its subject (B1): `genetisk test viste anlegg for X` →
+  `anlegg for X`. Participles are kept as part of the fact: `observert …`, `påvist …` (gold starts 16
+  spans with `observert`).
 - Evidential *noun* frames are not cut: `tegn på sykdom`, `indikasjoner på forfalskning` stay
   whole (gold keeps `tegn på` in 447 of 554 occurrences). Only the reporting verb before them goes.
 
 **B37 — An outcome inside a parenthetical is still its own span (B3 over B33).** B33's
 absorption covers the case number, court, amount and creditor; an outcome word in the same
 parenthetical — `henlagt`, `frifunnet`, `ingen tiltale`, `ikke tiltalt` — is split out as its
-own CRIMINAL span, as B3 requires for outcome clauses. Gold splits 32 such outcomes and absorbs 14.
+own CRIMINAL span, as B3 requires for outcome clauses, without the brackets (`henlagt`, never
+`(henlagt)`; gold 13:0). Gold splits 32 such outcomes and absorbs 14.
 - `anmeldt for trusler (sak 2019/4521, henlagt grunnet bevisets stilling)` → CRIMINAL
   `anmeldt for trusler (sak 2019/4521` is NOT a valid span (B5); tag `anmeldt for trusler` and
   `henlagt grunnet bevisets stilling`, with `2019/4521` as CASE_NUMBER.
 
 **B38 — A date with `kl.` and a time is one DATE_TIME span.** `27.10.2024 kl. 14:35` is one
-span, as printed. Gold does this 99 times with no contrary case.
+span, as printed, running to the end of the time expression: a range (`kl. 14:35-15:10`),
+seconds (`kl. 14:35:20`) and an hour-only time (`kl. 14`) are all inside. Gold does this 99 times with no contrary case.
 
 **B31 — A same-sex relationship is SEXUAL_ORIENTATION when the text states it** (narrowed
 2026-10-10 by the owner). GDPR Art. 9 covers "sex life *or* sexual orientation", so a pairing the
 text itself shows to be same-sex discloses orientation without a label: a male subject's
-`tidligere forhold til en mann ved navn Lars Johannessen`, `registrert partnerskap` (same-sex only
-in Norwegian law), `homoseksuelt forhold`. **The partner's gender is never inferred from a first
+`tidligere forhold til en mann ved navn Lars Johannessen`, `homoseksuelt forhold`. `registrert
+partnerskap` is a civil status (MARITAL_STATUS) and `registrert partner` a relationship noun
+(FAMILY_RELATION) — neither states orientation by itself. **The partner's gender is never inferred from a first
 name.** `gift med Per Hansen`, `Hans samboer, Kristian Bjørnstad`, `i et forhold med Bjørn Hansen`
-stay MARITAL_STATUS (status word: gift, samboer, separert, skilt, partnerskap) or FAMILY_RELATION
-(relationship noun: forhold, partner, ektefelle, skilsmisse), even in a document that states the
+stay MARITAL_STATUS (status word: gift, samboer, samboerskap, separert, skilt, partnerskap) or
+FAMILY_RELATION (relationship noun: forhold, samboerforhold, partner, ektefelle, skilsmisse), even in a document that states the
 subject's orientation elsewhere — that statement is tagged on its own. Old gold and slice used
 MARITAL_STATUS for name-only pairings in over 100 cases; 17 name-inferred SEXUAL_ORIENTATION spans
 there and 84 in gold2/slice2 were retyped to match.
@@ -1859,7 +1865,7 @@ SEXUAL_ORIENTATION tags a clause that states, discloses, or credibly alleges a n
 - Third-party allegation/rumour about orientation — tag the substantive clause, drop the reporting frame: from "rykter om hans homofile legning", tag `hans homofile legning`.
 
 #### Exclude
-- Plain relationship-status nouns with no orientation word: `samboer`, `partner`, `ektefelle`, `gift`, `skilt`, `registrert partnerskap`, `ektemann`, `husband` — FAMILY_RELATION, or MARITAL_STATUS for the civil-status words (`samboer`, `gift`, `skilt`, `registrert partnerskap`), even though 1,168/1,421/276/40 of them carry a single stray SEXUAL_ORIENTATION mislabel in the corpus. A civil partnership or cohabitation is available to opposite-sex and same-sex couples alike and reveals nothing about orientation by itself. **"By itself" is the whole of it:** where the clause also names a partner whose gender matches the subject's, B31 governs and the span is SEXUAL_ORIENTATION — `lever i et partnerskap med Lise Hansen`, said of a woman, discloses orientation even though `partnerskap` alone would not.
+- Plain relationship-status nouns with no orientation word: `samboer`, `partner`, `ektefelle`, `gift`, `skilt`, `registrert partnerskap`, `ektemann`, `husband` — FAMILY_RELATION, or MARITAL_STATUS for the civil-status words (`samboer`, `gift`, `skilt`, `registrert partnerskap`), even though 1,168/1,421/276/40 of them carry a single stray SEXUAL_ORIENTATION mislabel in the corpus. A civil partnership or cohabitation is available to opposite-sex and same-sex couples alike and reveals nothing about orientation by itself. Under B31 (narrowed 2026-10-10) a partner's gender is never inferred from a name: `lever i et partnerskap med Lise Hansen`, said of a woman, stays MARITAL_STATUS. Only a clause that itself states the same-sex pairing (`forhold til en mann`, said of a man) is SEXUAL_ORIENTATION.
 - Extramarital-affair language with no orientation content: `affære`, `utroskap`, `utenomekteskapelig forhold`, `kortvarig affære` — FAMILY_RELATION, not orientation, unless the affair partner's gender combined with the subject's stated orientation is the disclosed fact.
 - Generic workplace/social descriptors caught by keyword collision: `mannlig kollega` alone.
 - Religious/political self-identifiers that are lexically adjacent in these dossiers but categorically unrelated: `ateist` — **RELIGIOUS_BELIEF**, never SEXUAL_ORIENTATION, despite 14 stray co-occurrences. (This line previously routed it to POLITICAL or untagged; that predates the RELIGIOUS_BELIEF type.)

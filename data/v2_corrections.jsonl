@@ -370,3 +370,5 @@
 {"id": "X0994", "type": "HEALTH", "old": "viste tegn på alvorlig forsømmelse, inkludert underernæring, skader og manglende veterinærbehandling", "new": "tegn på alvorlig forsømmelse, inkludert underernæring, skader og manglende veterinærbehandling", "why": "B36: evidential verb cut"}
 {"id": "X0995", "type": "HEALTH", "old": "viser klare tegn på separasjonsangst, med mye bjeffing, klynking og engstelig atferd", "new": "klare tegn på separasjonsangst, med mye bjeffing, klynking og engstelig atferd", "why": "B36: evidential verb cut"}
 {"id": "X1000", "type": "HEALTH", "old": "viste symptomer på blåtunge", "new": "symptomer på blåtunge", "why": "B36: evidential verb cut"}
+{"id": "X0921", "type": "SEXUAL_ORIENTATION", "old": "i et registrert partnerskap med Kjell Arne Pedersen", "new": null, "why": "B31 narrowed: registrert partnerskap is a civil status (spec MARITAL_STATUS list), not stated orientation"}
+{"id": "X0928", "type": "SEXUAL_ORIENTATION", "old": "registrert partner med Kristoffer Johansen", "new": null, "why": "B31 narrowed: registrert partner -> FAMILY_RELATION (spec mandate)"}
