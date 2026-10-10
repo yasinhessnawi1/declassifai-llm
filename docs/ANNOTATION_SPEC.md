@@ -335,7 +335,9 @@ import`, `forfalsket`, `bedrageri`, `uregistrert våpen` stated as illegal).
 - `Eier`/`Eieren` attached to a named person is EMPLOYMENT (B12); the name stays PERSON.
 - A year range is one DATE_TIME span (`2021-2023`); a year list is one span per year
   (`2021`, `2022`, `2023` from `2021, 2022 og 2023`).
-- Quotation marks and guillemets around an organisation name stay outside ORGANIZATION.
+- Quotation marks printed around an organisation's name stay INSIDE the ORGANIZATION span, as
+  the ORGANIZATION section says (`"Smak av Fjordene"`; gold: 174 spans with quotes vs 84 without).
+  (Corrected the same day: a first draft of B35 said the opposite.)
 - An 11-digit number after `f.` is NATIONAL_ID by shape (Identifier types), not DATE_OF_BIRTH.
 
 **B36 — Evidential verbs are dropped like hedges** (decided 2026-10-10). A leading verb that
