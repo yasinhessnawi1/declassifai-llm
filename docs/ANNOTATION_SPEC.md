@@ -313,6 +313,31 @@ barn, X og Y` and B4 cannot be applied without non-contiguous surgery.
   2010)` alone is a PERSON and a DATE_OF_BIRTH; the relation is `to barn sammen`, and a span
   that omits it states no relationship at all. One such pair has been corrected.
 
+**B33 — CRIMINAL and FINANCIAL absorb their elaborating parenthetical; B4 governs the
+rest** (decided 2026-10-10 from gold practice: 237 gold CRIMINAL spans run through a
+parenthetical, 43 stop before one). A parenthetical directly attached to a CRIMINAL or
+FINANCIAL clause that elaborates the same offence or debt (case number, court, amount,
+creditor, loan number) stays inside the span, with any identifier in it nested under its own
+type: `tidligere dømt for bedrageri (sak nr. 2015/12345 ved Bergen Tingrett)`. A parenthetical
+holding only a date or year is still split out under B4 (`dømt for bedrageri (2010)` →
+CRIMINAL `dømt for bedrageri` + DATE_TIME `2010`), and for every other type B4 applies as
+written.
+
+**B34 — Regulatory breaches are not CRIMINAL unless framed as criminal** (decided
+2026-10-10; gold leaves 263 of 296 `brudd på …` clauses untagged). Administrative findings —
+`brudd på dyrevelferdsloven`, `brudd på hygienereglene`, breaches of quarantine, permit,
+labelling or storage rules, an expired licence — are untagged. They become CRIMINAL only when
+the text frames them criminally: a police report, charge, conviction, criminal fine,
+`politianmeldt`, or an act the text itself calls illegal, fraudulent or forged (`ulovlig
+import`, `forfalsket`, `bedrageri`, `uregistrert våpen` stated as illegal).
+
+**B35 — Small conventions** (decided 2026-10-10 from annotator questions):
+- `Eier`/`Eieren` attached to a named person is EMPLOYMENT (B12); the name stays PERSON.
+- A year range is one DATE_TIME span (`2021-2023`); a year list is one span per year
+  (`2021`, `2022`, `2023` from `2021, 2022 og 2023`).
+- Quotation marks and guillemets around an organisation name stay outside ORGANIZATION.
+- An 11-digit number after `f.` is NATIONAL_ID by shape (Identifier types), not DATE_OF_BIRTH.
+
 **B31 — A same-sex relationship is SEXUAL_ORIENTATION with or without an orientation
 word.** GDPR Art. 9 covers "sex life *or* sexual orientation", so the fact is disclosed by
 the pairing itself: a male subject's `tidligere forhold til en mann ved navn Lars
