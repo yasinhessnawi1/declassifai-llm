@@ -1007,7 +1007,7 @@ label-first rule.
    - `YYYY/NNNNN` or `YYYY-NNNNN` (`2018/45678`, `2015-00472`)
    - `YYYYMMDD-NNNN` or `YYYY-MM-DD-NNNN` (`20230512-0047`, `2023-11-02-BH-027`)
    - `NN-NNNNN/YYYY` (`08-12345/2018`, `15-54321/2019`)
-   - Court/police-authority-suffixed (`2018-12345 Oslo Tingrett`, `2019/423 Lofoten Tingrett`, `Nordland politidistrikt 2022/11458`)
+   - Court/police-authority-suffixed (`2018-12345 Oslo Tingrett`, `2019/423 Lofoten Tingrett`, `2022/11458 Nordland politidistrikt` (authority after the number; a preceding authority is left out, B23))
    - Court-prefixed compact form `TOSLO-YYYY-NNNNN` (`TOSLO-2008-12345`, `TOSLO-2018-12345`) — 268 documents in the corpus contain one.
    - Letter-coded prefixes (`BH-2023-10-27`, `I-2023-005432`, `L-456789`), and initials-coded references (`PHV/2023/Klage`).
 6. **DRIVER_LICENSE, PASSPORT, IDENTITY_CARD, TAX_ID** — the value after the label, exactly as printed. These occur rarely in the corpus (9, 7, 1 and 3 spans in gold and the slice).
