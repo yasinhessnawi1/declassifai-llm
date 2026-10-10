@@ -100,8 +100,8 @@ def load_annotated(patterns: List[str]) -> List[dict]:
 def main() -> None:
     """CLI entry point."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--gold", nargs="*", default=["data/gold_v2/batch_*_gold.jsonl"])
-    parser.add_argument("--slice", nargs="*", default=["data/slice_v2/batch_*_annotator1.jsonl"])
+    parser.add_argument("--gold", nargs="*", default=["data/gold_v2/batch_*_gold.jsonl", "data/gold2_v2/batch_*_gold.jsonl"])
+    parser.add_argument("--slice", nargs="*", default=["data/slice_v2/batch_*_annotator1.jsonl", "data/slice2_v2/batch_*_annotator1.jsonl"])
     parser.add_argument("--synthetic", nargs="*", default=[],
                         help="generated v2 documents for train (off by default)")
     parser.add_argument("--corpus", default="data/combined_data.jsonl")

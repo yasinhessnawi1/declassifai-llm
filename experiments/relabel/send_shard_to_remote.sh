@@ -26,7 +26,7 @@ json.dump({"model": cfg.model.name, "system": system, "user_prefix": prefix,
                      "double_quant": cfg.model.bnb_4bit_use_double_quant}, "shard": "1/2"},
           open(os.path.join(B, "meta.json"), "w"), ensure_ascii=False, indent=1)
 held = set()
-for pat in ("data/gold_v2/*.jsonl", "data/slice_v2/*.jsonl"):
+for pat in ("data/gold_v2/*.jsonl", "data/slice_v2/*.jsonl", "data/gold2_v2/*.jsonl", "data/slice2_v2/*.jsonl"):
     for p in glob.glob(pat):
         for l in open(p, encoding="utf-8"):
             held.add(hashlib.md5(json.loads(l)["text_input"].encode()).hexdigest())

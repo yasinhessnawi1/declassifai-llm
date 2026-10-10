@@ -87,7 +87,7 @@ def main():
 
     import glob, hashlib
     held = set()
-    for pat in ("data/gold_v2/*.jsonl", "data/slice_v2/*.jsonl"):
+    for pat in ("data/gold_v2/*.jsonl", "data/slice_v2/*.jsonl", "data/gold2_v2/*.jsonl", "data/slice2_v2/*.jsonl"):
         for p in glob.glob(os.path.join(ROOT, pat)):
             for l in open(p, encoding="utf-8"):
                 held.add(hashlib.md5(json.loads(l)["text_input"].encode()).hexdigest())
