@@ -91,4 +91,9 @@ tier C (clauses), where span boundaries are long and judgement-heavy.
   `innrømmet/erkjente` restored at CRIMINAL starts (B1). Spec also fixed: B35 quote rule reversed
   (gold 174:84), identifier-table CASE_NUMBER example aligned with B23. gold2 is test-only
   (build_training_set holds it out); slice2 joins training.
+- 2026-10-10 — Re-scored the taggers after the B31/B34/B36 gold corrections (CPU predict).
+  gold_v2 (400, corrected): NorBERT3-small 0.770 / 0.901, xs 0.760 / 0.899 (unchanged within 0.001).
+  gold2 (200, agent gold, dossier-weighted): small 0.743 / 0.886, xs 0.733 / 0.887. Tier A drops to
+  ~0.92 on gold2 (rare identifier types the D1 training data barely has); tier C ~0.55 exact on both.
+  E0 (9B) needs a GPU re-score on both sets.
 
