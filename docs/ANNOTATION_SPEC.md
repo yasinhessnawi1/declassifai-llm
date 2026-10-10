@@ -346,6 +346,19 @@ only reports how the fact came to light — `viste`, `viser`, `avdekket`, `tyder
 import av planter` → `ulovlig import av planter`. Gold had split on this (`avdekket` cut 33 times,
 kept 8; `viste` cut 23, kept 24); this follows the majority and B1's "start at the fact". A main
 verb that is itself the fact stays: `holdes i overfylte bur`, `mangler tilgang til vann`.
+- Evidential *noun* frames are not cut: `tegn på sykdom`, `indikasjoner på forfalskning` stay
+  whole (gold keeps `tegn på` in 447 of 554 occurrences). Only the reporting verb before them goes.
+
+**B37 — An outcome inside a parenthetical is still its own span (B3 over B33).** B33's
+absorption covers the case number, court, amount and creditor; an outcome word in the same
+parenthetical — `henlagt`, `frifunnet`, `ingen tiltale`, `ikke tiltalt` — is split out as its
+own CRIMINAL span, as B3 requires for outcome clauses. Gold splits 32 such outcomes and absorbs 14.
+- `anmeldt for trusler (sak 2019/4521, henlagt grunnet bevisets stilling)` → CRIMINAL
+  `anmeldt for trusler (sak 2019/4521` is NOT a valid span (B5); tag `anmeldt for trusler` and
+  `henlagt grunnet bevisets stilling`, with `2019/4521` as CASE_NUMBER.
+
+**B38 — A date with `kl.` and a time is one DATE_TIME span.** `27.10.2024 kl. 14:35` is one
+span, as printed. Gold does this 99 times with no contrary case.
 
 **B31 — A same-sex relationship is SEXUAL_ORIENTATION with or without an orientation
 word.** GDPR Art. 9 covers "sex life *or* sexual orientation", so the fact is disclosed by
