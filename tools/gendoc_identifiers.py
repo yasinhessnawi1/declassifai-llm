@@ -367,7 +367,7 @@ _VESSEL_TYPES = [("fiskefartøyet", "fiskefartøyet"), ("fiskebåten", "fiskebå
                  ("kystfiskefartøyet", "kystfiskefartøyet")]
 
 
-def firearms_license_number(rng: random.Random) -> str:
+def firearms_license_number(rng: random.Random, max_year: int = 2026) -> str:
     """Generate a firearms card (`våpenkort`) or weapon licence number.
 
     The gold set prints these as a letter and six or seven digits (`W0987654`,
@@ -377,6 +377,11 @@ def firearms_license_number(rng: random.Random) -> str:
     (`AB1234`), and, in about one case in six, the plate-shaped `HG12345`, which
     the caller must print under an explicit firearms label (see the block comment
     above and `is_plate_shaped_firearms`).
+
+    Args:
+        rng: Seeded RNG.
+        max_year: Latest year an issue-year form may carry, so a number is never issued
+            after the document that mentions it.
     """
     letter = lambda: rng.choice(_FIREARM_LETTERS)  # noqa: E731
     digits = lambda n: "".join(str(rng.randint(0, 9)) for _ in range(n))  # noqa: E731
@@ -396,8 +401,8 @@ def firearms_license_number(rng: random.Random) -> str:
     if roll < 0.88:
         return str(rng.randint(1, 9)) + digits(6)
     if roll < 0.96:
-        return f"{rng.randint(2005, 2025)}-{rng.randint(1, 9)}{digits(5)}"
-    return f"{letter()}{rng.choice('RSTK')}-{rng.randint(2015, 2025)}-{rng.randint(1000, 9999)}"
+        return f"{rng.randint(2005, min(2025, max_year))}-{rng.randint(1, 9)}{digits(5)}"
+    return f"{letter()}{rng.choice('RSTK')}-{rng.randint(2015, min(2025, max_year))}-{rng.randint(1000, 9999)}"
 
 
 def is_plate_shaped_firearms(value: str) -> bool:
@@ -561,9 +566,17 @@ def social_media_handle(rng: random.Random, first: str, last: str) -> str:
     return "@" + handle if rng.random() < 0.7 else handle
 
 
-def case_number(rng: random.Random, year_hint: Optional[int] = None) -> str:
-    """Generate a case/reference number in one of the real Norwegian shapes."""
-    year = year_hint or rng.randint(2018, 2026)
+def case_number(rng: random.Random, year_hint: Optional[int] = None, max_year: int = 2026) -> str:
+    """Generate a case/reference number in one of the real Norwegian shapes.
+
+    Args:
+        rng: Seeded RNG.
+        year_hint: Force the year of the year-bearing shapes.
+        max_year: Latest year a drawn year may be, so a case number is never from a year
+            after the document that cites it. Years before 2018 are not drawn; a
+            document dated earlier than 2018 would get 2018.
+    """
+    year = year_hint or rng.randint(2018, max(2018, min(2026, max_year)))
     style = rng.random()
     if style < 0.45:
         return f"{year}/{rng.randint(1000, 99999)}"
@@ -634,19 +647,23 @@ def medical_license_number(rng: random.Random) -> str:
         rng.randint(100000000, 999999999))
 
 
-def insurance_number(rng: random.Random) -> str:
+def insurance_number(rng: random.Random, max_year: int = 2026) -> str:
     """Generate a private insurance policy or claim number.
 
     Norwegian insurers print no common format; the shapes here are the ones
     that actually appear on `polisenummer` and `skadenummer` lines (a plain
     eight-to-ten-digit run, a year-prefixed claim reference, or a short
     alphabetic prefix plus digits). No check digit.
+
+    Args:
+        rng: Seeded RNG.
+        max_year: Latest year the year-prefixed form may carry.
     """
     style = rng.random()
     if style < 0.4:
         return str(rng.randint(10000000, 9999999999))
     if style < 0.7:
-        return f"{rng.randint(2018, 2026)}-{rng.randint(100000, 999999)}"
+        return f"{rng.randint(2018, max(2018, min(2026, max_year)))}-{rng.randint(100000, 999999)}"
     return f"{rng.choice(['POL', 'SKA', 'FP', 'AV'])}{rng.randint(1000000, 9999999)}"
 
 

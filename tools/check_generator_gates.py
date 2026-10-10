@@ -953,7 +953,7 @@ def registry_identifier_checks(clause_bank: dict, gold_v2_glob: str) -> bool:
                                profile="typical", type_target=8, art9_cap=1)
             rec = gen.sample_record(random.Random(seed), seed, plan, "seeded", taxonomy_index, bank,
                                     set(data.PUBLIC_FIGURES))
-            adult_forced.append((rec.person.age() >= 18, any(pv.type == "FIREARMS_LICENSE" for pv in rec.planned)))
+            adult_forced.append((rec.person.age(rec.today) >= 18, any(pv.type == "FIREARMS_LICENSE" for pv in rec.planned)))
         child_dropped = []
         for seed in range(40):
             plan = gen.DocPlan(idx=0, genre="school_incident", variant="prose_letter", form="nb",
@@ -964,7 +964,7 @@ def registry_identifier_checks(clause_bank: dict, gold_v2_glob: str) -> bool:
             # The youth profile runs to 18, so the subject is sometimes of age; the
             # rule is that the type is planned exactly when the subject is an adult.
             planned_here = any(pv.type == "FIREARMS_LICENSE" for pv in rec.planned)
-            child_dropped.append((rec.person.age() < 18, planned_here == (rec.person.age() >= 18)))
+            child_dropped.append((rec.person.age(rec.today) < 18, planned_here == (rec.person.age(rec.today) >= 18)))
     finally:
         minor_spec["minor_subject_p"] = saved if saved is not None else 0.0
         if saved is None:
@@ -2364,6 +2364,198 @@ def _plan_for(idx: int, genre: str, profile: str, form: str, band, *, near_miss:
                        near_miss_only=near_miss, n_negatives=n_negatives)
 
 
+def document_date_checks(taxonomy_index, clause_bank: dict) -> bool:
+    """Ages, birth dates, fødselsnummer and planned dates agree with each record's own document date.
+
+    Every record carries the day it is dated (`Record.today`); an age printed at a fixed
+    global date was wrong for a document dated a year earlier, and a "frist" drawn from the
+    same past window landed before the document that sets it. The checks recompute everything
+    from the birth dates, independently of `Person.age`, so a mistake in that method cannot
+    hide itself.
+    """
+    import collections
+    import dataclasses
+    import datetime
+    import random
+    ok = True
+
+    def report(name: str, passed: bool, detail: str) -> None:
+        nonlocal ok
+        ok &= passed
+        print(f"{'PASS' if passed else 'FAIL'} dates {name:<34} {detail}")
+
+    months = {m: i + 1 for i, m in enumerate(gen._MONTHS_NB)}
+
+    def parse(text: str) -> datetime.date:
+        m = re.fullmatch(r"(\d{2})\.(\d{2})\.(\d{4})", text)
+        if m:
+            return datetime.date(int(m.group(3)), int(m.group(2)), int(m.group(1)))
+        m = re.fullmatch(r"(\d{1,2})\. (\w+) (\d{4})", text)
+        return datetime.date(int(m.group(3)), months[m.group(2)], int(m.group(1)))
+
+    def age_on(born: datetime.date, day: datetime.date) -> int:
+        return day.year - born.year - ((day.month, day.day) < (born.month, born.day))
+
+    def fnr_birth(fnr: str) -> datetime.date:
+        dd, mm, yy, indiv = int(fnr[0:2]), int(fnr[2:4]), int(fnr[4:6]), int(fnr[6:9])
+        if dd > 40:
+            dd -= 40
+        return datetime.date((1900 if indiv < 500 else 2000) + yy, mm, dd)
+
+    bank = {t: v for t, v in clause_bank.items() if t != "negatives"}
+    public_figures = set(data.PUBLIC_FIGURES)
+    profiles = [p for p in gen.genres_mod.PROFILES if p not in ("pii_free", "near_miss_only")]
+    genres = sorted(gen.genres_mod.GENRES)
+    forced = ["AGE", "DATE_TIME", "DATE_OF_BIRTH", "NATIONAL_ID", "CASE_NUMBER"]
+
+    records = []
+    for n in range(420):
+        genre = genres[n % len(genres)]
+        profile = profiles[(n // len(genres) + n) % len(profiles)]
+        if n % 3 == 0:
+            profile = "dense" if "dense" in profiles else profile
+        spec = gen.genres_mod.GENRES[genre]
+        plan = gen.DocPlan(idx=n, genre=genre, variant="prose_letter", form="nb" if n % 4 else "nn",
+                           length_band=gen.genres_mod.PROFILES[profile]["bands"][-1],
+                           forced_types=forced if n % 2 else [], profile=profile,
+                           type_target=9, art9_cap=1)
+        seed = 700_000 + n * 31
+        records.append((spec, gen.sample_record(random.Random(seed), seed, plan, "seeded",
+                                                taxonomy_index, bank, public_figures)))
+
+    def holder(rec, pv):
+        if pv.party is None:
+            return rec.person
+        return next((p.person for p in rec.parties if p.role == pv.party), None)
+
+    age_checked = cast_age_checked = 0
+    age_bad: List[str] = []
+    dob_bad: List[str] = []
+    fnr_bad: List[str] = []
+    band_bad: List[str] = []
+    for spec, rec in records:
+        if rec.person is None:
+            continue
+        lo, hi = spec.get("subject_age") or (0, 120)
+        if not lo <= age_on(rec.person.birth_date, rec.today) <= hi:
+            band_bad.append(f"{rec.genre}:{age_on(rec.person.birth_date, rec.today)}")
+        for pv in rec.planned:
+            if pv.type not in ("AGE", "DATE_OF_BIRTH", "NATIONAL_ID"):
+                continue
+            person = holder(rec, pv)
+            if person is None:
+                continue
+            true_age = age_on(person.birth_date, rec.today)
+            if pv.type == "AGE":
+                age_checked += 1
+                cast_age_checked += pv.party is not None
+                if pv.value != f"{true_age} år":
+                    age_bad.append(f"{rec.doc_seed}:{pv.value}!={true_age}")
+            elif pv.type == "DATE_OF_BIRTH":
+                if parse(pv.value) != person.birth_date:
+                    dob_bad.append(f"{rec.doc_seed}:{pv.value}")
+            elif pv.type == "NATIONAL_ID":
+                digits = re.sub(r"\D", "", pv.value)
+                if fnr_birth(digits) != person.birth_date or age_on(fnr_birth(digits), rec.today) != true_age:
+                    fnr_bad.append(f"{rec.doc_seed}:{pv.value}")
+    report("planned_age_equals_age_at_doc_date", not age_bad and age_checked >= 150 and cast_age_checked >= 25,
+           f"{len(records)} records, {age_checked} planned AGE values ({cast_age_checked} on cast members), "
+           f"{len(age_bad)} wrong {age_bad[:3]}")
+    report("birth_date_matches_person", not dob_bad,
+           f"{sum(1 for _s, r in records for pv in r.planned if pv.type == 'DATE_OF_BIRTH')} DATE_OF_BIRTH values, "
+           f"{len(dob_bad)} differ from the person's birth date {dob_bad[:3]}")
+    report("fnr_matches_birth_date_and_age", not fnr_bad,
+           f"{sum(1 for _s, r in records for pv in r.planned if pv.type == 'NATIONAL_ID')} NATIONAL_ID values, "
+           f"{len(fnr_bad)} disagree with birth date or age at the document date {fnr_bad[:3]}")
+    report("subject_age_band_at_doc_date", not band_bad,
+           f"{len(records)} subjects held to the genre's `subject_age` band on the document date; "
+           f"{len(band_bad)} outside {band_bad[:3]}")
+
+    deadlines = other = doc_dates = early_deadline = late_event = no_doc_date = 0
+    max_gap = 0
+    for _spec, rec in records:
+        dates = [(pv.hint or "", parse(pv.value)) for pv in rec.planned if pv.type == "DATE_TIME"]
+        if dates and not dates[0][0].startswith("dokumentets dato"):
+            no_doc_date += 1
+        for hint, day in dates:
+            if hint.startswith("dokumentets dato"):
+                doc_dates += 1
+                late_event += day != rec.today
+            elif "frist" in hint:
+                deadlines += 1
+                early_deadline += not (rec.today < day <= rec.today + datetime.timedelta(weeks=12))
+                max_gap = max(max_gap, (day - rec.today).days)
+            else:
+                other += 1
+                late_event += not day < rec.today
+    report("frist_after_all_else_before", deadlines >= 20 and not early_deadline and not late_event
+           and not no_doc_date,
+           f"{doc_dates} document dates (== record date), {other} earlier-event dates strictly before it, "
+           f"{deadlines} deadlines 1-12 weeks after it (max {max_gap} days); "
+           f"{early_deadline} bad deadlines, {late_event} misplaced dates, {no_doc_date} records not starting with the document date")
+
+    counts = collections.Counter(rec.today for _s, rec in records)
+    top_day, top_n = counts.most_common(1)[0]
+    in_window = all(gen.REFERENCE_DATE - datetime.timedelta(days=gen.DOCUMENT_DATE_WINDOW_DAYS)
+                    <= d <= gen.REFERENCE_DATE for d in counts)
+    report("document_dates_vary", len(counts) >= 0.7 * len(records) and top_n <= 0.03 * len(records) and in_window,
+           f"{len(counts)} distinct document dates over {len(records)} records, most common {top_day} x{top_n}, "
+           f"all inside the {gen.DOCUMENT_DATE_WINDOW_DAYS}-day window: {in_window}")
+
+    year_bad = case_bad = year_checked = case_checked = 0
+    for _spec, rec in records:
+        for pv in rec.planned:
+            if pv.value_kind == "clause" and pv.value and pv.party is None and rec.person:
+                for year in gen._YEAR_IN_TEXT_RE.findall(pv.value):
+                    year_checked += 1
+                    year_bad += not rec.person.birth_date.year + 15 <= int(year) <= rec.today.year
+            if pv.type == "CASE_NUMBER":
+                m = re.match(r"(20\d\d)/", pv.value or "")
+                if m:
+                    case_checked += 1
+                    case_bad += int(m.group(1)) > max(2018, rec.today.year)
+    # The bank holds no clause with a year today, so the plausibility check is exercised on
+    # synthetic entries: a year after the document's year, or before the subject's 15th
+    # birthday, must reject the clause; the document's own year must not.
+    born = datetime.date(1980, 5, 5)
+    probe = gen._Subject(gen.Person("Test", "Person", "M", born), "police_report", "nb",
+                         {"police_report"}, today=datetime.date(2024, 10, 8))
+
+    def fits(text: str) -> bool:
+        return gen._clause_fits({"genres": ["police_report"], "form": "nb", "text": text}, probe)
+
+    probe_ok = (fits("anmeldt i 2024") and fits("dømt i 2012") and not fits("anmeldt i 2025")
+                and not fits("anmeldt i 1993") and fits("anmeldt i 1995"))
+    report("years_not_after_document_year", probe_ok and not year_bad and not case_bad,
+           f"clause-year probe (document 2024-10-08, born 1980): {probe_ok}; {year_checked} sampled clause years "
+           f"outside [birth+15, document year]: {year_bad}; {case_checked} case-number years <= document year, "
+           f"{case_bad} after")
+
+    same = 0
+    for n in (0, 7, 33, 101, 250, 419):
+        spec, rec = records[n]
+        plan = gen.DocPlan(idx=n, genre=rec.genre, variant="prose_letter", form=rec.form,
+                           length_band=rec.length_band, forced_types=forced if n % 2 else [],
+                           profile=rec.profile, type_target=9, art9_cap=1)
+        again = gen.sample_record(random.Random(rec.doc_seed), rec.doc_seed, plan, "seeded",
+                                  taxonomy_index, bank, public_figures)
+        same += dataclasses.asdict(again) == dataclasses.asdict(rec) and again.today == rec.today
+    report("same_seed_same_record", same == 6, f"{same}/6 re-sampled records identical, document date included")
+
+    prompt_ok = True
+    for _spec, rec in records[:60]:
+        if rec.person is None:
+            continue
+        line = gen._subject_line(rec)
+        wanted = [f"{age_on(rec.person.birth_date, rec.today)} år"] + [
+            f"{age_on(p.person.birth_date, rec.today)} år)" for p in rec.parties
+            if not p.is_subject and p.role != "author"]
+        prompt_ok &= all(w in line for w in wanted)
+    report("prompt_ages_at_doc_date", prompt_ok,
+           "subject and cast ages in the shared prompt line are the ages on the document date")
+    return ok
+
+
 def role_word_checks(taxonomy_index, clause_bank: dict, partition: dict) -> bool:
     """The EMPLOYMENT role words and the near-miss-only profile, at the level of the sampler and the gates."""
     import collections
@@ -3442,6 +3634,7 @@ def main() -> int:
     all_passed &= negative_wording_checks(taxonomy_index, clause_bank, partition)
     all_passed &= record_checks(taxonomy_index, clause_bank, partition, out_dir)
     all_passed &= role_word_checks(taxonomy_index, clause_bank, partition)
+    all_passed &= document_date_checks(taxonomy_index, clause_bank)
     all_passed &= prose_cast_checks(taxonomy_index, clause_bank, partition, args.gold_v2_glob)
     all_passed &= resume_checks(out_dir)
 

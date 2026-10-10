@@ -213,6 +213,35 @@ MARKER_RE = re.compile(r"⟦([A-Z_]+):\s*(.*?)⟧", re.DOTALL)
 
 REFERENCE_DATE = date(2026, 9, 26)
 
+# Every document is dated on its own day, drawn from the two years before
+# REFERENCE_DATE. Ages, birth dates, event dates and deadlines are all computed against
+# that day: with one fixed "today" a man born 10.12.1961 was "64 år" in a document dated
+# October 2025, when he was 63, and a deadline could fall before the document itself.
+DOCUMENT_DATE_WINDOW_DAYS = 730
+# Event, meeting and contact dates lie 1..N days before the document date; a deadline
+# lies 1..12 weeks after it.
+EVENT_OFFSET_MAX_DAYS = 720
+DEADLINE_WEEKS = (1, 12)
+# The wording says which side of the document date the deadline is on, so the model does not
+# write it as a past event; the harness recognises a deadline by its "frist".
+_DEADLINE_HINT = "dato for en frist i saken, som ligger frem i tid"
+
+
+def document_date(doc_seed: int) -> date:
+    """The day a document is dated, drawn deterministically from its seed.
+
+    A stream of its own (not the record's main rng) so that drawing it neither shifts nor
+    depends on any other sampling decision.
+
+    Args:
+        doc_seed: The document seed recorded on the `Record`.
+
+    Returns:
+        A date in the `DOCUMENT_DATE_WINDOW_DAYS` days up to and including REFERENCE_DATE.
+    """
+    offset = random.Random(doc_seed ^ 0xD07E).randint(0, DOCUMENT_DATE_WINDOW_DAYS)
+    return REFERENCE_DATE - timedelta(days=offset)
+
 
 @dataclass
 class Person:
@@ -228,8 +257,12 @@ class Person:
     def full_name(self) -> str:
         return f"{self.first_name} {self.last_name}"
 
-    def age(self, today: date = REFERENCE_DATE) -> int:
-        """Exact age in whole years, so AGE never contradicts the fødselsnummer."""
+    def age(self, today: date) -> int:
+        """Exact age in whole years on `today`, so AGE never contradicts the fødselsnummer.
+
+        `today` is the document's own date (`Record.today`) and has no default: an age
+        computed against any other day is wrong for the document it is printed in.
+        """
         before_birthday = (today.month, today.day) < (self.birth_date.month, self.birth_date.day)
         return today.year - self.birth_date.year - int(before_birthday)
 
@@ -301,7 +334,9 @@ class Record:
 
     Attributes beyond the sampled content: `instances_planned` is what the plan asked for
     (`{type: 2..4}`), `instances_realised` what the record could supply (types with two or more
-    planned values), and `coherence` the report of the cast-coherence pass.
+    planned values), `coherence` the report of the cast-coherence pass, and `today` the
+    document's own date (`document_date(doc_seed)`), which every age, birth date, event date
+    and deadline in the record is relative to.
     """
 
     doc_seed: int
@@ -323,6 +358,7 @@ class Record:
     instances_planned: Dict[str, int] = field(default_factory=dict)  # plan: type -> instances asked for
     instances_realised: Dict[str, int] = field(default_factory=dict)  # type -> planned values of it (>= 2 only)
     coherence: Optional[dict] = None  # `gendoc_coherence.CoherenceReport.as_dict()` of the cast
+    today: date = REFERENCE_DATE  # the document's own date; every age and date in the record is relative to it
 
 
 def sample_person(rng: random.Random, age_profile: str = "adult", today: date = REFERENCE_DATE,
@@ -471,7 +507,7 @@ _VALUE_KIND_TYPES = {
 
 def _generate_value_kind(
     etype: str, rng: random.Random, person: Person, invalid_rate: float,
-    staff: bool = False,
+    staff: bool = False, today: date = REFERENCE_DATE,
 ) -> Tuple[str, Optional[bool]]:
     """Generate a Tier A / Tier B "value" kind value.
 
@@ -484,6 +520,8 @@ def _generate_value_kind(
         staff: Whether the person is a professional acting in the document (a
             doctor, a caseworker), whose email sits on an institutional domain
             rather than a consumer one.
+        today: The document's date (`Record.today`): the day AGE is computed on, the
+            latest year a case number may carry, and the day a stray DATE_TIME lies before.
 
     Returns:
         Tuple of (value text, whether its checksum is valid, or None when the
@@ -536,7 +574,7 @@ def _generate_value_kind(
     if etype == "SOCIAL_MEDIA":
         return ident.social_media_handle(rng, first, last), None
     if etype == "CASE_NUMBER":
-        return ident.case_number(rng), None
+        return ident.case_number(rng, max_year=today.year), None
     if etype == "PASSPORT":
         return ident.passport_number(rng), None
     if etype == "DRIVER_LICENSE":
@@ -550,7 +588,7 @@ def _generate_value_kind(
     if etype == "MEDICAL_LICENSE":
         return ident.medical_license_number(rng), None
     if etype == "INSURANCE_NUMBER":
-        return ident.insurance_number(rng), None
+        return ident.insurance_number(rng, max_year=today.year), None
     if etype == "STUDENT_ID":
         return ident.student_id(rng), None
     if etype == "CRYPTO":
@@ -560,7 +598,7 @@ def _generate_value_kind(
     if etype == "LICENSE_PLATE":
         return ident.vehicle_reg(rng), None
     if etype == "FIREARMS_LICENSE":
-        return ident.firearms_license_number(rng), None
+        return ident.firearms_license_number(rng, max_year=today.year), None
     if etype == "VESSEL_REGISTRATION":
         return ident.vessel_registration_mark(rng), None
     if etype == "POSTAL_CODE":
@@ -572,7 +610,7 @@ def _generate_value_kind(
     if etype == "AGE":
         # AGE is one span including its unit ("13 år", ANNOTATION_SPEC); a bare
         # "13" planned here and "13 år" found by the sweep were labelled twice.
-        return f"{person.age()} år", None
+        return f"{person.age(today)} år", None
     if etype == "GENDER":
         return ("mann" if person.gender == "M" else "kvinne"), None
     if etype == "MARITAL_STATUS":
@@ -585,8 +623,9 @@ def _generate_value_kind(
     if etype == "ORGANIZATION":
         return _employer(rng, "Oslo")[0], None
     if etype == "DATE_TIME":
-        offset = rng.randint(-700, 0)
-        return _format_date(rng, REFERENCE_DATE + timedelta(days=offset)), None
+        # Only reached for a DATE_TIME outside the record plan (a regenerated value); the plan
+        # itself builds its dates from the document date, with deadlines after it.
+        return _format_date(rng, today - timedelta(days=rng.randint(1, EVENT_OFFSET_MAX_DAYS))), None
     if etype == "ANIMAL_INFO":
         return ident.animal_descriptor(rng), None
     raise KeyError(etype)
@@ -616,12 +655,14 @@ _CLAUSE_PLACEHOLDER_RE = re.compile(r"\{(PERSON|PERSON_M|PERSON_F|SURNAME_FAM|SU
 _CLAUSE_ID_LITERALS = {"12345/2018": "CASE_NUMBER"}
 
 
-def localize_clause_ids(rng: random.Random, text: str) -> Tuple[str, List[Tuple[str, str]]]:
+def localize_clause_ids(rng: random.Random, text: str,
+                        max_year: int = REFERENCE_DATE.year) -> Tuple[str, List[Tuple[str, str]]]:
     """Replace fixed identifier literals in a clause with fresh values.
 
     Args:
         rng: Seeded RNG.
         text: The clause text after name localisation.
+        max_year: Latest year a substituted case number may carry (the document's year).
 
     Returns:
         Tuple of (text, list of (type, value) to plant as nested labels).
@@ -629,7 +670,7 @@ def localize_clause_ids(rng: random.Random, text: str) -> Tuple[str, List[Tuple[
     planted: List[Tuple[str, str]] = []
     for literal, etype in _CLAUSE_ID_LITERALS.items():
         if literal in text:
-            value = ident.case_number(rng)
+            value = ident.case_number(rng, max_year=max_year)
             text = text.replace(literal, value)
             planted.append((etype, value))
     return text, planted
@@ -714,6 +755,7 @@ class _Subject:
     animal_types: Set[str] = dataclasses.field(default_factory=set)  # types drawn from the animal's clauses
     polarity: Optional[str] = None  # "poor" / "rich", the means the first financial clause implies
     groups: Dict[str, str] = dataclasses.field(default_factory=dict)  # clause `group` -> the one topic in use
+    today: date = REFERENCE_DATE  # the document's date; the subject's age and every clause year are tested against it
 
     @property
     def foreign(self) -> bool:
@@ -741,7 +783,7 @@ def _clause_fits(entry: dict, subject: _Subject, etype: Optional[str] = None) ->
     Returns:
         True if the entry's genre, form, subject kind, gender, age, origin, status, partner,
         means (`polarity`) and `group` constraints all hold, and any year it mentions falls
-        after the subject's 15th birthday.
+        after the subject's 15th birthday and no later than the document's own year.
     """
     if not subject.clause_genres.intersection(entry.get("genres", [])):
         return False
@@ -759,7 +801,7 @@ def _clause_fits(entry: dict, subject: _Subject, etype: Optional[str] = None) ->
     if entry.get("gender") and entry["gender"] != person.gender:
         return False
     lo, hi = entry.get("age_range", [18, 120])
-    if not lo <= person.age() <= hi:
+    if not lo <= person.age(subject.today) <= hi:
         return False
     if entry.get("nationalities") and person.nationality not in entry["nationalities"]:
         return False
@@ -777,7 +819,7 @@ def _clause_fits(entry: dict, subject: _Subject, etype: Optional[str] = None) ->
     if marital and subject.marital and marital != subject.marital:
         return False
     for year in _YEAR_IN_TEXT_RE.findall(entry["text"]):
-        if int(year) < person.birth_date.year + 15 or int(year) > REFERENCE_DATE.year:
+        if int(year) < person.birth_date.year + 15 or int(year) > subject.today.year:
             return False
     return True
 
@@ -886,7 +928,7 @@ _EMPLOYED_SUBJECT_GENRES = {
 
 
 def _cast_person(rng: random.Random, role: str, subject: Person, public_figures: Set[str],
-                  age_profile: str) -> Person:
+                  age_profile: str, today: date) -> Person:
     """Sample a cast member coherent with the role they play and with the subject.
 
     A spouse is of a similar age and shares the household; a child is a minor
@@ -900,11 +942,13 @@ def _cast_person(rng: random.Random, role: str, subject: Person, public_figures:
         subject: The data subject, whose age and nationality family roles follow.
         public_figures: Embedded public-figure set (G3).
         age_profile: The genre's own age distribution, for the neutral roles.
+        today: The document's date; the subject's age and the cast member's birth date
+            are both taken on this day.
 
     Returns:
         A `Person`.
     """
-    subject_age = subject.age()
+    subject_age = subject.age(today)
     family = role in {"spouse", "child", "parent", "guardian"}
     nationality = subject.nationality if family and rng.random() < 0.7 else (
         "norsk" if rng.random() < 0.85 else rng.choice(data.FOREIGN_NATIONALITIES))
@@ -927,14 +971,15 @@ def _cast_person(rng: random.Random, role: str, subject: Person, public_figures:
         age = genres_mod.sample_age(rng, age_profile)
         gender = None
     return _resample_until_no_collision(
-        rng, public_figures, nationality=nationality, gender=gender, age=age,
+        rng, public_figures, nationality=nationality, gender=gender, age=age, today=today,
     )
 
 
-def _with_age(person: Person, age: int, rng: random.Random, today: date = REFERENCE_DATE) -> Person:
-    """Return the same person (name, sex, nationality) at a different age.
+def _with_age(person: Person, age: int, rng: random.Random, today: date) -> Person:
+    """Return the same person (name, sex, nationality) at a different age on `today`.
 
     Used by the coherence repair: a physician drawn at 23 keeps their name and becomes 41.
+    `today` is the document's date, the day the new age holds on.
     """
     birth = date(today.year - age, rng.randint(1, 12), rng.randint(1, 28))
     if (birth.month, birth.day) > (today.month, today.day):
@@ -1036,7 +1081,7 @@ def _add_instances(
             for name in introduced:
                 planned.append(PlannedValue("PERSON", "B", "value", name, None, label("PERSON"),
                                             hint="person nevnt i en av opplysningene"))
-            text, nested_ids = localize_clause_ids(rng, text)
+            text, nested_ids = localize_clause_ids(rng, text, subject.today.year)
             for id_type, id_value in nested_ids:
                 planned.append(PlannedValue(id_type, tier(id_type), "value", id_value, None, label(id_type),
                                             hint="saksnummeret i opplysningen over; skrives bare der"))
@@ -1209,7 +1254,8 @@ def _plant_negatives(rng: random.Random, plan: "DocPlan", spec: dict, person: Op
                      clause_types: Set[str], negative_bank: dict,
                      literals: Sequence[str] = (),
                      ledger: Optional[NegativeLedger] = None,
-                     avoid: Sequence[str] = (), unnamed: bool = False) -> List[PlantedNegative]:
+                     avoid: Sequence[str] = (), unnamed: bool = False,
+                     today: date = REFERENCE_DATE) -> List[PlantedNegative]:
     """Choose the hard negatives to plant in one document.
 
     A negative is only planted where it reads as an ordinary sentence of the
@@ -1246,6 +1292,8 @@ def _plant_negatives(rng: random.Random, plan: "DocPlan", spec: dict, person: Op
         unnamed: True for a near-miss-only document. Only negatives `gendoc_dataset.unnamed_safe`
             accepts are eligible, the subject's gender and age restrictions do not apply,
             and `{PRON}` is filled with "søkeren" / "vedkommende" instead of a pronoun.
+        today: The document's date, the day the subject's age is tested against a
+            negative's `age_range`.
 
     Returns:
         The planted negatives, possibly fewer than requested.
@@ -1272,7 +1320,7 @@ def _plant_negatives(rng: random.Random, plan: "DocPlan", spec: dict, person: Op
                 if entry.get("gender") and entry["gender"] != person.gender:
                     continue
                 lo, hi = entry.get("age_range", [18, 120])
-                if not lo <= person.age() <= hi:
+                if not lo <= person.age(today) <= hi:
                     continue
             if ledger is not None and not ledger.available(entry["text"]):
                 continue
@@ -1424,6 +1472,7 @@ def sample_record(
         `dropped_forced` lists scheduled types the sampler could not place.
     """
     genre, form, length_band = plan.genre, plan.form, plan.length_band
+    today = document_date(doc_seed)
     spec = genres_mod.GENRES[genre]
     label = lambda t: genres_mod.field_label(t, form)  # noqa: E731
 
@@ -1431,10 +1480,10 @@ def sample_record(
         negatives = []
         if plan.near_miss_only and plan.n_negatives and negative_bank:
             negatives = _plant_negatives(rng, plan, spec, None, form, set(), negative_bank,
-                                         ledger=negative_ledger, unnamed=True)
+                                         ledger=negative_ledger, unnamed=True, today=today)
         return Record(doc_seed, genre, plan.variant, form, length_band, None, [], [],
                       profile=plan.profile, pii_free=plan.pii_free, near_miss_only=plan.near_miss_only,
-                      dataset=dataset, planted_negatives=negatives)
+                      dataset=dataset, planted_negatives=negatives, today=today)
 
     is_clause_type = lambda t: taxonomy_index.get(t, {}).get("value_kind") == "clause"  # noqa: E731
     foreign = rng.random() < spec.get("foreign_subject_p", 0.0)
@@ -1455,21 +1504,22 @@ def sample_record(
     person = _resample_until_no_collision(
         rng, public_figures, nationality=nationality, age_profile=age_profile,
         age=rng.randint(13, 17) if minor else forced_age, gender=forced_gender,
-        age_clamp=spec.get("subject_age"),
+        age_clamp=spec.get("subject_age"), today=today,
     )
     status = None
     if genre in _EMPLOYED_SUBJECT_GENRES:
         status = "employed"
-    elif person.age() > 67:
+    elif person.age(today) > 67:
         status = "retired"
     subject = _Subject(person, genre, form, set(spec["clause_genres"]), status=status,
-                       animal_types=set(spec.get("animal_types", ())))
+                       animal_types=set(spec.get("animal_types", ())), today=today)
     street_address, postal, place = _address(rng)
 
     signatory = None
     signatory_role = None
     if rng.random() < 0.75:
-        signatory = _resample_until_no_collision(rng, public_figures, age_profile="professional")
+        signatory = _resample_until_no_collision(rng, public_figures, age_profile="professional",
+                                                 today=today)
         signatory_role = rng.choice(spec["signatory_roles"])[0 if form == "nb" else 1]
 
     ceiling = genres_mod.type_ceiling(length_band[1], spec.get("density_factor", 1.0))
@@ -1489,7 +1539,7 @@ def sample_record(
         return any(_clause_fits(e, subject, etype) for e in clause_bank.get(etype, []))
 
     def _value_fits(etype: str) -> bool:
-        if etype in genres_mod.ADULT_ONLY_TYPES and person.age() < 18:
+        if etype in genres_mod.ADULT_ONLY_TYPES and person.age(today) < 18:
             return False
         return not (etype == "VISA_NUMBER" and not subject.foreign)
 
@@ -1612,7 +1662,7 @@ def sample_record(
     rng.shuffle(cast_pool)
     cast: List[Tuple[str, Person]] = []
     for role in cast_pool[:n_cast]:
-        cast.append((role, _cast_person(rng, role, person, public_figures, age_profile)))
+        cast.append((role, _cast_person(rng, role, person, public_figures, age_profile, today)))
     # A planned HPR number belongs to a clinician. When the document has neither a clinical
     # signatory nor a clinician in its cast, one is added rather than giving the number to
     # the patient.
@@ -1620,19 +1670,20 @@ def sample_record(
     if ("MEDICAL_LICENSE" in chosen and not author_is_clinician
             and not any(role in _CLINICIAN_ROLES for role, _p in cast)):
         clinician_role = "veterinarian" if spec.get("domain") == "veterinary" else "physician"
-        cast.append((clinician_role, _cast_person(rng, clinician_role, person, public_figures, age_profile)))
+        cast.append((clinician_role, _cast_person(rng, clinician_role, person, public_figures,
+                                                  age_profile, today)))
 
     # The cast is drawn from each role's natural distribution and then held to the rules of
     # `gendoc_coherence` (professionals 25-67, no living parent past 100, a child at least 16
     # years younger, a spouse of a possible age) before any value is generated for them, so
     # a violating plan is repaired here and costs no model call.
-    roster = ([coherence.Member("author", signatory.age())] if signatory else []) \
-        + [coherence.Member(role, member.age()) for role, member in cast]
-    repaired, coherence_report = coherence.enforce_cast(person.age(), roster, rng)
+    roster = ([coherence.Member("author", signatory.age(today))] if signatory else []) \
+        + [coherence.Member(role, member.age(today)) for role, member in cast]
+    repaired, coherence_report = coherence.enforce_cast(person.age(today), roster, rng)
     if signatory:
         author_fixed, repaired = repaired[0], repaired[1:]
-        if author_fixed is not None and author_fixed.age != signatory.age():
-            signatory = _with_age(signatory, author_fixed.age, rng)
+        if author_fixed is not None and author_fixed.age != signatory.age(today):
+            signatory = _with_age(signatory, author_fixed.age, rng, today)
     parties: List[Party] = [Party(person, None, "hovedpersonen", is_subject=True)]
     surnames_in_use = {person.last_name.lower()}
     if signatory:
@@ -1642,8 +1693,8 @@ def sample_record(
     for (role, member), fixed in zip(cast, repaired):
         if fixed is None:
             continue
-        if fixed.age != member.age():
-            member = _with_age(member, fixed.age, rng)
+        if fixed.age != member.age(today):
+            member = _with_age(member, fixed.age, rng, today)
         member = _with_surname(member, surnames_in_use, public_figures)
         surnames_in_use.add(member.last_name.lower())
         parties.append(Party(member, fixed.role, genres_mod.CAST_ROLES[fixed.role][form],
@@ -1686,7 +1737,7 @@ def sample_record(
             planned.append(PlannedValue(
                 etype, tier(etype), "value", employer, None, label(etype),
                 hint=("en virksomhet nevnt i saken, ikke hovedpersonens arbeidsgiver"
-                      if person.age() < 18 else "hovedpersonens arbeidsgiver")))
+                      if person.age(today) < 18 else "hovedpersonens arbeidsgiver")))
             continue
         if etype == "NATIONALITY":
             planned.append(PlannedValue(etype, tier(etype), "value", person.nationality, None,
@@ -1703,21 +1754,31 @@ def sample_record(
         if etype == "CASE_NUMBER":
             for k in range(1 if plan.profile != "case_file" else rng.randint(1, 2)):
                 hint = "saksnummeret" if k == 0 else "et henvist saksnummer i en tilknyttet sak"
-                planned.append(PlannedValue(etype, tier(etype), "value", ident.case_number(rng),
+                planned.append(PlannedValue(etype, tier(etype), "value",
+                                            ident.case_number(rng, max_year=today.year),
                                             None, label(etype), hint=hint))
             continue
         if etype == "DATE_TIME":
+            # The first date is the document's own day (`today`); every other date is an
+            # earlier event, meeting or contact, strictly before it, except a deadline, which
+            # is strictly after. The count and the format variety are as before.
             n_dates = max(1, rng.randint(date_lo, date_hi) if date_hi else 1)
-            offsets = sorted(rng.sample(range(1, 900), min(n_dates, 8)))
+            offsets = sorted(rng.sample(range(1, EVENT_OFFSET_MAX_DAYS), min(n_dates, 8) - 1))
             hints = ["dokumentets dato", "dato for hendelsen eller vedtaket saken gjelder",
                      "dato for et tidligere møte eller brev i saken",
-                     "dato for en tidligere kontakt i saken", "dato for en frist i saken",
+                     "dato for en tidligere kontakt i saken", _DEADLINE_HINT,
                      "dato for en undersøkelse i saken", "dato for et tidligere vedtak",
                      "dato for en samtale i saken"]
-            for k, off in enumerate(offsets):
-                planned.append(PlannedValue(etype, tier(etype), "value",
-                                            _format_date(rng, REFERENCE_DATE - timedelta(days=off)),
-                                            None, label(etype), hint=hints[k % len(hints)]))
+            planned.append(PlannedValue(etype, tier(etype), "value", _format_date(rng, today),
+                                        None, label(etype), hint=hints[0]))
+            for k, off in enumerate(offsets, start=1):
+                hint = hints[k % len(hints)]
+                if hint == _DEADLINE_HINT:
+                    when = today + timedelta(weeks=rng.randint(*DEADLINE_WEEKS))
+                else:
+                    when = today - timedelta(days=off)
+                planned.append(PlannedValue(etype, tier(etype), "value", _format_date(rng, when),
+                                            None, label(etype), hint=hint))
             continue
         if etype in clause_texts:
             chosen_entry = clause_texts[etype]
@@ -1731,7 +1792,7 @@ def sample_record(
                 for name in introduced_names:
                     planned.append(PlannedValue("PERSON", "B", "value", name, None, label("PERSON"),
                                                 hint="person nevnt i en av opplysningene"))
-                text, nested_ids = localize_clause_ids(rng, text)
+                text, nested_ids = localize_clause_ids(rng, text, today.year)
                 for id_type, id_value in nested_ids:
                     planned.append(PlannedValue(id_type, tier(id_type), "value", id_value, None,
                                                 label(id_type),
@@ -1748,7 +1809,8 @@ def sample_record(
         if entry.get("value_kind") == "clause":
             continue  # no coherent clause for this subject; drop rather than contradict
         try:
-            value, checksum_valid = _generate_value_kind(etype, rng, person, invalid_rate=0.0)
+            value, checksum_valid = _generate_value_kind(etype, rng, person, invalid_rate=0.0,
+                                                         today=today)
         except KeyError:
             continue
         hint = None
@@ -1796,9 +1858,9 @@ def sample_record(
         marital = subject.marital
         if not marital:
             options = ["ugift", "gift", "skilt", "samboer"]
-            if person.age() >= 55:
+            if person.age(today) >= 55:
                 options.append("enke" if person.gender == "F" else "enkemann")
-            marital = rng.choice(options if person.age() >= 20 else ["ugift"])
+            marital = rng.choice(options if person.age(today) >= 20 else ["ugift"])
         hint = "hovedpersonens sivilstand"
         spouse = next((p for p in parties if p.role == "spouse"), None)
         # ANNOTATION_SPEC: the bare word is right for a `Sivilstand:` field, but
@@ -1825,7 +1887,7 @@ def sample_record(
         for etype in role_values[:n_values]:
             if etype not in taxonomy_index or etype not in _VALUE_KIND_TYPES:
                 continue
-            if party.person.age() < 15 and etype in _NOT_FOR_YOUNG_CHILDREN:
+            if party.person.age(today) < 15 and etype in _NOT_FOR_YOUNG_CHILDREN:
                 continue
             if etype not in planned_types and len(planned_types) >= ceiling:
                 continue
@@ -1837,7 +1899,7 @@ def sample_record(
             else:
                 try:
                     value, checksum_valid = _generate_value_kind(
-                        etype, rng, party.person, invalid_rate=0.0, staff=party.staff)
+                        etype, rng, party.person, invalid_rate=0.0, staff=party.staff, today=today)
                 except KeyError:
                     continue
             planned_types.add(etype)
@@ -1863,7 +1925,7 @@ def sample_record(
         literals = [pv.value for pv in planned if pv.value]
         negatives = _plant_negatives(rng, plan, spec, person, form, set(clause_texts), negative_bank,
                                      literals, negative_ledger,
-                                     avoid=[pv.value for pv in planned if pv.anchor])
+                                     avoid=[pv.value for pv in planned if pv.anchor], today=today)
     realised = {pv.type for pv in planned}
     dropped = [t for t in plan.forced_types if t not in realised]
     per_type = collections.Counter(pv.type for pv in planned if pv.type in genres_mod.MULTI_INSTANCE_TYPES)
@@ -1872,7 +1934,7 @@ def sample_record(
                   dataset=dataset, planted_negatives=negatives, dropped_forced=dropped,
                   instances_planned=dict(plan.instances),
                   instances_realised={t: n for t, n in per_type.items() if n >= 2},
-                  coherence=coherence_report.as_dict())
+                  coherence=coherence_report.as_dict(), today=today)
 
 
 # ---------------------------------------------------------------------------
@@ -2052,9 +2114,10 @@ def _subject_line(record: Record) -> str:
     person = record.person
     gender_word = ("kvinne" if person.gender == "F" else "mann")
     subject_line = (
-        f"Hovedpersonen er {person.full_name}, {gender_word}, {person.age()} år. "
+        f"Hovedpersonen er {person.full_name}, {gender_word}, {person.age(record.today)} år. "
         f"Omtal hovedpersonen med pronomenene {_PRONOUNS[(person.gender, record.form)]}"
         + (" – aldri «han»." if person.gender == "F" else " – aldri «hun»/«ho».")
+        + " Alle aldre i teksten gjelder på dokumentets dato."
     )
     author = next((p for p in record.parties if p.role == "author"), None)
     if record.signatory_role and author:
@@ -2073,7 +2136,7 @@ def _subject_line(record: Record) -> str:
         listed = "; ".join(
             f"{p.person.full_name} ({role_word[p.role] + ', ' if p.role in role_word else ''}"
             f"{_cast_reason(p, record.form, p.role in role_word)}; "
-            f"{'kvinne' if p.person.gender == 'F' else 'mann'}, {p.person.age()} år)" for p in cast
+            f"{'kvinne' if p.person.gender == 'F' else 'mann'}, {p.person.age(record.today)} år)" for p in cast
         )
         subject_line += (f" Andre personer som er nevnt i saken: {listed}. "
                          "Bruk bare disse navnene, og bare om disse personene. Første gang en av dem nevnes, "
@@ -2793,9 +2856,9 @@ def check_record_coherence(record: Record) -> List[Tuple[str, str, int]]:
     """
     if record.person is None:
         return []
-    members = [coherence.Member(p.role or "subject", p.person.age())
+    members = [coherence.Member(p.role or "subject", p.person.age(record.today))
                for p in record.parties if not p.is_subject]
-    return coherence.check(record.person.age(), members)
+    return coherence.check(record.person.age(record.today), members)
 
 
 def new_attempt_record(state: DocState, base_seed: int, taxonomy_index: Dict[str, dict],
@@ -2841,7 +2904,7 @@ def new_attempt_record(state: DocState, base_seed: int, taxonomy_index: Dict[str
     for pv in record.planned:
         if pv.tier == "A" and pv.checksum_valid is not None and rng.random() < config.invalid_checksum_rate:
             value, valid = _generate_value_kind(pv.type, random.Random(doc_seed + 1), record.person,
-                                                invalid_rate=1.0)
+                                                invalid_rate=1.0, today=record.today)
             if valid is not None:
                 pv.value, pv.checksum_valid = value, valid
     state.record = record
@@ -4426,7 +4489,7 @@ def density_report(accepted: List[dict], plans: List[DocPlan]) -> dict:
     types_per_doc = [len(r["output"]) for r in accepted]
     spans_per_doc = [sum(len(v) for v in r["output"].values()) for r in accepted]
     lengths = [len(r["text"]) for r in accepted]
-    ages = [r["record"].person.age() for r in accepted if r["record"].person]
+    ages = [r["record"].person.age(r["record"].today) for r in accepted if r["record"].person]
     contact = sum(1 for r in accepted if r["output"].get("PHONE") or r["output"].get("EMAIL"))
     parties = [len(r["record"].parties) for r in accepted]
     # The type ceiling is computed from the planned length band, but the model
@@ -4780,14 +4843,14 @@ def accepted_lines(st: DocState, mode: dataset_mod.DatasetMode, strategy: str) -
              "why_not": neg.why_not, "also_labelled": neg.also_labelled,
              "surface": neg.found, "in_text": bool(gates.negative_occurrences(text, neg.text))}
             for neg in rec.planted_negatives],
-        "tabular": result["tabular"],
+        "document_date": rec.today.isoformat(), "tabular": result["tabular"],
         "type_target": st.plan.type_target, "art9_cap": st.plan.art9_cap,
         "realised_types": sorted(output),
         "distinct_spans": sum(len(v) for v in output.values()),
         "parties": [{"role": p.role or ("subject" if p.is_subject else None),
-                     "gender": p.person.gender, "age": p.person.age(),
+                     "gender": p.person.gender, "age": p.person.age(rec.today),
                      "nationality": p.person.nationality} for p in rec.parties],
-        "subject": ({"gender": rec.person.gender, "age": rec.person.age(),
+        "subject": ({"gender": rec.person.gender, "age": rec.person.age(rec.today),
                      "nationality": rec.person.nationality} if rec.person else None),
         "sectioned": st.section_plan is not None,
         "section_plan": (sections_mod.summary(st.section_plan, rec)
@@ -4869,7 +4932,10 @@ def stored_accepted(batch_line: dict, meta: dict, plan: DocPlan) -> dict:
         genre=meta["genre"], variant=meta["variant"], form=meta["form"], profile=meta["profile"],
         pii_free=meta["pii_free"], near_miss_only=meta.get("near_miss_only", False),
         dataset=meta["dataset"], length_band=tuple(meta["length_band"]),
-        person=SimpleNamespace(age=lambda age=subject["age"]: age) if subject else None,
+        today=(date.fromisoformat(meta["document_date"]) if meta.get("document_date")
+               else REFERENCE_DATE),  # stores written before per-document dates have none
+        # The stored age is already the age on the document date, so the day is ignored.
+        person=SimpleNamespace(age=lambda _today=None, age=subject["age"]: age) if subject else None,
         parties=[None] * len(meta["parties"]),
         planned=[None] * (meta["planned_items"] - len(meta["planted_negatives"])),
         planted_negatives=[PlantedNegative(n["type"], n["text"], n["why_not"], n["also_labelled"],
