@@ -1,0 +1,6220 @@
+{
+ "schema": 1,
+ "version": "2026-11-07.1",
+ "taxonomy_version": "1.0.0",
+ "built": "2026-11-07",
+ "scorer": {
+  "repo": "llm_finetune",
+  "commit": null,
+  "rule": "routing rule v1"
+ },
+ "engine_models": {
+  "fast": "tagger",
+  "standard": "gliner",
+  "advanced": "gpt-4o"
+ },
+ "floors": {
+  "tagger": null,
+  "gliner": 0.5,
+  "gpt-4o": 0.5
+ },
+ "floors_provisional": [
+  "gpt-4o"
+ ],
+ "sets": [
+  {
+   "id": "norne_test",
+   "kind": "real",
+   "docs": 346,
+   "date": "2026-11-06",
+   "note": "news; marks every named mention, so it under-rates the tagger on PERSON and ORGANIZATION"
+  },
+  {
+   "id": "cv9",
+   "kind": "real",
+   "docs": 9,
+   "date": "2026-11-06",
+   "note": "one person in nine variants, one annotator; no per-type recall recorded"
+  },
+  {
+   "id": "bench_v3_s100",
+   "kind": "synthetic_weak",
+   "docs": 100,
+   "date": "2026-11-05",
+   "note": "synthetic, from the generator that made the tagger training data; flatters the tagger"
+  }
+ ],
+ "types": {
+  "BANK_ACCOUNT": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.94,
+      "f1_lenient": 0.94,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 8,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.21,
+      "f1_lenient": 0.21,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 8,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.89,
+      "f1_lenient": 0.89,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 8,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced",
+      "standard"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "CASE_NUMBER": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 1.0,
+      "f1_lenient": 1.0,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 31,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.82,
+      "f1_lenient": 0.82,
+      "recall_exact": 0.94,
+      "recall_lenient": 0.94,
+      "spans": 31,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.9,
+      "f1_lenient": 0.9,
+      "recall_exact": 0.84,
+      "recall_lenient": 0.84,
+      "spans": 31,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": "bench_v3_s100",
+   "rung": "bench",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "advanced",
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced",
+      "standard"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "CREDIT_CARD": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 1.0,
+      "f1_lenient": 1.0,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 2,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.5,
+      "f1_lenient": 0.5,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 2,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.5,
+      "f1_lenient": 0.5,
+      "recall_exact": 0.5,
+      "recall_lenient": 0.5,
+      "spans": 2,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard",
+      "advanced"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "CRYPTO": {
+   "evidence": {},
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "no_evidence"
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": "no_evidence"
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "no_evidence"
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": "no_evidence"
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": "no_evidence"
+    },
+    "standard+advanced": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": "no_evidence"
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard",
+      "advanced"
+     ],
+     "hint": "no_evidence"
+    }
+   }
+  },
+  "DATE_OF_BIRTH": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.94,
+      "f1_lenient": 0.94,
+      "recall_exact": 0.89,
+      "recall_lenient": 0.89,
+      "spans": 19,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.7,
+      "f1_lenient": 0.7,
+      "recall_exact": 0.68,
+      "recall_lenient": 0.68,
+      "spans": 19,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.77,
+      "f1_lenient": 0.87,
+      "recall_exact": 0.79,
+      "recall_lenient": 0.89,
+      "spans": 19,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced",
+      "standard"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "DEVICE_ID": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.4,
+      "f1_lenient": 0.8,
+      "recall_exact": 0.5,
+      "recall_lenient": 1.0,
+      "spans": 4,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.0,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.0,
+      "spans": 4,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.86,
+      "f1_lenient": 0.86,
+      "recall_exact": 0.75,
+      "recall_lenient": 0.75,
+      "spans": 4,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard",
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced",
+      "standard"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "DRIVER_LICENSE": {
+   "evidence": {},
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "no_evidence"
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": "no_evidence"
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "no_evidence"
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": "no_evidence"
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": "no_evidence"
+    },
+    "standard+advanced": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": "no_evidence"
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard",
+      "advanced"
+     ],
+     "hint": "no_evidence"
+    }
+   }
+  },
+  "EMAIL": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.98,
+      "f1_lenient": 0.98,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 45,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.99,
+      "f1_lenient": 0.99,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 45,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 1.0,
+      "f1_lenient": 1.0,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 45,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    },
+    "cv9": {
+     "tagger": {
+      "f1_exact": 0.27,
+      "f1_lenient": 0.27,
+      "recall_exact": null,
+      "recall_lenient": null,
+      "spans": 9,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.82,
+      "f1_lenient": 0.82,
+      "recall_exact": null,
+      "recall_lenient": null,
+      "spans": 9,
+      "docs": null,
+      "floor": 0.5
+     }
+    }
+   },
+   "deciding_set": "bench_v3_s100",
+   "rung": "bench",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced",
+      "standard"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "FAX_NUMBER": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.33,
+      "f1_lenient": 0.33,
+      "recall_exact": 0.2,
+      "recall_lenient": 0.2,
+      "spans": 5,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.0,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.0,
+      "spans": 5,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.0,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.0,
+      "spans": 5,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": true,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+advanced": {
+     "read": [
+      "fast",
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+standard": {
+     "read": [
+      "fast",
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "standard+advanced": {
+     "read": [
+      "standard",
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast",
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": "weak"
+    }
+   }
+  },
+  "FIREARMS_LICENSE": {
+   "evidence": {},
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [],
+     "fallback": [],
+     "hint": "gap"
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": "no_evidence"
+    },
+    "standard": {
+     "read": [],
+     "fallback": [],
+     "hint": "gap"
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": "no_evidence"
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": "no_evidence"
+    },
+    "standard+advanced": {
+     "read": [],
+     "fallback": [],
+     "hint": "gap"
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": "no_evidence"
+    }
+   }
+  },
+  "IBAN": {
+   "evidence": {},
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "no_evidence"
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": "no_evidence"
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "no_evidence"
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": "no_evidence"
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": "no_evidence"
+    },
+    "standard+advanced": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": "no_evidence"
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard",
+      "advanced"
+     ],
+     "hint": "no_evidence"
+    }
+   }
+  },
+  "IDENTITY_CARD": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.0,
+      "f1_lenient": 1.0,
+      "recall_exact": 0.0,
+      "recall_lenient": 1.0,
+      "spans": 1,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.0,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.0,
+      "spans": 1,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.67,
+      "recall_exact": 0.0,
+      "recall_lenient": 1.0,
+      "spans": 1,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard",
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced",
+      "standard"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "INSURANCE_NUMBER": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 1.0,
+      "f1_lenient": 1.0,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 3,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 1.0,
+      "f1_lenient": 1.0,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 3,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.8,
+      "f1_lenient": 0.8,
+      "recall_exact": 0.67,
+      "recall_lenient": 0.67,
+      "spans": 3,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard",
+      "advanced"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "IP_ADDRESS": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 1.0,
+      "f1_lenient": 1.0,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 2,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.8,
+      "f1_lenient": 0.8,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 2,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.67,
+      "f1_lenient": 0.67,
+      "recall_exact": 0.5,
+      "recall_lenient": 0.5,
+      "spans": 2,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard",
+      "advanced"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "LICENSE_PLATE": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.67,
+      "f1_lenient": 0.67,
+      "recall_exact": 0.5,
+      "recall_lenient": 0.5,
+      "spans": 2,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 1.0,
+      "f1_lenient": 1.0,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 2,
+      "docs": null,
+      "floor": 0.5,
+      "note": "merged with VESSEL_REGISTRATION"
+     },
+     "gpt-4o": {
+      "f1_exact": 0.5,
+      "f1_lenient": 0.5,
+      "recall_exact": 0.5,
+      "recall_lenient": 0.5,
+      "spans": 2,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard",
+      "advanced"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "MEDICAL_LICENSE": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.67,
+      "f1_lenient": 0.67,
+      "recall_exact": 0.5,
+      "recall_lenient": 0.5,
+      "spans": 2,
+      "docs": null,
+      "floor": null
+     }
+    }
+   },
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [],
+     "fallback": [],
+     "hint": "gap"
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [],
+     "fallback": [],
+     "hint": "gap"
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [],
+     "fallback": [],
+     "hint": "gap"
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    }
+   }
+  },
+  "MILITARY_ID": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.0,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.0,
+      "spans": 1,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.0,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.0,
+      "spans": 1,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.0,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.0,
+      "spans": 1,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": true,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+advanced": {
+     "read": [
+      "fast",
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+standard": {
+     "read": [
+      "fast",
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "standard+advanced": {
+     "read": [
+      "standard",
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast",
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": "weak"
+    }
+   }
+  },
+  "NATIONAL_ID": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 1.0,
+      "f1_lenient": 1.0,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 58,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.99,
+      "f1_lenient": 0.99,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 58,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 1.0,
+      "f1_lenient": 1.0,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 58,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": "bench_v3_s100",
+   "rung": "bench",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced",
+      "standard"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "ORG_NUMBER": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.96,
+      "f1_lenient": 0.96,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 13,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.96,
+      "f1_lenient": 0.96,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 13,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 1.0,
+      "f1_lenient": 1.0,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 13,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced",
+      "standard"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "PASSPORT": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 1.0,
+      "f1_lenient": 1.0,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 1,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.0,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.0,
+      "spans": 1,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.0,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.0,
+      "spans": 1,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard",
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard",
+      "advanced"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "PASSWORD": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.0,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.0,
+      "spans": 1,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 1.0,
+      "f1_lenient": 1.0,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 1,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.0,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.0,
+      "spans": 1,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": true,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+advanced": {
+     "read": [
+      "fast",
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+standard": {
+     "read": [
+      "fast",
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast",
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "PHONE": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.95,
+      "f1_lenient": 0.95,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 72,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.86,
+      "f1_lenient": 0.93,
+      "recall_exact": 0.93,
+      "recall_lenient": 1.0,
+      "spans": 72,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.94,
+      "f1_lenient": 0.94,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 72,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    },
+    "cv9": {
+     "tagger": {
+      "f1_exact": 0.95,
+      "f1_lenient": 0.95,
+      "recall_exact": null,
+      "recall_lenient": null,
+      "spans": 9,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.9,
+      "f1_lenient": 0.9,
+      "recall_exact": null,
+      "recall_lenient": null,
+      "spans": 9,
+      "docs": null,
+      "floor": 0.5
+     }
+    }
+   },
+   "deciding_set": "bench_v3_s100",
+   "rung": "bench",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard",
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced",
+      "standard"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "POSTAL_CODE": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 1.0,
+      "f1_lenient": 1.0,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 89,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.02,
+      "f1_lenient": 0.02,
+      "recall_exact": 0.01,
+      "recall_lenient": 0.01,
+      "spans": 89,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.09,
+      "f1_lenient": 0.09,
+      "recall_exact": 0.04,
+      "recall_lenient": 0.04,
+      "spans": 89,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": "bench_v3_s100",
+   "rung": "bench",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "advanced",
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced",
+      "standard"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "SOCIAL_MEDIA": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.86,
+      "f1_lenient": 0.86,
+      "recall_exact": 0.75,
+      "recall_lenient": 0.75,
+      "spans": 4,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 1.0,
+      "f1_lenient": 1.0,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 4,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 1.0,
+      "f1_lenient": 1.0,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 4,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    },
+    "cv9": {
+     "tagger": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.0,
+      "recall_exact": null,
+      "recall_lenient": null,
+      "spans": 61,
+      "docs": null,
+      "floor": null,
+      "note": "URL family (URL 43, SOCIAL_MEDIA 18) scored together"
+     },
+     "gliner": {
+      "f1_exact": 0.78,
+      "f1_lenient": 0.87,
+      "recall_exact": null,
+      "recall_lenient": null,
+      "spans": 61,
+      "docs": null,
+      "floor": 0.5,
+      "note": "URL family (URL 43, SOCIAL_MEDIA 18) scored together"
+     }
+    }
+   },
+   "deciding_set": "cv9",
+   "rung": "real",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "gliner",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "no_evidence"
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "fast"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "fast",
+      "advanced"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "STUDENT_ID": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 1.0,
+      "f1_lenient": 1.0,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 5,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.83,
+      "f1_lenient": 0.83,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 5,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 1.0,
+      "f1_lenient": 1.0,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 5,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced",
+      "standard"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "TAX_ID": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.0,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.0,
+      "spans": 1,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.0,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.0,
+      "spans": 1,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.0,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.0,
+      "spans": 1,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": true,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+advanced": {
+     "read": [
+      "fast",
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+standard": {
+     "read": [
+      "fast",
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "standard+advanced": {
+     "read": [
+      "standard",
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast",
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": "weak"
+    }
+   }
+  },
+  "URL": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.86,
+      "f1_lenient": 0.86,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 3,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.75,
+      "f1_lenient": 0.75,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 3,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 1.0,
+      "f1_lenient": 1.0,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 3,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    },
+    "cv9": {
+     "tagger": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.0,
+      "recall_exact": null,
+      "recall_lenient": null,
+      "spans": 61,
+      "docs": null,
+      "floor": null,
+      "note": "URL family (URL 43, SOCIAL_MEDIA 18) scored together"
+     },
+     "gliner": {
+      "f1_exact": 0.78,
+      "f1_lenient": 0.87,
+      "recall_exact": null,
+      "recall_lenient": null,
+      "spans": 61,
+      "docs": null,
+      "floor": 0.5,
+      "note": "URL family (URL 43, SOCIAL_MEDIA 18) scored together"
+     }
+    }
+   },
+   "deciding_set": "cv9",
+   "rung": "real",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "gliner",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "no_evidence"
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "fast"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "fast",
+      "advanced"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "USERNAME": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.0,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.0,
+      "spans": 6,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.8,
+      "f1_lenient": 0.8,
+      "recall_exact": 0.67,
+      "recall_lenient": 0.67,
+      "spans": 6,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.67,
+      "f1_lenient": 0.67,
+      "recall_exact": 0.5,
+      "recall_lenient": 0.5,
+      "spans": 6,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": true,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+advanced": {
+     "read": [
+      "fast",
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast",
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast",
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "VESSEL_REGISTRATION": {
+   "evidence": {},
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [],
+     "fallback": [],
+     "hint": "gap"
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": "no_evidence"
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "no_evidence"
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": "no_evidence"
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": "no_evidence"
+    },
+    "standard+advanced": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "no_evidence"
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": "no_evidence"
+    }
+   }
+  },
+  "VISA_NUMBER": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.0,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.0,
+      "spans": 2,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 1.0,
+      "f1_lenient": 1.0,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 2,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.67,
+      "f1_lenient": 0.67,
+      "recall_exact": 0.5,
+      "recall_lenient": 0.5,
+      "spans": 2,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": true,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+advanced": {
+     "read": [
+      "fast",
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast",
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast",
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "ACADEMIC_RECORD": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.42,
+      "f1_lenient": 0.74,
+      "recall_exact": 0.5,
+      "recall_lenient": 0.88,
+      "spans": 8,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.5,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.38,
+      "spans": 8,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.22,
+      "f1_lenient": 0.22,
+      "recall_exact": 0.12,
+      "recall_lenient": 0.12,
+      "spans": 8,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    },
+    "cv9": {
+     "tagger": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.51,
+      "recall_exact": null,
+      "recall_lenient": null,
+      "spans": 32,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.3,
+      "f1_lenient": 0.3,
+      "recall_exact": null,
+      "recall_lenient": null,
+      "spans": 32,
+      "docs": null,
+      "floor": 0.5
+     }
+    }
+   },
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "no_evidence"
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard",
+      "advanced"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "ADDRESS": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.98,
+      "f1_lenient": 0.99,
+      "recall_exact": 0.99,
+      "recall_lenient": 1.0,
+      "spans": 93,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.78,
+      "f1_lenient": 0.98,
+      "recall_exact": 0.8,
+      "recall_lenient": 1.0,
+      "spans": 93,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.9,
+      "f1_lenient": 0.94,
+      "recall_exact": 0.9,
+      "recall_lenient": 0.95,
+      "spans": 93,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": "bench_v3_s100",
+   "rung": "bench",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard",
+      "advanced"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "AGE": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.96,
+      "f1_lenient": 0.96,
+      "recall_exact": 0.98,
+      "recall_lenient": 0.98,
+      "spans": 81,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.14,
+      "f1_lenient": 0.54,
+      "recall_exact": 0.1,
+      "recall_lenient": 0.38,
+      "spans": 81,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.8,
+      "f1_lenient": 0.91,
+      "recall_exact": 0.78,
+      "recall_lenient": 0.89,
+      "spans": 81,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": "bench_v3_s100",
+   "rung": "bench",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced",
+      "standard"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "ANIMAL_INFO": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.48,
+      "f1_lenient": 0.86,
+      "recall_exact": 0.56,
+      "recall_lenient": 1.0,
+      "spans": 9,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.5,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.44,
+      "spans": 9,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.33,
+      "f1_lenient": 0.33,
+      "recall_exact": 0.22,
+      "recall_lenient": 0.22,
+      "spans": 9,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard",
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard",
+      "advanced"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "DATE_TIME": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.95,
+      "f1_lenient": 0.97,
+      "recall_exact": 0.97,
+      "recall_lenient": 0.99,
+      "spans": 179,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.87,
+      "f1_lenient": 0.93,
+      "recall_exact": 0.92,
+      "recall_lenient": 0.99,
+      "spans": 179,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.89,
+      "f1_lenient": 0.9,
+      "recall_exact": 0.83,
+      "recall_lenient": 0.84,
+      "spans": 179,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    },
+    "cv9": {
+     "tagger": {
+      "f1_exact": 0.33,
+      "f1_lenient": 0.92,
+      "recall_exact": null,
+      "recall_lenient": null,
+      "spans": 150,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.44,
+      "f1_lenient": 0.99,
+      "recall_exact": null,
+      "recall_lenient": null,
+      "spans": 150,
+      "docs": null,
+      "floor": 0.5
+     }
+    }
+   },
+   "deciding_set": "cv9",
+   "rung": "real",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "gliner",
+   "second": "tagger",
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "no_evidence"
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "standard",
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "standard",
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "EMPLOYMENT": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.9,
+      "f1_lenient": 0.94,
+      "recall_exact": 0.93,
+      "recall_lenient": 0.98,
+      "spans": 228,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.63,
+      "f1_lenient": 0.76,
+      "recall_exact": 0.56,
+      "recall_lenient": 0.68,
+      "spans": 228,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.23,
+      "f1_lenient": 0.34,
+      "recall_exact": 0.15,
+      "recall_lenient": 0.21,
+      "spans": 228,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    },
+    "cv9": {
+     "tagger": {
+      "f1_exact": 0.14,
+      "f1_lenient": 0.38,
+      "recall_exact": null,
+      "recall_lenient": null,
+      "spans": 81,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.22,
+      "f1_lenient": 0.61,
+      "recall_exact": null,
+      "recall_lenient": null,
+      "spans": 81,
+      "docs": null,
+      "floor": 0.5
+     }
+    }
+   },
+   "deciding_set": "cv9",
+   "rung": "real",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "gliner",
+   "second": "tagger",
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "no_evidence"
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "standard",
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "standard",
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "FAMILY_RELATION": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.67,
+      "f1_lenient": 0.81,
+      "recall_exact": 0.76,
+      "recall_lenient": 0.92,
+      "spans": 93,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.08,
+      "f1_lenient": 0.74,
+      "recall_exact": 0.09,
+      "recall_lenient": 0.75,
+      "spans": 93,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.08,
+      "f1_lenient": 0.37,
+      "recall_exact": 0.05,
+      "recall_lenient": 0.25,
+      "spans": 93,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": "bench_v3_s100",
+   "rung": "bench",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard",
+      "advanced"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "GENDER": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.8,
+      "f1_lenient": 0.8,
+      "recall_exact": 0.67,
+      "recall_lenient": 0.67,
+      "spans": 6,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.73,
+      "f1_lenient": 0.73,
+      "recall_exact": 0.67,
+      "recall_lenient": 0.67,
+      "spans": 6,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.6,
+      "f1_lenient": 0.6,
+      "recall_exact": 0.5,
+      "recall_lenient": 0.5,
+      "spans": 6,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard",
+      "advanced"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "LOCATION": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.99,
+      "f1_lenient": 0.99,
+      "recall_exact": 1.0,
+      "recall_lenient": 1.0,
+      "spans": 90,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.16,
+      "f1_lenient": 0.16,
+      "recall_exact": 0.09,
+      "recall_lenient": 0.09,
+      "spans": 90,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.17,
+      "f1_lenient": 0.19,
+      "recall_exact": 0.1,
+      "recall_lenient": 0.11,
+      "spans": 90,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    },
+    "norne_test": {
+     "tagger": {
+      "f1_exact": 0.628,
+      "f1_lenient": 0.684,
+      "recall_exact": 0.584,
+      "recall_lenient": 0.636,
+      "spans": 613,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.531,
+      "f1_lenient": 0.566,
+      "recall_exact": 0.388,
+      "recall_lenient": 0.414,
+      "spans": 613,
+      "docs": null,
+      "floor": 0.5
+     }
+    },
+    "cv9": {
+     "tagger": {
+      "f1_exact": 0.62,
+      "f1_lenient": 0.62,
+      "recall_exact": null,
+      "recall_lenient": null,
+      "spans": 102,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.12,
+      "f1_lenient": 0.29,
+      "recall_exact": null,
+      "recall_lenient": null,
+      "spans": 102,
+      "docs": null,
+      "floor": 0.5
+     }
+    }
+   },
+   "deciding_set": "norne_test",
+   "rung": "real",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "no_evidence"
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard",
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard",
+      "advanced"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "MARITAL_STATUS": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.44,
+      "f1_lenient": 0.56,
+      "recall_exact": 0.35,
+      "recall_lenient": 0.43,
+      "spans": 23,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.0,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.0,
+      "spans": 23,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.06,
+      "f1_lenient": 0.5,
+      "recall_exact": 0.04,
+      "recall_lenient": 0.35,
+      "spans": 23,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": true,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+advanced": {
+     "read": [
+      "fast",
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+standard": {
+     "read": [
+      "fast",
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "standard+advanced": {
+     "read": [
+      "standard",
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast",
+      "advanced"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": "weak"
+    }
+   }
+  },
+  "NATIONALITY": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.67,
+      "f1_lenient": 0.67,
+      "recall_exact": 0.83,
+      "recall_lenient": 0.83,
+      "spans": 6,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.62,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.67,
+      "spans": 6,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.77,
+      "f1_lenient": 0.77,
+      "recall_exact": 0.83,
+      "recall_lenient": 0.83,
+      "spans": 6,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced",
+      "standard"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "ORGANIZATION": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.84,
+      "f1_lenient": 0.86,
+      "recall_exact": 0.93,
+      "recall_lenient": 0.95,
+      "spans": 40,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.73,
+      "f1_lenient": 0.76,
+      "recall_exact": 0.9,
+      "recall_lenient": 0.93,
+      "spans": 40,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.72,
+      "f1_lenient": 0.72,
+      "recall_exact": 0.72,
+      "recall_lenient": 0.72,
+      "spans": 40,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    },
+    "norne_test": {
+     "tagger": {
+      "f1_exact": 0.124,
+      "f1_lenient": 0.161,
+      "recall_exact": 0.074,
+      "recall_lenient": 0.096,
+      "spans": 582,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.437,
+      "f1_lenient": 0.459,
+      "recall_exact": 0.306,
+      "recall_lenient": 0.321,
+      "spans": 582,
+      "docs": null,
+      "floor": 0.5
+     }
+    },
+    "cv9": {
+     "tagger": {
+      "f1_exact": 0.33,
+      "f1_lenient": 0.51,
+      "recall_exact": null,
+      "recall_lenient": null,
+      "spans": 103,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.48,
+      "f1_lenient": 0.54,
+      "recall_exact": null,
+      "recall_lenient": null,
+      "spans": 103,
+      "docs": null,
+      "floor": 0.5
+     }
+    }
+   },
+   "deciding_set": "norne_test",
+   "rung": "real",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "docs",
+    "genres"
+   ],
+   "watch": true,
+   "primary": "gliner",
+   "second": "tagger",
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "no_evidence"
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+advanced": {
+     "read": [
+      "fast",
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+standard": {
+     "read": [
+      "standard",
+      "fast"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "standard+advanced": {
+     "read": [
+      "standard",
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "standard",
+      "fast",
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    }
+   }
+  },
+  "PERSON": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.96,
+      "f1_lenient": 0.97,
+      "recall_exact": 0.99,
+      "recall_lenient": 1.0,
+      "spans": 277,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.85,
+      "f1_lenient": 0.87,
+      "recall_exact": 0.97,
+      "recall_lenient": 1.0,
+      "spans": 277,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.95,
+      "f1_lenient": 0.95,
+      "recall_exact": 0.92,
+      "recall_lenient": 0.92,
+      "spans": 277,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    },
+    "norne_test": {
+     "tagger": {
+      "f1_exact": 0.599,
+      "f1_lenient": 0.623,
+      "recall_exact": 0.451,
+      "recall_lenient": 0.468,
+      "spans": 961,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.801,
+      "f1_lenient": 0.845,
+      "recall_exact": 0.748,
+      "recall_lenient": 0.789,
+      "spans": 961,
+      "docs": null,
+      "floor": 0.5
+     }
+    },
+    "cv9": {
+     "tagger": {
+      "f1_exact": 0.62,
+      "f1_lenient": 0.62,
+      "recall_exact": null,
+      "recall_lenient": null,
+      "spans": 9,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.4,
+      "f1_lenient": 0.4,
+      "recall_exact": null,
+      "recall_lenient": null,
+      "spans": 9,
+      "docs": null,
+      "floor": 0.5
+     }
+    }
+   },
+   "deciding_set": "norne_test",
+   "rung": "real",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "gliner",
+   "second": "tagger",
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "no_evidence"
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+advanced": {
+     "read": [
+      "fast",
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+standard": {
+     "read": [
+      "standard",
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard",
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "standard",
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "AGE_INFO": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.46,
+      "f1_lenient": 0.77,
+      "recall_exact": 0.43,
+      "recall_lenient": 0.71,
+      "spans": 7,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.08,
+      "f1_lenient": 0.08,
+      "recall_exact": 0.14,
+      "recall_lenient": 0.14,
+      "spans": 7,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.0,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.0,
+      "spans": 7,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard",
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard",
+      "advanced"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "BEHAVIORAL_PATTERN": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.51,
+      "f1_lenient": 0.77,
+      "recall_exact": 0.55,
+      "recall_lenient": 0.83,
+      "spans": 47,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.05,
+      "f1_lenient": 0.49,
+      "recall_exact": 0.04,
+      "recall_lenient": 0.4,
+      "spans": 47,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.08,
+      "f1_lenient": 0.19,
+      "recall_exact": 0.04,
+      "recall_lenient": 0.11,
+      "spans": 47,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": "bench_v3_s100",
+   "rung": "bench",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard",
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard",
+      "advanced"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "BIOMETRIC_DATA": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.0,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.0,
+      "spans": 3,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.0,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.0,
+      "spans": 3,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.5,
+      "f1_lenient": 0.5,
+      "recall_exact": 0.33,
+      "recall_lenient": 0.33,
+      "spans": 3,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": true,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+advanced": {
+     "read": [
+      "fast",
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+standard": {
+     "read": [
+      "fast",
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "standard+advanced": {
+     "read": [
+      "standard",
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast",
+      "advanced"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": "weak"
+    }
+   }
+  },
+  "CRIMINAL": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.53,
+      "f1_lenient": 0.74,
+      "recall_exact": 0.7,
+      "recall_lenient": 0.97,
+      "spans": 33,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.03,
+      "f1_lenient": 0.67,
+      "recall_exact": 0.03,
+      "recall_lenient": 0.76,
+      "spans": 33,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.1,
+      "f1_lenient": 0.76,
+      "recall_exact": 0.09,
+      "recall_lenient": 0.73,
+      "spans": 33,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": "bench_v3_s100",
+   "rung": "bench",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "advanced",
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced",
+      "standard"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "DISABILITY": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.43,
+      "f1_lenient": 0.43,
+      "recall_exact": 0.27,
+      "recall_lenient": 0.27,
+      "spans": 11,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.47,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.36,
+      "spans": 11,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.56,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.45,
+      "spans": 11,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": true,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+advanced": {
+     "read": [
+      "fast",
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+standard": {
+     "read": [
+      "fast",
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "standard+advanced": {
+     "read": [
+      "standard",
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast",
+      "advanced"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": "weak"
+    }
+   }
+  },
+  "ECONOMIC_STATUS": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.7,
+      "f1_lenient": 0.85,
+      "recall_exact": 0.72,
+      "recall_lenient": 0.87,
+      "spans": 46,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.49,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.46,
+      "spans": 46,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.15,
+      "f1_lenient": 0.64,
+      "recall_exact": 0.13,
+      "recall_lenient": 0.57,
+      "spans": 46,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": "bench_v3_s100",
+   "rung": "bench",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced",
+      "standard"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "ETHNICITY": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.75,
+      "recall_exact": 0.0,
+      "recall_lenient": 1.0,
+      "spans": 3,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.29,
+      "f1_lenient": 0.57,
+      "recall_exact": 0.33,
+      "recall_lenient": 0.67,
+      "spans": 3,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.4,
+      "f1_lenient": 0.4,
+      "recall_exact": 0.33,
+      "recall_lenient": 0.33,
+      "spans": 3,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard",
+      "advanced"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "FINANCIAL": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.55,
+      "f1_lenient": 0.81,
+      "recall_exact": 0.6,
+      "recall_lenient": 0.88,
+      "spans": 42,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.81,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.81,
+      "spans": 42,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.22,
+      "f1_lenient": 0.66,
+      "recall_exact": 0.24,
+      "recall_lenient": 0.71,
+      "spans": 42,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": "bench_v3_s100",
+   "rung": "bench",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard",
+      "advanced"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "GENETIC_DATA": {
+   "evidence": {},
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "no_evidence"
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": "no_evidence"
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "no_evidence"
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": "no_evidence"
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": "no_evidence"
+    },
+    "standard+advanced": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": "no_evidence"
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard",
+      "advanced"
+     ],
+     "hint": "no_evidence"
+    }
+   }
+  },
+  "HEALTH": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.56,
+      "f1_lenient": 0.72,
+      "recall_exact": 0.76,
+      "recall_lenient": 0.97,
+      "spans": 37,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.07,
+      "f1_lenient": 0.59,
+      "recall_exact": 0.08,
+      "recall_lenient": 0.68,
+      "spans": 37,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.15,
+      "f1_lenient": 0.65,
+      "recall_exact": 0.19,
+      "recall_lenient": 0.84,
+      "spans": 37,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": "bench_v3_s100",
+   "rung": "bench",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced",
+      "standard"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "IMMIGRATION_STATUS": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.0,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.0,
+      "spans": 5,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.0,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.0,
+      "spans": 5,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.0,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.0,
+      "spans": 5,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": true,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+advanced": {
+     "read": [
+      "fast",
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+standard": {
+     "read": [
+      "fast",
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "standard+advanced": {
+     "read": [
+      "standard",
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast",
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": "weak"
+    }
+   }
+  },
+  "MEDICATION": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.6,
+      "f1_lenient": 0.6,
+      "recall_exact": 0.5,
+      "recall_lenient": 0.5,
+      "spans": 6,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.29,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.17,
+      "spans": 6,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.8,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.67,
+      "spans": 6,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard",
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced",
+      "standard"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "POLITICAL": {
+   "evidence": {},
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "no_evidence"
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": "no_evidence"
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "no_evidence"
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": "no_evidence"
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": "no_evidence"
+    },
+    "standard+advanced": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": "no_evidence"
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard",
+      "advanced"
+     ],
+     "hint": "no_evidence"
+    }
+   }
+  },
+  "RELIGIOUS_BELIEF": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.0,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.0,
+      "spans": 1,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.67,
+      "recall_exact": 0.0,
+      "recall_lenient": 1.0,
+      "spans": 1,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.2,
+      "recall_exact": 0.0,
+      "recall_lenient": 1.0,
+      "spans": 1,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": true,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+advanced": {
+     "read": [
+      "fast",
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast",
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast",
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "SEXUAL_ORIENTATION": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.4,
+      "f1_lenient": 0.8,
+      "recall_exact": 0.5,
+      "recall_lenient": 1.0,
+      "spans": 2,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.5,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.5,
+      "spans": 2,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.0,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.0,
+      "spans": 2,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard",
+      "advanced"
+     ],
+     "hint": null
+    }
+   }
+  },
+  "TRADE_UNION": {
+   "evidence": {
+    "bench_v3_s100": {
+     "tagger": {
+      "f1_exact": 0.08,
+      "f1_lenient": 0.54,
+      "recall_exact": 0.12,
+      "recall_lenient": 0.88,
+      "spans": 8,
+      "docs": null,
+      "floor": null
+     },
+     "gliner": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.0,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.0,
+      "spans": 8,
+      "docs": null,
+      "floor": 0.5
+     },
+     "gpt-4o": {
+      "f1_exact": 0.0,
+      "f1_lenient": 0.75,
+      "recall_exact": 0.0,
+      "recall_lenient": 0.75,
+      "spans": 8,
+      "docs": null,
+      "floor": 0.5,
+      "note": "floor assumed 0.5, not recorded"
+     }
+    }
+   },
+   "deciding_set": null,
+   "rung": "default",
+   "provisional": true,
+   "provisional_reasons": [
+    "not_gold",
+    "spans",
+    "docs",
+    "genres"
+   ],
+   "watch": false,
+   "primary": "tagger",
+   "second": null,
+   "routes": {
+    "advanced": {
+     "read": [
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "standard": {
+     "read": [
+      "standard"
+     ],
+     "fallback": [],
+     "hint": "weak"
+    },
+    "fast+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced"
+     ],
+     "hint": null
+    },
+    "fast+standard": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "standard"
+     ],
+     "hint": null
+    },
+    "standard+advanced": {
+     "read": [
+      "standard",
+      "advanced"
+     ],
+     "fallback": [],
+     "hint": null
+    },
+    "fast+standard+advanced": {
+     "read": [
+      "fast"
+     ],
+     "fallback": [
+      "advanced",
+      "standard"
+     ],
+     "hint": null
+    }
+   }
+  }
+ },
+ "note": "Provisional: built from numbers already measured (engine research note sections 4.2 and 4.3), no new run. Every type is provisional. The taxonomy is a draft copy, see taxonomy_pin.json."
+}

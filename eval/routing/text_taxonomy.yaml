@@ -1,0 +1,429 @@
+# DRAFT copy of the text taxonomy, for the scorer's engine label maps and gold-label validation.
+#
+# Built from the engine research note's mapping table (section 1), NOT from the service's
+# contract file. Only the fields the scorer needs are here: id, tier, rules, engine_labels,
+# shared_labels. An empty engine list means the engine has no label for the type (a gap).
+# `shared_labels` on LICENSE_PLATE: GLiNER's plate labels also serve VESSEL_REGISTRATION.
+#
+# TODO(pin): when the taxonomy branch in detection_service merges, replace this file with a
+# byte-for-byte copy of contract/text_taxonomy.yaml and update taxonomy_pin.json
+# (repository, path, commit, blob hash, draft=false). Until then the pin records a draft.
+schema: 1
+version: 1.0.0
+implicit_aliases: ['{id}_S']
+types:
+- id: BANK_ACCOUNT
+  tier: A
+  rules: true
+  engine_labels:
+    tagger: [BANK_ACCOUNT]
+    gliner: [bank account number]
+    advanced: [BANK_ACCOUNT_A]
+- id: CASE_NUMBER
+  tier: A
+  rules: false
+  engine_labels:
+    tagger: [CASE_NUMBER]
+    gliner: [CASE_NUMBER_S]
+    advanced: [CASE_NUMBER_A]
+- id: CREDIT_CARD
+  tier: A
+  rules: true
+  engine_labels:
+    tagger: [CREDIT_CARD]
+    gliner: [credit card number, credit card expiration date]
+    advanced: [CREDIT_CARD_A]
+- id: CRYPTO
+  tier: A
+  rules: false
+  engine_labels:
+    tagger: [CRYPTO]
+    gliner: [crypto wallet]
+    advanced: [CRYPTO_A]
+- id: DATE_OF_BIRTH
+  tier: A
+  rules: true
+  engine_labels:
+    tagger: [DATE_OF_BIRTH]
+    gliner: [date of birth]
+    advanced: [DATE_OF_BIRTH_A]
+- id: DEVICE_ID
+  tier: A
+  rules: false
+  engine_labels:
+    tagger: [DEVICE_ID]
+    gliner: [device id]
+    advanced: [DEVICE_ID_A]
+- id: DRIVER_LICENSE
+  tier: A
+  rules: false
+  engine_labels:
+    tagger: [DRIVER_LICENSE]
+    gliner: [driver license number]
+    advanced: [DRIVER_LICENSE_A]
+- id: EMAIL
+  tier: A
+  rules: true
+  engine_labels:
+    tagger: [EMAIL]
+    gliner: [EMAIL_ADDRESS_S]
+    advanced: [EMAIL_A]
+- id: FAX_NUMBER
+  tier: A
+  rules: false
+  engine_labels:
+    tagger: [FAX_NUMBER]
+    gliner: [fax number]
+    advanced: [FAX_NUMBER_A]
+- id: FIREARMS_LICENSE
+  tier: A
+  rules: false
+  engine_labels:
+    tagger: [FIREARMS_LICENSE]
+    gliner: []
+    advanced: []
+- id: IBAN
+  tier: A
+  rules: false
+  engine_labels:
+    tagger: [IBAN]
+    gliner: [iban]
+    advanced: [IBAN_A]
+- id: IDENTITY_CARD
+  tier: A
+  rules: false
+  engine_labels:
+    tagger: [IDENTITY_CARD]
+    gliner: [identity card number]
+    advanced: [IDENTITY_CARD_A]
+- id: INSURANCE_NUMBER
+  tier: A
+  rules: true
+  engine_labels:
+    tagger: [INSURANCE_NUMBER]
+    gliner: [insurance number]
+    advanced: [INSURANCE_NUMBER_A]
+- id: IP_ADDRESS
+  tier: A
+  rules: true
+  engine_labels:
+    tagger: [IP_ADDRESS]
+    gliner: [ip address]
+    advanced: [IP_ADDRESS_A]
+- id: LICENSE_PLATE
+  tier: A
+  rules: false
+  engine_labels:
+    tagger: [LICENSE_PLATE]
+    gliner: [license plate number, vehicle registration number, registration number]
+    advanced: [LICENSE_PLATE_A, VEHICLE_REG_A]
+  shared_labels:
+    gliner: [VESSEL_REGISTRATION]
+- id: MEDICAL_LICENSE
+  tier: A
+  rules: false
+  engine_labels:
+    tagger: [MEDICAL_LICENSE]
+    gliner: []
+    advanced: []
+- id: MILITARY_ID
+  tier: A
+  rules: false
+  engine_labels:
+    tagger: [MILITARY_ID]
+    gliner: [military id]
+    advanced: [MILITARY_ID_A]
+- id: NATIONAL_ID
+  tier: A
+  rules: true
+  engine_labels:
+    tagger: [NATIONAL_ID]
+    gliner: [GOV_ID_S, national id number]
+    advanced: [NATIONAL_ID_A, GOV_ID_A]
+- id: ORG_NUMBER
+  tier: A
+  rules: true
+  engine_labels:
+    tagger: [ORG_NUMBER]
+    gliner: [organization number]
+    advanced: [ORG_NUMBER_A]
+- id: PASSPORT
+  tier: A
+  rules: false
+  engine_labels:
+    tagger: [PASSPORT]
+    gliner: [passport number]
+    advanced: [PASSPORT_A]
+- id: PASSWORD
+  tier: A
+  rules: false
+  engine_labels:
+    tagger: [PASSWORD]
+    gliner: [password]
+    advanced: [PASSWORD_A]
+- id: PHONE
+  tier: A
+  rules: true
+  engine_labels:
+    tagger: [PHONE]
+    gliner: [NO_PHONE_NUMBER_S]
+    advanced: [PHONE_A]
+- id: POSTAL_CODE
+  tier: A
+  rules: false
+  engine_labels:
+    tagger: [POSTAL_CODE]
+    gliner: [POSTAL_CODE_S, postal code]
+    advanced: [POSTAL_CODE_A]
+- id: SOCIAL_MEDIA
+  tier: A
+  rules: true
+  engine_labels:
+    tagger: [SOCIAL_MEDIA]
+    gliner: [social media handle]
+    advanced: [SOCIAL_MEDIA_A]
+- id: STUDENT_ID
+  tier: A
+  rules: true
+  engine_labels:
+    tagger: [STUDENT_ID]
+    gliner: [student id number]
+    advanced: [STUDENT_ID_A]
+- id: TAX_ID
+  tier: A
+  rules: false
+  engine_labels:
+    tagger: [TAX_ID]
+    gliner: [tax identification number]
+    advanced: [TAX_ID_A]
+- id: URL
+  tier: A
+  rules: true
+  engine_labels:
+    tagger: [URL]
+    gliner: [url]
+    advanced: [URL_A]
+- id: USERNAME
+  tier: A
+  rules: false
+  engine_labels:
+    tagger: [USERNAME]
+    gliner: [username]
+    advanced: [USERNAME_A]
+- id: VESSEL_REGISTRATION
+  tier: A
+  rules: false
+  engine_labels:
+    tagger: [VESSEL_REGISTRATION]
+    gliner: []
+    advanced: []
+- id: VISA_NUMBER
+  tier: A
+  rules: false
+  engine_labels:
+    tagger: [VISA_NUMBER]
+    gliner: [visa number]
+    advanced: [VISA_NUMBER_A]
+- id: ACADEMIC_RECORD
+  tier: B
+  rules: false
+  engine_labels:
+    tagger: [ACADEMIC_RECORD]
+    gliner: [ACADEMIC_RECORD_S]
+    advanced: [ACADEMIC_RECORD_A]
+- id: ADDRESS
+  tier: B
+  rules: false
+  engine_labels:
+    tagger: [ADDRESS]
+    gliner: [NO_ADDRESS_S, address]
+    advanced: [ADDRESS_A]
+- id: AGE
+  tier: B
+  rules: false
+  engine_labels:
+    tagger: [AGE]
+    gliner: [AGE_S]
+    advanced: [AGE_A]
+- id: ANIMAL_INFO
+  tier: B
+  rules: false
+  engine_labels:
+    tagger: [ANIMAL_INFO]
+    gliner: [ANIMAL_INFO_S]
+    advanced: [ANIMAL_INFO_A]
+- id: DATE_TIME
+  tier: B
+  rules: false
+  engine_labels:
+    tagger: [DATE_TIME]
+    gliner: [DATE_TIME_S, date]
+    advanced: [DATE_A]
+- id: EMPLOYMENT
+  tier: B
+  rules: false
+  engine_labels:
+    tagger: [EMPLOYMENT]
+    gliner: [EMPLOYMENT_INFO_S]
+    advanced: [EMPLOYMENT_A]
+- id: FAMILY_RELATION
+  tier: B
+  rules: false
+  engine_labels:
+    tagger: [FAMILY_RELATION]
+    gliner: [FAMILY_RELATION_S]
+    advanced: [FAMILY_A]
+- id: GENDER
+  tier: B
+  rules: false
+  engine_labels:
+    tagger: [GENDER]
+    gliner: [GENDER_S]
+    advanced: [GENDER_A]
+- id: LOCATION
+  tier: B
+  rules: false
+  engine_labels:
+    tagger: [LOCATION]
+    gliner: [location]
+    advanced: [LOCATION_A]
+- id: MARITAL_STATUS
+  tier: B
+  rules: false
+  engine_labels:
+    tagger: [MARITAL_STATUS]
+    gliner: [MARITAL_STATUS_S]
+    advanced: [MARITAL_STATUS_A]
+- id: NATIONALITY
+  tier: B
+  rules: false
+  engine_labels:
+    tagger: [NATIONALITY]
+    gliner: [NATIONALITY_S]
+    advanced: [NATIONALITY_A]
+- id: ORGANIZATION
+  tier: B
+  rules: false
+  engine_labels:
+    tagger: [ORGANIZATION]
+    gliner: [organization]
+    advanced: [ORGANIZATION_A]
+- id: PERSON
+  tier: B
+  rules: false
+  engine_labels:
+    tagger: [PERSON]
+    gliner: [PERSON_S]
+    advanced: [PERSON_A]
+- id: AGE_INFO
+  tier: C
+  rules: false
+  engine_labels:
+    tagger: [AGE_INFO]
+    gliner: [AGE_INFO_S]
+    advanced: [AGE_INFO_A]
+- id: BEHAVIORAL_PATTERN
+  tier: C
+  rules: false
+  engine_labels:
+    tagger: [BEHAVIORAL_PATTERN]
+    gliner: [BEHAVIORAL_PATTERN_S]
+    advanced: [BEHAVIORAL_PATTERN_A]
+- id: BIOMETRIC_DATA
+  tier: C
+  rules: false
+  engine_labels:
+    tagger: [BIOMETRIC_DATA]
+    gliner: [BIOMETRIC_DATA_S]
+    advanced: [BIOMETRIC_DATA_A]
+- id: CRIMINAL
+  tier: C
+  rules: false
+  engine_labels:
+    tagger: [CRIMINAL]
+    gliner: [CRIMINAL_RECORD_S]
+    advanced: [CRIMINAL_A]
+- id: DISABILITY
+  tier: C
+  rules: false
+  engine_labels:
+    tagger: [DISABILITY]
+    gliner: [DISABILITY_S]
+    advanced: [DISABILITY_A]
+- id: ECONOMIC_STATUS
+  tier: C
+  rules: false
+  engine_labels:
+    tagger: [ECONOMIC_STATUS]
+    gliner: [ECONOMIC_STATUS_S]
+    advanced: [ECONOMIC_STATUS_A]
+- id: ETHNICITY
+  tier: C
+  rules: false
+  engine_labels:
+    tagger: [ETHNICITY]
+    gliner: [ETHNICITY_S]
+    advanced: [ETHNICITY_A]
+- id: FINANCIAL
+  tier: C
+  rules: false
+  engine_labels:
+    tagger: [FINANCIAL]
+    gliner: [FINANCIAL_INFO_S]
+    advanced: [FINANCIAL_INFO_A]
+- id: GENETIC_DATA
+  tier: C
+  rules: false
+  engine_labels:
+    tagger: [GENETIC_DATA]
+    gliner: [GENETIC_DATA_S]
+    advanced: [GENETIC_DATA_A]
+- id: HEALTH
+  tier: C
+  rules: false
+  engine_labels:
+    tagger: [HEALTH]
+    gliner: [HEALTH_INFO_S, medical condition]
+    advanced: [HEALTH_A, MEDICAL_CONDITION_A]
+- id: IMMIGRATION_STATUS
+  tier: C
+  rules: false
+  engine_labels:
+    tagger: [IMMIGRATION_STATUS]
+    gliner: [IMMIGRATION_STATUS_S]
+    advanced: [IMMIGRATION_STATUS_A]
+- id: MEDICATION
+  tier: C
+  rules: false
+  engine_labels:
+    tagger: [MEDICATION]
+    gliner: [medication]
+    advanced: [MEDICATION_A]
+- id: POLITICAL
+  tier: C
+  rules: false
+  engine_labels:
+    tagger: [POLITICAL]
+    gliner: [POLITICAL_CASE_S]
+    advanced: [POLITICAL_AFFILIATION_A]
+- id: RELIGIOUS_BELIEF
+  tier: C
+  rules: false
+  engine_labels:
+    tagger: [RELIGIOUS_BELIEF]
+    gliner: [RELIGIOUS_BELIEF_S]
+    advanced: [RELIGIOUS_BELIEF_A]
+- id: SEXUAL_ORIENTATION
+  tier: C
+  rules: false
+  engine_labels:
+    tagger: [SEXUAL_ORIENTATION]
+    gliner: [SEXUAL_ORIENTATION_S]
+    advanced: [SEXUAL_A]
+- id: TRADE_UNION
+  tier: C
+  rules: false
+  engine_labels:
+    tagger: [TRADE_UNION]
+    gliner: [TRADE_UNION_S]
+    advanced: [TRADE_UNION_A]

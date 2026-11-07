@@ -1,0 +1,7 @@
+# Per-engine score floor. A number only counts as evidence when it was measured at the
+# floor of its own engine. Changing a floor means a new table version and a re-score.
+floors:
+  tagger: null    # scores every finding 1.0, so no floor
+  gliner: 0.5
+  gpt-4o: 0.5     # provisional: not yet measured, 0.5 until it is
+provisional: [gpt-4o]
