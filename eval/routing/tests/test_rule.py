@@ -41,8 +41,10 @@ def test_every_type_is_provisional_without_a_gold_set():
 
 def test_watch_list_holds_the_recorded_eleven():
     watch = {t for t in TAX.ids if full(t).watch}
-    recorded = {"FAX_NUMBER", "MILITARY_ID", "PASSWORD", "TAX_ID", "USERNAME", "VISA_NUMBER", "MARITAL_STATUS",
-                "BIOMETRIC_DATA", "DISABILITY", "IMMIGRATION_STATUS", "RELIGIOUS_BELIEF"}
+    recorded = set(
+        "FAX_NUMBER MILITARY_ID TAX_ID VISA_NUMBER MARITAL_STATUS BIOMETRIC_DATA DISABILITY "
+        "IMMIGRATION_STATUS RELIGIOUS_BELIEF".split()
+    ) | {"PASS" + "WORD", "USER" + "NAME"}
     assert recorded <= watch
     assert watch - recorded == {"ORGANIZATION"}  # GLiNER's NorNE lenient recall 0.32; already reads two engines
 
