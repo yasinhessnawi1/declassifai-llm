@@ -2,7 +2,7 @@
 # own labels map. The source of truth for every repo that detects, stores or shows a text category; the other repos
 # keep a pinned copy. contract/text_contract.fixture.json is made from it by scripts/gen_text_contract.py.
 schema: 1
-version: "1.0.0"   # minor: alias, label or field added; major: an alias target changes (needs a migration note)
+version: "1.1.0"   # minor: alias, label or field added; major: an alias target changes (needs a migration note)
 change_rule: >-
   An id is never renamed, removed or reused. The list stays at 59; new needs go to AI search.
 implicit_aliases: ["{id}_S"]          # the tagger's and the rules' old output form, for all 59
@@ -253,8 +253,8 @@ types:
       - { name: NO_FODSELSNUMMER_F }
       - { name: GOV_ID_S }
       - { name: "national id number" }
-      - { name: NATIONAL_ID_A }
-      - { name: GOV_ID_A }
+      - { name: NATIONAL_ID_A, also_selects: [PASSPORT, DRIVER_LICENSE] }
+      - { name: GOV_ID_A, also_selects: [ORG_NUMBER, PASSPORT, DRIVER_LICENSE, IDENTITY_CARD] }
   - id: ORG_NUMBER
     tier: A
     label_key: orgNumber

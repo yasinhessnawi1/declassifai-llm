@@ -1,7 +1,7 @@
 {
  "schema": 1,
- "version": "2026-11-07.2",
- "taxonomy_version": "1.0.0",
+ "version": "2026-11-07.3",
+ "taxonomy_version": "1.1.0",
  "built": "2026-11-07",
  "scorer": {
   "repo": "llm_finetune",

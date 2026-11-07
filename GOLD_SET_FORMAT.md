@@ -33,7 +33,7 @@ gold_real/
 |---|---|
 | `set_id` | name of the set, e.g. `gold_real` |
 | `version` | set version, a string |
-| `taxonomy_version` | must equal the taxonomy version in `eval/routing/text_taxonomy.yaml` (now `1.0.0`) |
+| `taxonomy_version` | must equal the taxonomy version in `eval/routing/text_taxonomy.yaml` (now `1.1.0`) |
 | `labelling_rules` | which labelling rules were used (name and date) |
 | `created` | date, `YYYY-MM-DD` |
 | `documents` | number of lines in `labels.jsonl` |
@@ -79,7 +79,7 @@ Nordmann bor i Storgata 5, 0182 Oslo.
 `manifest.json`:
 
 ```example-manifest
-{"set_id": "gold_real", "version": "1", "taxonomy_version": "1.0.0", "labelling_rules": "gold-set labelling rules, 07.11.2026", "created": "2026-11-20", "documents": 1}
+{"set_id": "gold_real", "version": "1", "taxonomy_version": "1.1.0", "labelling_rules": "gold-set labelling rules, 07.11.2026", "created": "2026-11-20", "documents": 1}
 ```
 
 The line in `labels.jsonl` (shown with line breaks here; in the file it is a single line):
