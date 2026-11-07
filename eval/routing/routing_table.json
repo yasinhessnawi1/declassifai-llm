@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "version": "2026-11-07.1",
+ "version": "2026-11-07.2",
  "taxonomy_version": "1.0.0",
  "built": "2026-11-07",
  "scorer": {
@@ -6216,5 +6216,5 @@
    }
   }
  },
- "note": "Provisional: built from numbers already measured (engine research note sections 4.2 and 4.3), no new run. Every type is provisional. The taxonomy is a draft copy, see taxonomy_pin.json."
+ "note": "Provisional: built from numbers already measured (engine research note sections 4.2 and 4.3), no new run. Every type is provisional. The taxonomy is the one merged in the detection service, see taxonomy_pin.json."
 }

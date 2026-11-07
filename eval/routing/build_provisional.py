@@ -11,10 +11,10 @@ from pathlib import Path
 from .table import HERE, build_table, check_table_structure, load_floors, write_table
 from .taxonomy import check_pin, load_taxonomy
 
-VERSION = "2026-11-07.1"
+VERSION = "2026-11-07.2"
 BUILT = "2026-11-07"
 NOTE = ("Provisional: built from numbers already measured (engine research note sections 4.2 and 4.3), "
-        "no new run. Every type is provisional. The taxonomy is a draft copy, see taxonomy_pin.json.")
+        "no new run. Every type is provisional. The taxonomy is the one merged in the detection service, see taxonomy_pin.json.")
 
 
 def main(argv: list) -> int:
