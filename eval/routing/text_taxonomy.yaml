@@ -1,0 +1,816 @@
+# The one list of text categories: 59 types in three tiers, with the old names each engine used and where the engines'
+# own labels map. The source of truth for every repo that detects, stores or shows a text category; the other repos
+# keep a pinned copy. contract/text_contract.fixture.json is made from it by scripts/gen_text_contract.py.
+schema: 1
+version: "1.0.0"   # minor: alias, label or field added; major: an alias target changes (needs a migration note)
+change_rule: >-
+  An id is never renamed, removed or reused. The list stays at 59; new needs go to AI search.
+implicit_aliases: ["{id}_S"]          # the tagger's and the rules' old output form, for all 59
+families: [person, contact, place, vehiclePlate, numberId, organisation, objectSecurity]
+types:
+  - id: BANK_ACCOUNT
+    tier: A
+    label_key: bankAccount
+    family: numberId
+    gdpr: null
+    rules: true
+    rule_category: bank_account      # the safety net's category for this type
+    engine_labels:
+      tagger: [BANK_ACCOUNT]
+      gliner: ["bank account number"]
+      advanced: [BANK_ACCOUNT]
+    aliases:
+      - { name: NO_BANK_ACCOUNT_F }
+      - { name: "bank account number" }
+      - { name: BANK_ACCOUNT_A }
+  - id: CASE_NUMBER
+    tier: A
+    label_key: caseNumber
+    family: numberId
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [CASE_NUMBER]
+      gliner: [CASE_NUMBER_S]
+      advanced: [CASE_NUMBER]
+    aliases:
+      - { name: CASE_NUMBER_S }
+      - { name: CASE_NUMBER_A }
+  - id: CREDIT_CARD
+    tier: A
+    label_key: creditCard
+    family: numberId
+    gdpr: null
+    rules: true
+    engine_labels:
+      tagger: [CREDIT_CARD]
+      gliner: ["credit card number"]
+      advanced: [CREDIT_CARD]
+    aliases:
+      - { name: "credit card number" }
+      - { name: CREDIT_CARD_A }
+  - id: CRYPTO
+    tier: A
+    label_key: crypto
+    family: numberId
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [CRYPTO]
+      gliner: ["crypto wallet"]
+      advanced: [CRYPTO]
+    aliases:
+      - { name: CRYPTO_F }
+      - { name: "crypto wallet" }
+      - { name: CRYPTO_A }
+  - id: DATE_OF_BIRTH
+    tier: A
+    label_key: dateOfBirth
+    family: numberId
+    gdpr: null
+    rules: true
+    engine_labels:
+      tagger: [DATE_OF_BIRTH]
+      gliner: ["date of birth"]
+      advanced: [DATE_OF_BIRTH]
+    aliases:
+      - { name: "date of birth", also_selects: [DATE_TIME] }
+      - { name: DATE_OF_BIRTH_A }
+  - id: DEVICE_ID
+    tier: A
+    label_key: deviceId
+    family: numberId
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [DEVICE_ID]
+      gliner: ["device id"]
+      advanced: [DEVICE_ID]
+    aliases:
+      - { name: "device id" }
+      - { name: DEVICE_ID_A }
+  - id: DRIVER_LICENSE
+    tier: A
+    label_key: driverLicense
+    family: numberId
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [DRIVER_LICENSE]
+      gliner: ["driver license number"]
+      advanced: [DRIVER_LICENSE]
+    aliases:
+      - { name: "driver license number" }
+      - { name: DRIVER_LICENSE_A }
+  - id: EMAIL
+    tier: A
+    label_key: email
+    family: contact
+    gdpr: null
+    rules: true
+    rule_category: email      # the safety net's category for this type
+    engine_labels:
+      tagger: [EMAIL]
+      gliner: [EMAIL_ADDRESS_S]
+      advanced: [EMAIL]
+    aliases:
+      - { name: EMAIL_ADDRESS_F }
+      - { name: EMAIL_ADDRESS_S }
+      - { name: EMAIL_A }
+  - id: FAX_NUMBER
+    tier: A
+    label_key: faxNumber
+    family: contact
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [FAX_NUMBER]
+      gliner: ["fax number"]
+      advanced: [FAX_NUMBER]
+    aliases:
+      - { name: "fax number" }
+      - { name: FAX_NUMBER_A }
+  - id: FIREARMS_LICENSE
+    tier: A
+    label_key: firearmsLicense
+    family: numberId
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [FIREARMS_LICENSE]
+      gliner: []      # no label
+      advanced: []      # no key
+    aliases:
+  - id: IBAN
+    tier: A
+    label_key: iban
+    family: numberId
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [IBAN]
+      gliner: [iban]
+      advanced: [IBAN]
+    aliases:
+      - { name: IBAN_CODE_F }
+      - { name: iban }
+      - { name: IBAN_A }
+  - id: IDENTITY_CARD
+    tier: A
+    label_key: identityCard
+    family: numberId
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [IDENTITY_CARD]
+      gliner: ["identity card number"]
+      advanced: [IDENTITY_CARD]
+    aliases:
+      - { name: "identity card number" }
+      - { name: IDENTITY_CARD_A }
+  - id: INSURANCE_NUMBER
+    tier: A
+    label_key: insuranceNumber
+    family: numberId
+    gdpr: null
+    rules: true
+    engine_labels:
+      tagger: [INSURANCE_NUMBER]
+      gliner: ["insurance number"]
+      advanced: [INSURANCE_NUMBER]
+    aliases:
+      - { name: "insurance number" }
+      - { name: INSURANCE_NUMBER_A }
+  - id: IP_ADDRESS
+    tier: A
+    label_key: ipAddress
+    family: contact
+    gdpr: null
+    rules: true
+    engine_labels:
+      tagger: [IP_ADDRESS]
+      gliner: ["ip address"]
+      advanced: [IP_ADDRESS]
+    aliases:
+      - { name: IP_ADDRESS_F }
+      - { name: "ip address" }
+      - { name: IP_ADDRESS_A }
+  - id: LICENSE_PLATE
+    tier: A
+    label_key: licensePlate
+    family: vehiclePlate
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [LICENSE_PLATE]
+      gliner: ["license plate number", "vehicle registration number", "registration number"]
+      advanced: [LICENSE_PLATE]
+    shared_labels: { gliner: [VESSEL_REGISTRATION] }   # these labels also serve VESSEL_REGISTRATION
+    aliases:
+      - { name: NO_LICENSE_PLATE_F, also_selects: [VESSEL_REGISTRATION], migrated_note: true }
+      - { name: "license plate number", also_selects: [VESSEL_REGISTRATION], migrated_note: true }
+      - { name: "vehicle registration number", also_selects: [VESSEL_REGISTRATION], migrated_note: true }
+      - { name: "registration number", also_selects: [VESSEL_REGISTRATION], migrated_note: true }
+      - { name: LICENSE_PLATE_A }
+      - { name: VEHICLE_REG_A }
+  - id: MEDICAL_LICENSE
+    tier: A
+    label_key: medicalLicense
+    family: numberId
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [MEDICAL_LICENSE]
+      gliner: []      # no label
+      advanced: []      # no key
+    aliases:
+      - { name: MEDICAL_LICENSE_F }
+  - id: MILITARY_ID
+    tier: A
+    label_key: militaryId
+    family: numberId
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [MILITARY_ID]
+      gliner: ["military id"]
+      advanced: [MILITARY_ID]
+    aliases:
+      - { name: "military id" }
+      - { name: MILITARY_ID_A }
+  - id: NATIONAL_ID
+    tier: A
+    label_key: nationalId
+    family: numberId
+    gdpr: null
+    rules: true
+    rule_category: national_id      # the safety net's category for this type
+    engine_labels:
+      tagger: [NATIONAL_ID]
+      gliner: [GOV_ID_S, "national id number"]
+      advanced: [NATIONAL_ID]
+    aliases:
+      - { name: NO_FODSELSNUMMER_F }
+      - { name: GOV_ID_S }
+      - { name: "national id number" }
+      - { name: NATIONAL_ID_A }
+      - { name: GOV_ID_A }
+  - id: ORG_NUMBER
+    tier: A
+    label_key: orgNumber
+    family: numberId
+    gdpr: null
+    rules: true
+    engine_labels:
+      tagger: [ORG_NUMBER]
+      gliner: ["organization number"]
+      advanced: [ORG_NUMBER]
+    aliases:
+      - { name: NO_COMPANY_NUMBER_F }
+      - { name: "organization number" }
+      - { name: ORG_NUMBER_A }
+  - id: PASSPORT
+    tier: A
+    label_key: passport
+    family: numberId
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [PASSPORT]
+      gliner: ["passport number"]
+      advanced: [PASSPORT]
+    aliases:
+      - { name: "passport number" }
+      - { name: PASSPORT_A }
+  - id: PASSWORD
+    tier: A
+    label_key: password
+    family: numberId
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [PASSWORD]
+      gliner: [password]
+      advanced: [PASSWORD]
+    aliases:
+      - { name: password }
+      - { name: PASSWORD_A }
+  - id: PHONE
+    tier: A
+    label_key: phone
+    family: contact
+    gdpr: null
+    rules: true
+    rule_category: phone      # the safety net's category for this type
+    engine_labels:
+      tagger: [PHONE]
+      gliner: [NO_PHONE_NUMBER_S]
+      advanced: [PHONE]
+    aliases:
+      - { name: NO_PHONE_NUMBER_F }
+      - { name: NO_PHONE_NUMBER_S }
+      - { name: PHONE_A }
+  - id: POSTAL_CODE
+    tier: A
+    label_key: postalCode
+    family: place
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [POSTAL_CODE]
+      gliner: [POSTAL_CODE_S, "postal code"]
+      advanced: [POSTAL_CODE]
+    aliases:
+      - { name: POSTAL_CODE_S, also_selects: [ADDRESS] }
+      - { name: "postal code", also_selects: [ADDRESS] }
+      - { name: POSTAL_CODE_A }
+  - id: SOCIAL_MEDIA
+    tier: A
+    label_key: socialMedia
+    family: contact
+    gdpr: null
+    rules: true
+    engine_labels:
+      tagger: [SOCIAL_MEDIA]
+      gliner: ["social media handle"]
+      advanced: [SOCIAL_MEDIA]
+    aliases:
+      - { name: "social media handle" }
+      - { name: SOCIAL_MEDIA_A }
+  - id: STUDENT_ID
+    tier: A
+    label_key: studentId
+    family: numberId
+    gdpr: null
+    rules: true
+    engine_labels:
+      tagger: [STUDENT_ID]
+      gliner: ["student id number"]
+      advanced: [STUDENT_ID]
+    aliases:
+      - { name: "student id number" }
+      - { name: STUDENT_ID_A }
+  - id: TAX_ID
+    tier: A
+    label_key: taxId
+    family: numberId
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [TAX_ID]
+      gliner: ["tax identification number"]
+      advanced: [TAX_ID]
+    aliases:
+      - { name: "tax identification number" }
+      - { name: TAX_ID_A }
+  - id: URL
+    tier: A
+    label_key: url
+    family: contact
+    gdpr: null
+    rules: true
+    engine_labels:
+      tagger: [URL]
+      gliner: [url]
+      advanced: [URL]
+    aliases:
+      - { name: URL_F }
+      - { name: url }
+      - { name: URL_A }
+  - id: USERNAME
+    tier: A
+    label_key: username
+    family: contact
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [USERNAME]
+      gliner: [username]
+      advanced: [USERNAME]
+    aliases:
+      - { name: username }
+      - { name: USERNAME_A }
+  - id: VESSEL_REGISTRATION
+    tier: A
+    label_key: vesselRegistration
+    family: vehiclePlate
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [VESSEL_REGISTRATION]
+      gliner: []      # no label of its own; it is read through LICENSE_PLATE's labels (shared_labels)
+      advanced: []      # no key
+    aliases:
+  - id: VISA_NUMBER
+    tier: A
+    label_key: visaNumber
+    family: numberId
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [VISA_NUMBER]
+      gliner: ["visa number"]
+      advanced: [VISA_NUMBER]
+    aliases:
+      - { name: "visa number" }
+      - { name: VISA_NUMBER_A }
+  - id: ACADEMIC_RECORD
+    tier: B
+    label_key: academicRecord
+    family: person
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [ACADEMIC_RECORD]
+      gliner: [ACADEMIC_RECORD_S]
+      advanced: [ACADEMIC_RECORD]
+    aliases:
+      - { name: ACADEMIC_RECORD_S }
+      - { name: ACADEMIC_RECORD_A }
+  - id: ADDRESS
+    tier: B
+    label_key: address
+    family: place
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [ADDRESS]
+      gliner: [NO_ADDRESS_S, address]
+      advanced: [ADDRESS]
+    aliases:
+      - { name: NO_ADDRESS_F, also_selects: [POSTAL_CODE], migrated_note: true }
+      - { name: NO_ADDRESS_S, also_selects: [POSTAL_CODE] }
+      - { name: address, also_selects: [POSTAL_CODE] }
+      - { name: ADDRESS_A }
+  - id: AGE
+    tier: B
+    label_key: age
+    family: person
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [AGE]
+      gliner: [AGE_S]
+      advanced: [AGE]
+    aliases:
+      - { name: AGE_S }
+      - { name: AGE_A }
+  - id: ANIMAL_INFO
+    tier: B
+    label_key: animalInfo
+    family: person
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [ANIMAL_INFO]
+      gliner: [ANIMAL_INFO_S]
+      advanced: [ANIMAL_INFO]
+    aliases:
+      - { name: ANIMAL_INFO_S }
+      - { name: ANIMAL_INFO_A }
+  - id: DATE_TIME
+    tier: B
+    label_key: dateTime
+    family: numberId
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [DATE_TIME]
+      gliner: [DATE_TIME_S, date, "credit card expiration date"]
+      advanced: [DATE_TIME]
+    aliases:
+      - { name: DATE_TIME_F, also_selects: [DATE_OF_BIRTH], migrated_note: true }
+      - { name: DATE_TIME_S, also_selects: [DATE_OF_BIRTH] }
+      - { name: date, also_selects: [DATE_OF_BIRTH] }
+      - { name: "credit card expiration date", also_selects: [CREDIT_CARD], migrated_note: true }
+      - { name: DATE_A }
+  - id: EMPLOYMENT
+    tier: B
+    label_key: employment
+    family: person
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [EMPLOYMENT]
+      gliner: [EMPLOYMENT_INFO_S]
+      advanced: [EMPLOYMENT]
+    aliases:
+      - { name: EMPLOYMENT_INFO_F }
+      - { name: EMPLOYMENT_INFO_S }
+      - { name: EMPLOYMENT_A }
+  - id: FAMILY_RELATION
+    tier: B
+    label_key: familyRelation
+    family: person
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [FAMILY_RELATION]
+      gliner: [FAMILY_RELATION_S]
+      advanced: [FAMILY_RELATION]
+    aliases:
+      - { name: FAMILY_RELATION_F }
+      - { name: FAMILY_RELATION_S }
+      - { name: FAMILY_A }
+  - id: GENDER
+    tier: B
+    label_key: gender
+    family: person
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [GENDER]
+      gliner: [GENDER_S]
+      advanced: [GENDER]
+    aliases:
+      - { name: GENDER_S }
+      - { name: GENDER_A }
+  - id: LOCATION
+    tier: B
+    label_key: location
+    family: place
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [LOCATION]
+      gliner: [location]
+      advanced: [LOCATION]
+    aliases:
+      - { name: LOCATION_F }
+      - { name: location }
+      - { name: LOCATION_A }
+  - id: MARITAL_STATUS
+    tier: B
+    label_key: maritalStatus
+    family: person
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [MARITAL_STATUS]
+      gliner: [MARITAL_STATUS_S]
+      advanced: [MARITAL_STATUS]
+    aliases:
+      - { name: MARITAL_STATUS_S }
+      - { name: MARITAL_STATUS_A }
+  - id: NATIONALITY
+    tier: B
+    label_key: nationality
+    family: person
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [NATIONALITY]
+      gliner: [NATIONALITY_S]
+      advanced: [NATIONALITY]
+    aliases:
+      - { name: NATIONALITY_S }
+      - { name: NATIONALITY_A }
+  - id: ORGANIZATION
+    tier: B
+    label_key: organization
+    family: organisation
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [ORGANIZATION]
+      gliner: [organization]
+      advanced: [ORGANIZATION]
+    aliases:
+      - { name: ORGANIZATION_F }
+      - { name: organization }
+      - { name: ORGANIZATION_A }
+  - id: PERSON
+    tier: B
+    label_key: person
+    family: person
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [PERSON]
+      gliner: [PERSON_S]
+      advanced: [PERSON]
+    aliases:
+      - { name: PERSON_F }
+      - { name: PERSON_S }
+      - { name: PERSON_A }
+  - id: AGE_INFO
+    tier: C
+    label_key: ageInfo
+    family: person
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [AGE_INFO]
+      gliner: [AGE_INFO_S]
+      advanced: [AGE_INFO]
+    aliases:
+      - { name: AGE_INFO_S }
+      - { name: AGE_INFO_A }
+  - id: BEHAVIORAL_PATTERN
+    tier: C
+    label_key: behavioralPattern
+    family: person
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [BEHAVIORAL_PATTERN]
+      gliner: [BEHAVIORAL_PATTERN_S]
+      advanced: [BEHAVIORAL_PATTERN]
+    aliases:
+      - { name: BEHAVIORAL_PATTERN_S }
+      - { name: BEHAVIORAL_PATTERN_A }
+  - id: BIOMETRIC_DATA
+    tier: C
+    label_key: biometricData
+    family: person
+    gdpr: art9
+    rules: false
+    engine_labels:
+      tagger: [BIOMETRIC_DATA]
+      gliner: [BIOMETRIC_DATA_S]
+      advanced: [BIOMETRIC_DATA]
+    aliases:
+      - { name: BIOMETRIC_DATA_S }
+      - { name: BIOMETRIC_DATA_A }
+  - id: CRIMINAL
+    tier: C
+    label_key: criminal
+    family: person
+    gdpr: art10
+    rules: false
+    engine_labels:
+      tagger: [CRIMINAL]
+      gliner: [CRIMINAL_RECORD_S]
+      advanced: [CRIMINAL]
+    aliases:
+      - { name: CRIMINAL_RECORD_F }
+      - { name: CRIMINAL_RECORD_S }
+      - { name: CRIMINAL_A }
+  - id: DISABILITY
+    tier: C
+    label_key: disability
+    family: person
+    gdpr: art9
+    rules: false
+    engine_labels:
+      tagger: [DISABILITY]
+      gliner: [DISABILITY_S]
+      advanced: [DISABILITY]
+    aliases:
+      - { name: DISABILITY_S }
+      - { name: DISABILITY_A }
+  - id: ECONOMIC_STATUS
+    tier: C
+    label_key: economicStatus
+    family: person
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [ECONOMIC_STATUS]
+      gliner: [ECONOMIC_STATUS_S]
+      advanced: [ECONOMIC_STATUS]
+    aliases:
+      - { name: ECONOMIC_STATUS_S }
+      - { name: ECONOMIC_STATUS_A }
+  - id: ETHNICITY
+    tier: C
+    label_key: ethnicity
+    family: person
+    gdpr: art9
+    rules: false
+    engine_labels:
+      tagger: [ETHNICITY]
+      gliner: [ETHNICITY_S]
+      advanced: [ETHNICITY]
+    aliases:
+      - { name: ETHNICITY_S }
+      - { name: ETHNICITY_A }
+  - id: FINANCIAL
+    tier: C
+    label_key: financial
+    family: person
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [FINANCIAL]
+      gliner: [FINANCIAL_INFO_S]
+      advanced: [FINANCIAL]
+    aliases:
+      - { name: FINANCIAL_INFO_F }
+      - { name: FINANCIAL_INFO_S }
+      - { name: FINANCIAL_INFO_A }
+  - id: GENETIC_DATA
+    tier: C
+    label_key: geneticData
+    family: person
+    gdpr: art9
+    rules: false
+    engine_labels:
+      tagger: [GENETIC_DATA]
+      gliner: [GENETIC_DATA_S]
+      advanced: [GENETIC_DATA]
+    aliases:
+      - { name: GENETIC_DATA_S }
+      - { name: GENETIC_DATA_A }
+  - id: HEALTH
+    tier: C
+    label_key: health
+    family: person
+    gdpr: art9
+    rules: false
+    engine_labels:
+      tagger: [HEALTH]
+      gliner: [HEALTH_INFO_S, "medical condition"]
+      advanced: [HEALTH]
+    aliases:
+      - { name: HEALTH_INFO_F, also_selects: [MEDICATION], migrated_note: true }
+      - { name: HEALTH_INFO_S, also_selects: [MEDICATION] }
+      - { name: "medical condition", also_selects: [MEDICATION] }
+      - { name: HEALTH_A }
+      - { name: MEDICAL_CONDITION_A }
+  - id: IMMIGRATION_STATUS
+    tier: C
+    label_key: immigrationStatus
+    family: person
+    gdpr: null
+    rules: false
+    engine_labels:
+      tagger: [IMMIGRATION_STATUS]
+      gliner: [IMMIGRATION_STATUS_S]
+      advanced: [IMMIGRATION_STATUS]
+    aliases:
+      - { name: IMMIGRATION_STATUS_S }
+      - { name: IMMIGRATION_STATUS_A }
+  - id: MEDICATION
+    tier: C
+    label_key: medication
+    family: person
+    gdpr: art9
+    rules: false
+    engine_labels:
+      tagger: [MEDICATION]
+      gliner: [medication]
+      advanced: [MEDICATION]
+    aliases:
+      - { name: medication, also_selects: [HEALTH] }
+      - { name: MEDICATION_A }
+  - id: POLITICAL
+    tier: C
+    label_key: political
+    family: person
+    gdpr: art9
+    rules: false
+    engine_labels:
+      tagger: [POLITICAL]
+      gliner: [POLITICAL_CASE_S]
+      advanced: [POLITICAL]
+    aliases:
+      - { name: POLITICAL_CASE_F }
+      - { name: POLITICAL_CASE_S }
+      - { name: POLITICAL_AFFILIATION_A }
+  - id: RELIGIOUS_BELIEF
+    tier: C
+    label_key: religiousBelief
+    family: person
+    gdpr: art9
+    rules: false
+    engine_labels:
+      tagger: [RELIGIOUS_BELIEF]
+      gliner: [RELIGIOUS_BELIEF_S]
+      advanced: [RELIGIOUS_BELIEF]
+    aliases:
+      - { name: RELIGIOUS_BELIEF_S }
+      - { name: RELIGIOUS_BELIEF_A }
+  - id: SEXUAL_ORIENTATION
+    tier: C
+    label_key: sexualOrientation
+    family: person
+    gdpr: art9
+    rules: false
+    engine_labels:
+      tagger: [SEXUAL_ORIENTATION]
+      gliner: [SEXUAL_ORIENTATION_S]
+      advanced: [SEXUAL_ORIENTATION]
+    aliases:
+      - { name: SEXUAL_ORIENTATION_F }
+      - { name: SEXUAL_ORIENTATION_S }
+      - { name: SEXUAL_A }
+  - id: TRADE_UNION
+    tier: C
+    label_key: tradeUnion
+    family: person
+    gdpr: art9
+    rules: false
+    engine_labels:
+      tagger: [TRADE_UNION]
+      gliner: [TRADE_UNION_S]
+      advanced: [TRADE_UNION]
+    aliases:
+      - { name: TRADE_UNION_S }
+      - { name: TRADE_UNION_A }
+groups:      { ALL: all, ALL_STANDARD: all, ALL_ADVANCED: all, ALL_GEMINI: all, ALL_FAST: fast_legacy }
+retired:     [CONTEXT_SENSITIVE_F, CONTEXT_SENSITIVE_S, CONTEXT_A, IDENTIFIABLE_IMAGE_F, IDENTIFIABLE_IMAGE_S, MISC_F]
+legacy_render:                        # the old answer name per engine and type (legacy renderer only)
+  fast: { from: aliases, suffix: _F }        # the 23 FAST_OUTPUT_NAMES
+  standard: { prefer: gliner_S_name, else: "{id}_S" }
+  advanced: { from: aliases, suffix: _A }
