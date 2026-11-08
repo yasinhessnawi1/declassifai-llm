@@ -9,7 +9,8 @@ Per type and set of enabled engines (models: tagger, gliner, gpt-4o; cheapest fi
   4. primary: highest lenient F1; engines within 0.03 tie and the cheapest wins;
   5. second engine (recall first): a) primary lenient recall < 0.90 and another is higher;
      b) runner-up within 0.03 lenient and 0.15 exact F1, primary not >= 0.95 on F1 and recall;
-     c) a real/gold set and the synthetic set pick different engines;
+     c) below the gold rung, a real set and the synthetic set pick different engines (at the gold
+        rung the gold set settles the type and the synthetic set plays no part);
   6. default: the tagger if on, else the cheapest enabled engine with a label; a watch-list
      type (primary lenient recall < 0.5 on the evidence there is) also reads the next engine;
   7. fallback: the other enabled candidates by lenient F1, cost order where there is no number;
@@ -138,7 +139,9 @@ def decide(tax: Taxonomy, type_id: str, evidence: dict, sets: list, floors: dict
         dec.rung, dec.deciding_set = rung, sid
         dec.primary, ranking = pick(usable)
         other_pick = None
-        if rung in ("gold", "real"):
+        # 5c: below the gold rung a real set and the synthetic set that disagree both read the type. Once the
+        # gold set is at the bar it settles the type: the synthetic set neither picks nor adds an engine.
+        if rung == "real":
             b_sid, b_u = best_of(lambda k: k == "synthetic_weak", BENCH_MIN_SPANS)
             other_pick = pick(b_u)[0] if b_sid else None
         dec.second, dec.second_reason = _second(dec.primary, usable, ranking, other_pick)
@@ -173,18 +176,20 @@ def decide(tax: Taxonomy, type_id: str, evidence: dict, sets: list, floors: dict
     return dec
 
 
-def provisional_reasons(dec: Decision, evidence: dict) -> list:
-    """The parts of the evidence bar that fail. Empty only for a gold set at the bar."""
+def provisional_reasons(dec: Decision, evidence: dict, sets: list | None = None) -> list:
+    """The parts of the evidence bar that fail. Empty only for a gold set at the bar. Where a gold set has a
+    number for the type, spans and documents are counted on it (the bar is the gold set's), else on the set
+    the type's evidence comes from."""
     if dec.rung == "gold":
         return []
     reasons = ["not_gold"]
-    cell = None
-    if dec.evidence_set:
-        cell = next(iter(evidence[dec.evidence_set].values()))
-    spans = max((c["spans"] for c in evidence.get(dec.evidence_set, {}).values()), default=0)
+    gold_ids = [s["id"] for s in (sets or []) if s.get("kind") == "gold" and evidence.get(s["id"])]
+    where = gold_ids[0] if gold_ids else dec.evidence_set
+    cells = evidence.get(where, {}).values()
+    spans = max((c["spans"] for c in cells), default=0)
     if spans < SPAN_BAR:
         reasons.append("spans")
-    docs = [c.get("docs") for c in evidence.get(dec.evidence_set, {}).values()]
+    docs = [c.get("docs") for c in cells]
     if not docs or any(d is None for d in docs) or max(docs) < GOLD_MIN_DOCS:
         reasons.append("docs")
     reasons.append("genres")

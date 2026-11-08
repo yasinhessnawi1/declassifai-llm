@@ -126,3 +126,25 @@ def test_gaps_and_shared_labels():
 def test_single_engine_reads_what_it_has_a_label_for():
     d = full("PERSON", enabled=["gpt-4o"])
     assert d.read == ["gpt-4o"] and d.second is None
+
+
+def test_bench_plays_no_part_at_the_gold_rung():
+    sets = [{"id": "g", "kind": "gold"}, {"id": "r", "kind": "real"}, {"id": "b", "kind": "synthetic_weak"}]
+    ev = {"g": {"tagger": cell(0.96, rl=0.96, spans=40, docs=20), "gliner": cell(0.5, rl=0.5, spans=40, docs=20, floor=0.5)},
+          "b": {"tagger": cell(0.2, spans=60), "gliner": cell(0.9, spans=60, floor=0.5)}}
+    d = full("PERSON", ev, sets)
+    assert (d.rung, d.primary, d.second, d.second_reason) == ("gold", "tagger", None, None)
+    # below the gold rung the same disagreement still adds the second engine
+    ev["g"] = {"tagger": cell(0.96, rl=0.96, spans=60, docs=14), "gliner": cell(0.5, rl=0.5, spans=60, docs=14, floor=0.5)}
+    d = full("PERSON", ev, sets)
+    assert (d.rung, d.primary, d.second, d.second_reason) == ("real", "tagger", "gliner", "sets_disagree")
+
+
+def test_provisional_reasons_count_on_the_gold_set_where_it_has_a_number():
+    sets = [{"id": "g", "kind": "gold"}, {"id": "r", "kind": "real"}]
+    ev = {"g": {"tagger": cell(0.9, spans=12, docs=5), "gliner": cell(0.5, spans=12, docs=5, floor=0.5)},
+          "r": {"tagger": cell(0.1, spans=900, docs=300), "gliner": cell(0.9, spans=900, docs=300, floor=0.5)}}
+    d = full("PERSON", ev, sets)
+    assert d.deciding_set == "r"
+    assert provisional_reasons(d, ev, sets) == ["not_gold", "spans", "docs", "genres"]
+    assert provisional_reasons(d, ev) == ["not_gold", "genres"]  # without the gold set: counted on the deciding set

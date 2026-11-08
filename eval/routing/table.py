@@ -45,7 +45,7 @@ def build_table(tax: Taxonomy, evidence_doc: dict, floors_doc: dict, *, version:
                 "fallback": [to_product[m] for m in d.fallback],
                 "hint": "gap" if not d.candidates else d.hint,
             }
-        reasons = provisional_reasons(full, ev)
+        reasons = provisional_reasons(full, ev, sets)
         types[tid] = {
             "evidence": ev,
             "deciding_set": full.deciding_set,
