@@ -157,8 +157,12 @@ def test_rule_5d_reads_the_top_two_when_their_union_finds_clearly_more():
     unions = {"g": {"tagger+gliner": {"f1_lenient": 0.66, "recall_lenient": 0.74}}}
     d = decide(TAX, "EMPLOYMENT", ev, sets, FLOORS, ["tagger", "gliner"], unions=unions)
     assert (d.primary, d.second, d.second_reason) == ("tagger", "gliner", "union")
-    unions["g"]["tagger+gliner"] = {"f1_lenient": 0.64, "recall_lenient": 0.74}  # F1 falls 0.06: too much
+    unions["g"]["tagger+gliner"] = {"f1_lenient": 0.59, "recall_lenient": 0.74}  # F1 falls 0.11: still taken
+    assert decide(TAX, "EMPLOYMENT", ev, sets, FLOORS, ["tagger", "gliner"], unions=unions).second == "gliner"
+    unions["g"]["tagger+gliner"] = {"f1_lenient": 0.58, "recall_lenient": 0.74}  # F1 falls 0.12: too much
     assert decide(TAX, "EMPLOYMENT", ev, sets, FLOORS, ["tagger", "gliner"], unions=unions).second is None
-    unions["g"]["tagger+gliner"] = {"f1_lenient": 0.69, "recall_lenient": 0.71}  # recall gains only 0.02
+    unions["g"]["tagger+gliner"] = {"f1_lenient": 0.69, "recall_lenient": 0.695}  # recall gains only 0.005
     assert decide(TAX, "EMPLOYMENT", ev, sets, FLOORS, ["tagger", "gliner"], unions=unions).second is None
+    unions["g"]["tagger+gliner"] = {"f1_lenient": 0.69, "recall_lenient": 0.696}  # gains 0.006: taken
+    assert decide(TAX, "EMPLOYMENT", ev, sets, FLOORS, ["tagger", "gliner"], unions=unions).second == "gliner"
     assert decide(TAX, "EMPLOYMENT", ev, sets, FLOORS, ["tagger", "gliner"]).second is None  # no unions scored

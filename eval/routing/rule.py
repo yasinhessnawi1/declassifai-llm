@@ -12,8 +12,8 @@ Per type and set of enabled engines (models: tagger, gliner, gpt-4o; cheapest fi
      c) below the gold rung, a real set and the synthetic set pick different engines (at the gold
         rung the gold set settles the type and the synthetic set plays no part);
      d) the union of the top two engines (where the deciding set scored unions): its lenient recall
-        beats the best single engine by more than 0.02 and its lenient F1 falls at most 0.05 under
-        the primary's;
+        beats the best single engine by more than 0.005 and its lenient F1 falls at most 0.11 under
+        the primary's (a missed value costs more than an extra box);
   6. default: the tagger if on, else the cheapest enabled engine with a label; a watch-list
      type (primary lenient recall < 0.5 on the evidence there is) also reads the next engine;
   7. fallback: the other enabled candidates by lenient F1, cost order where there is no number;
@@ -35,8 +35,8 @@ GOLD_MIN_SPANS, GOLD_MIN_DOCS = 30, 15
 REAL_MIN_SPANS = 50
 BENCH_MIN_SPANS = 30
 SPAN_BAR = 30  # the spans part of the bar that clears "provisional"
-UNION_RECALL_GAIN = 0.02  # 5d: the union's lenient recall must beat the best single engine by more than this
-UNION_F1_DROP = 0.05  # 5d: and its lenient F1 may fall at most this far under the primary's
+UNION_RECALL_GAIN = 0.005  # 5d: the union's lenient recall must beat the best single engine by more than this
+UNION_F1_DROP = 0.11  # 5d: and its lenient F1 may fall at most this far under the primary's
 
 
 @dataclass
