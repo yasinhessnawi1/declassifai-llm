@@ -7,8 +7,8 @@ from pathlib import Path
 
 import yaml
 
-from .rule import RULE_NAME, candidates, decide, provisional_reasons
-from .taxonomy import DEFAULT_ENGINE_MODELS, PRODUCT_ENGINES, Taxonomy
+from .rule import RULE_NAME, WATCH_BELOW, candidates, decide, provisional_reasons, union_key
+from .taxonomy import DEFAULT_ENGINE_MODELS, ENGINES, PRODUCT_ENGINES, Taxonomy
 
 HERE = Path(__file__).parent
 SCHEMA = 1
@@ -27,23 +27,64 @@ def load_floors(path: Path = HERE / "floors.yaml") -> dict:
     return yaml.safe_load(Path(path).read_text(encoding="utf-8"))
 
 
+def _gold_recall(unions: dict, models) -> float | None:
+    """Lenient recall on the gold set of reading these models together (a single engine or a union)."""
+    cell = unions.get(union_key(models)) if models else None
+    return None if cell is None else cell.get("recall_lenient")
+
+
+def keep_baseline_recall(read: list, fallback: list, baseline_read: list, unions: dict) -> tuple:
+    """Below the gold bar a new route never reads less on the gold set than the baseline table's route: while it
+    would, the baseline engine that helps most is added to the reads (and leaves the fallback)."""
+    read, fallback = list(read), list(fallback)
+    added = []
+    while True:
+        now, before = _gold_recall(unions, read), _gold_recall(unions, baseline_read)
+        if now is None or before is None or now >= before - 1e-9:
+            return read, fallback, added
+        options = [m for m in baseline_read if m not in read]
+        if not options:
+            return read, fallback, added
+        best = max(options, key=lambda m: (_gold_recall(unions, read + [m]) or 0, -ENGINES.index(m)))
+        read.append(best)
+        added.append(best)
+        if best in fallback:
+            fallback.remove(best)
+
+
 def build_table(tax: Taxonomy, evidence_doc: dict, floors_doc: dict, *, version: str, built: str,
-                scorer_commit=None, note=None, engine_models: dict = DEFAULT_ENGINE_MODELS) -> dict:
+                scorer_commit=None, note=None, engine_models: dict = DEFAULT_ENGINE_MODELS,
+                baseline: dict | None = None) -> dict:
+    """evidence_doc may carry `unions` (type -> gold set id -> union key -> cell). With a baseline table, a type
+    below the gold bar keeps at least the baseline route's lenient recall on the gold set (see keep_baseline_recall)."""
     floors = floors_doc["floors"]
     sets = evidence_doc["sets"]
     to_product = {m: p for p, m in engine_models.items()}
+    gold_ids = [s["id"] for s in sets if s.get("kind") == "gold"]
     types = {}
     for tid in tax.ids:
         ev = evidence_doc["cells"].get(tid, {})
-        full = decide(tax, tid, ev, sets, floors, list(engine_models.values()))
+        unions = (evidence_doc.get("unions") or {}).get(tid, {})
+        full = decide(tax, tid, ev, sets, floors, list(engine_models.values()), unions=unions)
         routes = {}
+        kept_by_baseline = {}
         for key in engine_sets():
             enabled = [engine_models[p] for p in key.split("+")]
-            d = decide(tax, tid, ev, sets, floors, enabled, hint_set=full.evidence_set)
+            d = decide(tax, tid, ev, sets, floors, enabled, hint_set=full.evidence_set, unions=unions)
+            read, fallback, hint = list(d.read), list(d.fallback), d.hint
+            gold_unions = unions.get(gold_ids[0], {}) if gold_ids else {}
+            if baseline is not None and full.rung != "gold" and gold_unions:
+                old = baseline["types"][tid]["routes"][key]["read"]
+                read, fallback, added = keep_baseline_recall(
+                    read, fallback, [engine_models[p] for p in old], gold_unions)
+                if added:
+                    kept_by_baseline[key] = [to_product[m] for m in added]
+                    if hint == "weak" and any((_gold_recall(gold_unions, [m]) or 0) >= WATCH_BELOW for m in read):
+                        hint = None
             routes[key] = {
-                "read": [to_product[m] for m in d.read],
-                "fallback": [to_product[m] for m in d.fallback],
-                "hint": "gap" if not d.candidates else d.hint,
+                "read": [to_product[m] for m in read],
+                "fallback": [to_product[m] for m in fallback],
+                "hint": "gap" if not d.candidates else hint,
             }
         reasons = provisional_reasons(full, ev, sets)
         types[tid] = {
@@ -57,6 +98,8 @@ def build_table(tax: Taxonomy, evidence_doc: dict, floors_doc: dict, *, version:
             "second": full.second,
             "routes": routes,
         }
+        if kept_by_baseline:
+            types[tid]["kept_from_baseline"] = kept_by_baseline
     table = {
         "schema": SCHEMA,
         "version": version,

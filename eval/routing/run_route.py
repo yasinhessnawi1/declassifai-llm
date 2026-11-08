@@ -153,7 +153,7 @@ def install_cost_guard(fh):
 
 async def pace(fh):
     """Keep the next document inside the deployment's tokens per minute (prompt + the answer cap, at arrival)."""
-    need = max([c for _, c in Spend.window] or [4000]) * 2
+    need = max([c for _, c in Spend.window] or [4000])
     while True:
         now = time.monotonic()
         Spend.window[:] = [(t, c) for t, c in Spend.window if now - t <= 60]

@@ -82,3 +82,28 @@ def test_writer_is_deterministic_and_round_trips(tmp_path):
     write_table(t, tmp_path / "a.json")
     assert json.loads((tmp_path / "a.json").read_text(encoding="utf-8")) == t
     assert dumps(t) == dumps(copy.deepcopy(t))
+
+
+def test_below_the_bar_a_route_never_reads_less_on_the_gold_set_than_the_baseline():
+    from eval.routing.table import keep_baseline_recall
+
+    unions = {"tagger": {"recall_lenient": 0.6}, "gliner": {"recall_lenient": 0.8}, "gpt-4o": {"recall_lenient": 0.7},
+              "tagger+gliner": {"recall_lenient": 0.85}, "tagger+gpt-4o": {"recall_lenient": 0.75},
+              "gliner+gpt-4o": {"recall_lenient": 0.9}, "tagger+gliner+gpt-4o": {"recall_lenient": 0.95}}
+    read, fallback, added = keep_baseline_recall(["tagger"], ["gliner", "gpt-4o"], ["gliner"], unions)
+    assert (read, fallback, added) == (["tagger", "gliner"], ["gpt-4o"], ["gliner"])
+    # as good as the baseline already: unchanged
+    assert keep_baseline_recall(["gliner"], ["tagger"], ["tagger"], unions) == (["gliner"], ["tagger"], [])
+    # no gold number for the type: unchanged
+    assert keep_baseline_recall(["tagger"], [], ["gliner"], {}) == (["tagger"], [], [])
+
+
+def test_the_gate_looks_only_at_the_types_it_is_given():
+    from eval.routing.score_gold import gate
+
+    def sc(r):
+        return {"per_type": {t: {"recall_lenient": r.get(t, 0.0), "spans": 10 if t in r else 0} for t in TAX.ids}}
+    single = {"fast": sc({"PERSON": 0.9, "STUDENT_ID": 0.5}), "standard": sc({"PERSON": 0.9, "STUDENT_ID": 1.0})}
+    routed = {"fast+standard": sc({"PERSON": 0.9, "STUDENT_ID": 0.5})}
+    assert gate(single, routed, ["PERSON"])["fast+standard"]["pass"]
+    assert not gate(single, routed, TAX.ids)["fast+standard"]["pass"]

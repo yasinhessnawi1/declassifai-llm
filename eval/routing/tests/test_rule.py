@@ -148,3 +148,17 @@ def test_provisional_reasons_count_on_the_gold_set_where_it_has_a_number():
     assert d.deciding_set == "r"
     assert provisional_reasons(d, ev, sets) == ["not_gold", "spans", "docs", "genres"]
     assert provisional_reasons(d, ev) == ["not_gold", "genres"]  # without the gold set: counted on the deciding set
+
+
+def test_rule_5d_reads_the_top_two_when_their_union_finds_clearly_more():
+    sets = [{"id": "g", "kind": "gold"}]
+    ev = {"g": {"tagger": cell(0.70, f1e=0.55, rl=0.69, spans=160, docs=100),
+                "gliner": cell(0.54, f1e=0.42, rl=0.53, spans=160, docs=100, floor=0.5)}}
+    unions = {"g": {"tagger+gliner": {"f1_lenient": 0.66, "recall_lenient": 0.74}}}
+    d = decide(TAX, "EMPLOYMENT", ev, sets, FLOORS, ["tagger", "gliner"], unions=unions)
+    assert (d.primary, d.second, d.second_reason) == ("tagger", "gliner", "union")
+    unions["g"]["tagger+gliner"] = {"f1_lenient": 0.64, "recall_lenient": 0.74}  # F1 falls 0.06: too much
+    assert decide(TAX, "EMPLOYMENT", ev, sets, FLOORS, ["tagger", "gliner"], unions=unions).second is None
+    unions["g"]["tagger+gliner"] = {"f1_lenient": 0.69, "recall_lenient": 0.71}  # recall gains only 0.02
+    assert decide(TAX, "EMPLOYMENT", ev, sets, FLOORS, ["tagger", "gliner"], unions=unions).second is None
+    assert decide(TAX, "EMPLOYMENT", ev, sets, FLOORS, ["tagger", "gliner"]).second is None  # no unions scored

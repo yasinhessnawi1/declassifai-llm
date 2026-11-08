@@ -11,6 +11,9 @@ Per type and set of enabled engines (models: tagger, gliner, gpt-4o; cheapest fi
      b) runner-up within 0.03 lenient and 0.15 exact F1, primary not >= 0.95 on F1 and recall;
      c) below the gold rung, a real set and the synthetic set pick different engines (at the gold
         rung the gold set settles the type and the synthetic set plays no part);
+     d) the union of the top two engines (where the deciding set scored unions): its lenient recall
+        beats the best single engine by more than 0.02 and its lenient F1 falls at most 0.05 under
+        the primary's;
   6. default: the tagger if on, else the cheapest enabled engine with a label; a watch-list
      type (primary lenient recall < 0.5 on the evidence there is) also reads the next engine;
   7. fallback: the other enabled candidates by lenient F1, cost order where there is no number;
@@ -32,6 +35,8 @@ GOLD_MIN_SPANS, GOLD_MIN_DOCS = 30, 15
 REAL_MIN_SPANS = 50
 BENCH_MIN_SPANS = 30
 SPAN_BAR = 30  # the spans part of the bar that clears "provisional"
+UNION_RECALL_GAIN = 0.02  # 5d: the union's lenient recall must beat the best single engine by more than this
+UNION_F1_DROP = 0.05  # 5d: and its lenient F1 may fall at most this far under the primary's
 
 
 @dataclass
@@ -110,8 +115,28 @@ def _second(primary: str, usable: dict, ranking: list, other_pick: str | None) -
     return None, None
 
 
+def union_key(models) -> str:
+    """The key of an engine combination's union cell: its models in cost order, joined by '+'."""
+    return "+".join(e for e in ENGINES if e in set(models))
+
+
+def _union(primary: str, usable: dict, ranking: list, unions: dict) -> str | None:
+    """5d: the runner-up, when the union of the top two engines finds clearly more at a small cost in F1."""
+    if len(ranking) < 2 or not unions:
+        return None
+    u = unions.get(union_key(ranking[:2]))
+    if not u or u.get("recall_lenient") is None:
+        return None
+    best_single = max((c.get("recall_lenient") or 0) for c in usable.values())
+    if (u["recall_lenient"] - best_single > UNION_RECALL_GAIN + 1e-9
+            and usable[primary]["f1_lenient"] - u["f1_lenient"] <= UNION_F1_DROP + 1e-9):
+        return ranking[1]
+    return None
+
+
 def decide(tax: Taxonomy, type_id: str, evidence: dict, sets: list, floors: dict, enabled: list,
-           hint_set: str | None = None) -> Decision:
+           hint_set: str | None = None, unions: dict | None = None) -> Decision:
+    """unions: set id -> union key -> cell, the unions of engine combinations scored on that set."""
     cands = candidates(tax, type_id, enabled)
     dec = Decision(candidates=cands)
     if not cands:
@@ -145,6 +170,9 @@ def decide(tax: Taxonomy, type_id: str, evidence: dict, sets: list, floors: dict
             b_sid, b_u = best_of(lambda k: k == "synthetic_weak", BENCH_MIN_SPANS)
             other_pick = pick(b_u)[0] if b_sid else None
         dec.second, dec.second_reason = _second(dec.primary, usable, ranking, other_pick)
+        if dec.second is None:
+            dec.second = _union(dec.primary, usable, ranking, (unions or {}).get(sid, {}))
+            dec.second_reason = "union" if dec.second else None
         dec.evidence_set = sid
     else:
         dec.primary = "tagger" if "tagger" in cands else cands[0]
